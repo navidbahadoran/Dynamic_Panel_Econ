@@ -16,6 +16,7 @@ from dynamic_panel_econ.core import Coefficients, Design
 from dynamic_panel_econ.dgp import DGP4_TRUTH_NAMES
 from dynamic_panel_econ.estimation import FactorBlock, FitResult, NuclearFit
 from dynamic_panel_econ.monte_carlo import (
+    calibrate_design,
     classify_inference_status,
     run_monte_carlo,
     run_replication,
@@ -156,6 +157,56 @@ def test_cap_pilot_is_rank_at_most_cap_and_may_return_lower_rank():
     assert diagnostics["objective_stability_pass"] is True
 
 
+def test_all_rank_sensitivities_use_completion_and_adaptive_cap_pilot(monkeypatch):
+    zero = Coefficients([np.zeros((6, 6))], [np.zeros((6, 6))], np.zeros((6, 6)))
+    nuclear = NuclearFit(zero, 1.0, 0.0, True, 1, [0.0], [[], [], []])
+    monkeypatch.setattr(rank_module, "nuclear_path", lambda *args, **kwargs: [nuclear])
+    cap_calls = []
+
+    def fake_cap(y, design, caps, preliminary, threshold, **kwargs):
+        cap_calls.append(tuple(caps))
+        return _fit((0, 0, 0), 1.0), {
+            "algorithm": "rank_adaptive_at_most_cap",
+            "numerical_rank_before_thresholding": (0, 0, 0),
+            "objective_stability_pass": True,
+        }
+
+    def fake_candidate(y, design, ranks, starts, *args, **kwargs):
+        objective = 1.0 + 0.01 * sum(ranks)
+        diagnostics = {
+            "start_objectives": [objective, objective],
+            "start_stationarity_residuals": [0.0, 0.0],
+            "start_valid": [True, True],
+            "best_two_objective_gap": 0.0,
+            "objective_stability_pass": True,
+            "third_start_used": False,
+        }
+        return _fit(ranks, objective), False, [], diagnostics
+
+    monkeypatch.setattr(rank_module, "fit_rank_adaptive_cap_pilot", fake_cap)
+    monkeypatch.setattr(rank_module, "_fit_candidate", fake_candidate)
+    result = select_ranks(
+        np.zeros((6, 6)),
+        Design([np.ones((6, 6))], [np.ones((6, 6))]),
+        (1, 1, 1),
+        coefficient_bound=9.0,
+        stationarity_tol=1.0,
+        threshold_sensitivity_multipliers=[1.0],
+        ic_sensitivity_multipliers=[1.0],
+        larger_rank_caps=[2, 2, 2],
+        compute_rank_sensitivities=True,
+        compute_dense_grid_sensitivity=True,
+        compute_larger_cap_sensitivity=True,
+    )
+    sensitivity = result.diagnostics["sensitivities"]
+    assert cap_calls == [(1, 1, 1), (1, 1, 1), (1, 1, 1), (2, 2, 2)]
+    assert sensitivity["threshold_multipliers"]["1.0"]["local_completion_applied"]
+    assert sensitivity["ic_multipliers"]["1.0"]["local_completion_applied"]
+    assert sensitivity["dense_grid_local_completion_applied"]
+    assert sensitivity["larger_cap_local_completion_applied"]
+    assert sensitivity["larger_cap_pilot_algorithm"] == "rank_adaptive_at_most_cap"
+
+
 def _split_result(overrides: dict | None = None, count: int = 4):
     base = {
         "converged": True,
@@ -294,7 +345,7 @@ def test_serial_two_worker_end_to_end_equality_and_broad_schema(tmp_path):
         }
     )
     config["dgp"]["group_gap_pilot_draws"] = 1
-    config["inference"]["targets"] = ["A_full_mean"]
+    config["inference"]["targets"] = ["A_full_mean", "B_full_mean"]
     _, serial_root = run_monte_carlo(config, overwrite=True)
     parallel = deepcopy(config)
     parallel["run"]["name"] = "parallel_equality"
@@ -323,6 +374,9 @@ def test_serial_two_worker_end_to_end_equality_and_broad_schema(tmp_path):
         ]
     ).issubset(serial_raw.columns)
     assert (serial_raw["split_fit_count"] == 4).all()
+    assert (serial_raw["split_coefficient_fit_count"] == 4).all()
+    assert serial_raw["true_target_projection_ratio"].notna().all()
+    assert set(serial_raw["target_applicability"]) == {"theorem_covered"}
     for encoded in serial_raw["split_diagnostics_json"]:
         for split in json.loads(encoded):
             positive = [
@@ -334,20 +388,24 @@ def test_serial_two_worker_end_to_end_equality_and_broad_schema(tmp_path):
             assert all("sigma_r" in item and "sigma_r_over_sigma_1" in item for item in positive)
 
 
-def test_rank_stress_runner_refuses_infeasible_common_r2(tmp_path):
+def test_rank_stress_design_normalizes_zero_slope_scale():
     config = load_config("configs/mc/rank_stress_smoke.toml")
-    config["run"]["output_root"] = str(tmp_path)
-    with pytest.raises(RuntimeError, match="target pooled R2=0.700000 is infeasible"):
-        run_monte_carlo(config, overwrite=True)
+    calibration = calibrate_design(config)[(1, 20, 20, (1, 0, 2))]
+    assert calibration.c_xi == 1.0
+    assert calibration.target_r2 is None
+    assert calibration.diagnostics["r2_scale_identified"] is False
 
 
 def test_rank_stress_end_to_end_runs_feasible_true_vectors(tmp_path):
     config = load_config("configs/mc/rank_stress_smoke.toml")
     config["run"]["output_root"] = str(tmp_path)
-    config["rank_stress"]["true_rank_vectors"] = [[1, 1, 1], [2, 1, 1]]
     _, root = run_monte_carlo(config, overwrite=True)
     ranks = _parquet_tree(root, "rank")
-    assert set(ranks["true_rank_vector"]) == {"[1, 1, 1]", "[2, 1, 1]"}
+    assert set(ranks["true_rank_vector"]) == {
+        "[1, 1, 1]",
+        "[2, 1, 1]",
+        "[1, 0, 2]",
+    }
     aggregate_run(root)
     table_paths = make_tables(root)
     assert root / "tables" / "tab_mc_rank.tex" in table_paths

@@ -30,7 +30,7 @@ DEFAULTS: dict[str, Any] = {
         "delta_x": 0.5,
         "eta_x": 0.3,
         "pi_h": 0.30,
-        "target_r2": 0.50,
+        "target_r2": 0.65,
         "mu_lambda_a_1": 0.9,
         "mu_lambda_a_2": 1.1,
         "sigma_lambda_a": 0.08,
@@ -80,6 +80,8 @@ DEFAULTS: dict[str, Any] = {
         "compute_tangent_gram": False,
         "tangent_gram_tol": 1e-5,
         "tangent_gram_max_iter": 500,
+        "tangent_gram_min_eigenvalue_floor": 1e-10,
+        "target_support_tolerance": 1e-12,
         "spatial_c": 1.0,
         "targets": ["A_entry", "B_entry", "A_fixed_time_mean", "A_full_mean"],
     },
@@ -126,6 +128,10 @@ def validate_config(config: dict[str, Any]) -> None:
         raise ValueError("start_objective_stability_tol must be positive")
     if float(config["inference"]["split_relative_rank_floor"]) <= 0.0:
         raise ValueError("split_relative_rank_floor must be positive")
+    if float(config["inference"]["tangent_gram_min_eigenvalue_floor"]) <= 0.0:
+        raise ValueError("tangent_gram_min_eigenvalue_floor must be positive")
+    if float(config["inference"]["target_support_tolerance"]) <= 0.0:
+        raise ValueError("target_support_tolerance must be positive")
 
 
 def canonical_json(config: dict[str, Any]) -> str:

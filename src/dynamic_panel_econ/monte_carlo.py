@@ -24,10 +24,15 @@ from .dgp import (
     generate_rank_stress_panel,
     group_gap_pilot,
 )
-from .inference import infer_target, split_correct_target
+from .inference import (
+    infer_corrected_target,
+    infer_target,
+    prepare_riesz_system,
+    prepare_split_fits,
+)
 from .rank_selection import RankPilotFailure, RankSelectionFailure, select_ranks
 from .seeds import seed_sequence
-from .targets import target_direction, target_value
+from .targets import target_direction, target_regularity_diagnostics, target_value
 
 FAILURE_CODES = (
     "success",
@@ -39,6 +44,12 @@ FAILURE_CODES = (
     "rank_at_cap",
     "rank_pilot_failure",
     "rank_selection_failure",
+    "target_unsupported_selected_rank",
+    "split_target_unsupported_selected_rank",
+    "tangent_gram_eigensolver_failure",
+    "tangent_gram_nearly_singular",
+    "split_tangent_gram_eigensolver_failure",
+    "split_tangent_gram_nearly_singular",
     "riesz_not_converged",
     "riesz_target_instability",
     "split_fit_not_converged",
@@ -303,8 +314,10 @@ def _rank_record(
         "config_hash": config_hash(config),
         "git_commit": _git_commit(),
     }
-    for multiplier, selected_rank in sensitivity.get("ic_multipliers", {}).items():
-        record[f"ic_multiplier_{multiplier}_selected_rank"] = json.dumps(selected_rank)
+    for multiplier, result in sensitivity.get("ic_multipliers", {}).items():
+        record[f"ic_multiplier_{multiplier}_selected_rank"] = json.dumps(
+            result["selected_rank"]
+        )
     for multiplier, result in sensitivity.get("threshold_multipliers", {}).items():
         record[f"threshold_multiplier_{multiplier}_selected_rank"] = json.dumps(
             result["selected_rank"]
@@ -320,6 +333,8 @@ def _rank_record(
 def classify_inference_status(result: Any, config: dict[str, Any]) -> str:
     """Apply the paper's primary and split-inference failure precedence."""
 
+    if getattr(result, "failure_code", None) is not None:
+        return str(result.failure_code)
     if not result.riesz.converged:
         return "riesz_not_converged"
     floor = float(config["inference"]["riesz_target_rayleigh_floor"])
@@ -426,24 +441,69 @@ def run_replication(
         if fit.max_envelope_ratio >= 1.0:
             return [rank_row, _failure_record(task, config, "coefficient_bound_active", str(fit.max_envelope_ratio))]
 
+        target_specs = [
+            target_direction(str(name), panel.theta0, panel.groups, dgp=dgp)
+            for name in config["inference"]["targets"]
+        ]
+        compute_gram = bool(config["inference"]["compute_tangent_gram"])
+        full_system = (
+            prepare_riesz_system(
+                fit.theta,
+                panel.design,
+                fit.ranks,
+                compute_tangent_gram=compute_gram,
+                tangent_gram_tolerance=float(config["inference"]["tangent_gram_tol"]),
+                tangent_gram_max_iter=int(config["inference"]["tangent_gram_max_iter"]),
+            )
+            if target_specs
+            else None
+        )
+        split_started = time.perf_counter()
+        split_bundle = (
+            prepare_split_fits(
+                fit,
+                panel.y,
+                panel.design,
+                panel.groups,
+                time_seed=seed_sequence(
+                    config["run"]["master_seed"], dgp, n, t, replication, true_rank, "time_split"
+                ),
+                unit_seed=seed_sequence(
+                    config["run"]["master_seed"], dgp, n, t, replication, true_rank, "unit_split"
+                ),
+                split_relative_rank_floor=float(
+                    config["inference"]["split_relative_rank_floor"]
+                ),
+                compute_tangent_gram=compute_gram,
+                tangent_gram_tolerance=float(config["inference"]["tangent_gram_tol"]),
+                tangent_gram_max_iter=int(config["inference"]["tangent_gram_max_iter"]),
+                fit_options=_fit_options(config),
+            )
+            if any(spec.broad for spec in target_specs)
+            else None
+        )
+        split_fit_runtime = time.perf_counter() - split_started if split_bundle else 0.0
+        split_coefficient_fit_count = (
+            split_bundle.coefficient_fit_count if split_bundle is not None else 0
+        )
+        rank_row["split_coefficient_fit_count"] = split_coefficient_fit_count
+        rank_row["split_fit_runtime_seconds"] = split_fit_runtime
         rows: list[dict[str, Any]] = [rank_row]
-        for name in config["inference"]["targets"]:
-            spec = target_direction(str(name), panel.theta0, panel.groups)
+        for spec in target_specs:
+            name = spec.name
             truth = target_value(spec.direction, panel.theta0)
+            regularity = target_regularity_diagnostics(spec, panel.theta0)
             inference_started = time.perf_counter()
             if spec.broad:
-                result = split_correct_target(
+                if split_bundle is None or full_system is None:
+                    raise RuntimeError("broad target requires prepared full and split systems")
+                result = infer_corrected_target(
                     spec.direction,
                     fit,
+                    full_system,
                     panel.y,
                     panel.design,
-                    panel.groups,
-                    time_seed=seed_sequence(
-                        config["run"]["master_seed"], dgp, n, t, replication, true_rank, "time_split"
-                    ),
-                    unit_seed=seed_sequence(
-                        config["run"]["master_seed"], dgp, n, t, replication, true_rank, "unit_split"
-                    ),
+                    split_bundle,
                     spatial=dgp >= 2,
                     c_sp=float(config["inference"]["spatial_c"]),
                     riesz_tolerance=float(config["inference"]["riesz_tol"]),
@@ -451,21 +511,16 @@ def run_replication(
                     target_rayleigh_floor=float(
                         config["inference"]["riesz_target_rayleigh_floor"]
                     ),
-                    split_relative_rank_floor=float(
-                        config["inference"]["split_relative_rank_floor"]
+                    target_support_tolerance=float(
+                        config["inference"]["target_support_tolerance"]
                     ),
-                    compute_tangent_gram=bool(
-                        config["inference"]["compute_tangent_gram"]
+                    tangent_gram_min_eigenvalue_floor=float(
+                        config["inference"]["tangent_gram_min_eigenvalue_floor"]
                     ),
-                    tangent_gram_tolerance=float(
-                        config["inference"]["tangent_gram_tol"]
-                    ),
-                    tangent_gram_max_iter=int(
-                        config["inference"]["tangent_gram_max_iter"]
-                    ),
-                    fit_options=_fit_options(config),
                 )
             else:
+                if full_system is None:
+                    raise RuntimeError("target inference requires a prepared full Riesz system")
                 result = infer_target(
                     spec.direction,
                     fit,
@@ -475,15 +530,13 @@ def run_replication(
                     c_sp=float(config["inference"]["spatial_c"]),
                     riesz_tolerance=float(config["inference"]["riesz_tol"]),
                     riesz_max_iter=int(config["inference"]["riesz_max_iter"]),
-                    compute_tangent_gram=bool(
-                        config["inference"]["compute_tangent_gram"]
+                    target_support_tolerance=float(
+                        config["inference"]["target_support_tolerance"]
                     ),
-                    tangent_gram_tolerance=float(
-                        config["inference"]["tangent_gram_tol"]
+                    tangent_gram_min_eigenvalue_floor=float(
+                        config["inference"]["tangent_gram_min_eigenvalue_floor"]
                     ),
-                    tangent_gram_max_iter=int(
-                        config["inference"]["tangent_gram_max_iter"]
-                    ),
+                    riesz_system=full_system,
                 )
             status = classify_inference_status(result, config)
 
@@ -495,8 +548,11 @@ def run_replication(
             corrected_variance = float(result.variance)
             primary_se = corrected_se if spec.broad else plugin_se
             primary_estimate = corrected_estimate if spec.broad else plugin_estimate
-            z_true = abs(primary_estimate - truth) / primary_se if primary_se > 0 else float("inf")
-            z_zero = abs(primary_estimate) / primary_se if primary_se > 0 else float("inf")
+            valid_interval = bool(
+                status == "success" and np.isfinite(primary_se) and primary_se > 0.0
+            )
+            z_true = abs(primary_estimate - truth) / primary_se if valid_interval else np.nan
+            z_zero = abs(primary_estimate) / primary_se if valid_interval else np.nan
             best_neighbor_rank = selection.diagnostics.get("best_neighbor_rank")
             neighbor_change = None
             if best_neighbor_rank is not None:
@@ -530,6 +586,8 @@ def run_replication(
                 "phi_time_sum": result.diagnostics.get("phi_time_sum"),
                 "phi_unit_sum": result.diagnostics.get("phi_unit_sum"),
                 "split_fit_count": len(result.diagnostics.get("split_fits", [])),
+                "split_coefficient_fit_count": split_coefficient_fit_count,
+                "split_fit_runtime_seconds": split_fit_runtime,
                 "split_diagnostics_json": json.dumps(
                     result.diagnostics.get("split_fits", []),
                     sort_keys=True,
@@ -537,9 +595,11 @@ def run_replication(
                 ),
                 "time_split_assignments_json": json.dumps(result.diagnostics.get("time_parts")),
                 "unit_split_assignments_json": json.dumps(result.diagnostics.get("unit_parts")),
-                "centered_reject_5pct": bool(z_true > 1.959963984540054),
-                "reject_zero_5pct": bool(z_zero > 1.959963984540054),
-                "covered_95pct": bool(z_true <= 1.959963984540054),
+                "centered_reject_5pct": bool(
+                    valid_interval and z_true > 1.959963984540054
+                ),
+                "reject_zero_5pct": bool(valid_interval and z_zero > 1.959963984540054),
+                "covered_95pct": bool(valid_interval and z_true <= 1.959963984540054),
                 "corrected": result.corrected,
                 "selected_rank": json.dumps(fit.ranks),
                 "selected_ic": selection.selected.ic,
@@ -586,6 +646,7 @@ def run_replication(
                 "git_commit": _git_commit(),
             }
             row.update({key: value for key, value in panel.diagnostics.items() if np.isscalar(value)})
+            row.update(regularity)
             row.update(panel.truths)
             rows.append(row)
         return rows

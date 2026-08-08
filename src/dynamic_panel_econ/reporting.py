@@ -100,6 +100,17 @@ def aggregate_run(root: str | Path) -> pd.DataFrame:
             "mean_replication_runtime_seconds": float(group["replication_runtime_seconds"].mean()),
             "mean_best_neighbor_target_change": float(group["best_neighbor_target_change"].mean()),
             "spatial_c": float(group["spatial_c"].mean()) if "spatial_c" in group else np.nan,
+            "target_applicability": group["target_applicability"].iloc[0],
+            "headline_theorem_target": bool(group["headline_theorem_target"].iloc[0]),
+            "mean_true_target_projection_ratio": float(
+                group["true_target_projection_ratio"].mean()
+            ),
+            "mean_true_entry_unit_leverage_scaled": float(
+                group["true_entry_unit_leverage_scaled"].mean()
+            ),
+            "mean_true_entry_time_leverage_scaled": float(
+                group["true_entry_time_leverage_scaled"].mean()
+            ),
         }
         relevant = raw.loc[
             (raw["dgp"] == keys[0])
@@ -164,9 +175,74 @@ def aggregate_run(root: str | Path) -> pd.DataFrame:
     if not rank_summary.empty:
         rank_summary = rank_summary.sort_values(["true_rank_vector", "dgp", "N", "T"])
 
+    target_rows = raw.loc[raw["record_type"] == "target"].copy() if not raw.empty else pd.DataFrame()
+    regularity_rows = []
+    if not target_rows.empty:
+        for keys, group in target_rows.groupby(
+            ["dgp", "N", "T", "target", "true_rank_vector"], dropna=False
+        ):
+            regularity_rows.append(
+                {
+                    "dgp": keys[0],
+                    "N": keys[1],
+                    "T": keys[2],
+                    "target": keys[3],
+                    "true_rank_vector": keys[4],
+                    "target_applicability": group["target_applicability"].iloc[0],
+                    "headline_theorem_target": bool(
+                        group["headline_theorem_target"].iloc[0]
+                    ),
+                    "mean_true_target_projection_ratio": float(
+                        group["true_target_projection_ratio"].mean()
+                    ),
+                    "minimum_true_target_projection_ratio": float(
+                        group["true_target_projection_ratio"].min()
+                    ),
+                    "mean_true_entry_unit_leverage_scaled": float(
+                        group["true_entry_unit_leverage_scaled"].mean()
+                    ),
+                    "minimum_true_entry_unit_leverage_scaled": float(
+                        group["true_entry_unit_leverage_scaled"].min()
+                    ),
+                    "mean_true_entry_time_leverage_scaled": float(
+                        group["true_entry_time_leverage_scaled"].mean()
+                    ),
+                    "minimum_true_entry_time_leverage_scaled": float(
+                        group["true_entry_time_leverage_scaled"].min()
+                    ),
+                    "requested_replications": requested,
+                    "target_records": int(len(group)),
+                }
+            )
+    target_regularity = pd.DataFrame(regularity_rows)
+    if target_regularity.empty:
+        target_regularity = pd.DataFrame(
+            columns=[
+                "dgp",
+                "N",
+                "T",
+                "target",
+                "true_rank_vector",
+                "target_applicability",
+                "headline_theorem_target",
+                "mean_true_target_projection_ratio",
+                "minimum_true_target_projection_ratio",
+                "mean_true_entry_unit_leverage_scaled",
+                "minimum_true_entry_unit_leverage_scaled",
+                "mean_true_entry_time_leverage_scaled",
+                "minimum_true_entry_time_leverage_scaled",
+                "requested_replications",
+                "target_records",
+            ]
+        )
+
     destination = root / "summary"
     destination.mkdir(exist_ok=True)
-    for name, frame in (("mc_summary", summary), ("rank_summary", rank_summary)):
+    for name, frame in (
+        ("mc_summary", summary),
+        ("rank_summary", rank_summary),
+        ("target_regularity", target_regularity),
+    ):
         frame.to_parquet(destination / f"{name}.parquet", index=False)
         frame.to_csv(destination / f"{name}.csv", index=False)
     return summary
@@ -242,7 +318,12 @@ def _write_artifact(base: Path, data: pd.DataFrame, latex: str) -> list[Path]:
 
 
 def _performance_table(summary: pd.DataFrame, dgp: int) -> tuple[pd.DataFrame, str]:
-    data = summary.loc[summary["dgp"] == dgp].copy()
+    headline = (
+        summary["headline_theorem_target"].fillna(False)
+        if "headline_theorem_target" in summary.columns
+        else pd.Series(False, index=summary.index, dtype=bool)
+    )
+    data = summary.loc[(summary["dgp"] == dgp) & headline].copy()
     panels = []
     for letter, target in zip(string.ascii_uppercase, TARGET_TITLES, strict=False):
         subset = data.loc[data["target"] == target]
@@ -264,7 +345,8 @@ def _performance_table(summary: pd.DataFrame, dgp: int) -> tuple[pd.DataFrame, s
         notes=(
             "Rates are on the 0--1 scale. Broad targets report the prescribed two-way corrected "
             "estimator; local and fixed-time targets report the full-panel plug-in. DGPs 2--4 "
-            "use the logarithmic Bartlett spatial cutoff."
+            "use the logarithmic Bartlett spatial cutoff. Targets tagged outside Assumption 9 "
+            "are excluded and reported in the target-regularity appendix."
         ),
     )
     return data, latex
@@ -393,6 +475,51 @@ def make_tables(root: str | Path) -> list[Path]:
         notes="Rows are unique by DGP, panel cell, and true-rank design; no inference-target duplication is present.",
     )
     outputs.extend(_write_artifact(table_root / "tab_mc_rank", rank_summary, rank_tex))
+
+    target_regularity = pd.read_parquet(
+        root / "summary" / "target_regularity.parquet"
+    )
+    regularity_panels = [
+        (
+            f"Panel {letter}. {TARGET_TITLES.get(target, target)}",
+            target_regularity.loc[target_regularity["target"] == target],
+        )
+        for letter, target in zip(
+            string.ascii_uppercase,
+            target_regularity["target"].drop_duplicates(),
+            strict=False,
+        )
+    ]
+    regularity_columns = [
+        ("dgp", "DGP"),
+        ("N", "$N$"),
+        ("T", "$T$"),
+        ("target_applicability", "Classification"),
+        ("mean_true_target_projection_ratio", r"Mean $\|P_0D\|/\|D\|$"),
+        ("minimum_true_target_projection_ratio", r"Min. $\|P_0D\|/\|D\|$"),
+        ("mean_true_entry_unit_leverage_scaled", "Mean unit leverage"),
+        ("mean_true_entry_time_leverage_scaled", "Mean time leverage"),
+        ("target_records", "Records"),
+    ]
+    regularity_tex = _longtable(
+        regularity_panels,
+        regularity_columns,
+        caption="Appendix target-regularity diagnostics",
+        label="tab:mc-target-regularity",
+        notes=(
+            "Fixed-time group contrasts in DGPs 1--3 are weak-target stress cases outside "
+            "Assumption 9 and are excluded from headline coverage. B-entry remains diagnostic "
+            "pending the prespecified loading-factor choice."
+        ),
+        first_text_column="target_applicability",
+    )
+    outputs.extend(
+        _write_artifact(
+            table_root / "tab_mc_target_regularity",
+            target_regularity,
+            regularity_tex,
+        )
+    )
 
     computation = rank_summary[
         ["dgp", "N", "T", "true_rank_vector", "mean_rank_runtime_seconds", "mean_candidate_count", "mean_ic_gap", "successful_replications", "requested_replications"]

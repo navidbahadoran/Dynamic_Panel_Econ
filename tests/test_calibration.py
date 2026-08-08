@@ -1,7 +1,6 @@
 import pytest
 
 from dynamic_panel_econ.calibration import (
-    CalibrationFeasibilityError,
     calibrate_cell,
     calibrate_rank_stress_cell,
 )
@@ -38,15 +37,20 @@ def test_rank_stress_is_separately_calibrated_on_actual_matrices(ranks):
     assert result.diagnostics["true_rank_vector"] == ranks
 
 
-def test_zero_slope_rank_stress_reports_common_r2_infeasibility():
-    with pytest.raises(CalibrationFeasibilityError, match="target pooled R2=0.650000 is infeasible"):
-        calibrate_rank_stress_cell(
-            1,
-            50,
-            50,
-            (1, 0, 2),
-            20260807,
-            component_strengths=(1.0, 1.0),
-            target_r2=0.65,
-            draws=3,
-        )
+def test_zero_slope_rank_stress_uses_explicit_scale_normalization():
+    result = calibrate_rank_stress_cell(
+        1,
+        50,
+        50,
+        (1, 0, 2),
+        20260807,
+        component_strengths=(1.0, 1.0),
+        target_r2=0.65,
+        draws=3,
+    )
+    assert result.c_xi == 1.0
+    assert result.target_r2 is None
+    assert result.diagnostics["r2_scale_identified"] is False
+    assert result.diagnostics["requested_r2"] is None
+    assert result.diagnostics["c_xi_normalization"] == 1.0
+    assert 0.0 < result.achieved_r2 < 1.0

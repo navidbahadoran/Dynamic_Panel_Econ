@@ -36,7 +36,8 @@ def main() -> None:
         infeasible = [
             row
             for row in csv.DictReader(handle)
-            if row["target_r2_feasible"].lower() != "true"
+            if row["r2_scale_identified"].lower() == "true"
+            and row["target_r2_feasible"].lower() != "true"
         ]
     if infeasible:
         vectors = sorted({row["true_rank_vector"] for row in infeasible})

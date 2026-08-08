@@ -7,6 +7,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from .core import Coefficients, inner, zeros_like
+from .lowrank import numerical_rank, tangent_project
 
 
 @dataclass(frozen=True, slots=True)
@@ -14,6 +15,8 @@ class TargetSpec:
     name: str
     direction: Coefficients
     broad: bool
+    theorem_validation: bool = True
+    applicability: str = "theorem_covered"
 
 
 def paper_index(size: int, divisor: int) -> int:
@@ -33,7 +36,11 @@ def _set_block(direction: Coefficients, block: str, weights: np.ndarray) -> None
 
 
 def target_direction(
-    name: str, template: Coefficients, groups: np.ndarray | None = None
+    name: str,
+    template: Coefficients,
+    groups: np.ndarray | None = None,
+    *,
+    dgp: int | None = None,
 ) -> TargetSpec:
     n, t = template.shape
     direction = zeros_like(template)
@@ -71,11 +78,62 @@ def target_direction(
     else:
         raise ValueError(f"unknown target: {name}")
     _set_block(direction, block, weights)
-    return TargetSpec(name, direction, broad)
+    theorem_validation = True
+    applicability = "theorem_covered"
+    if "G2_minus_G1_fixed_time" in name and dgp is not None and dgp < 4:
+        theorem_validation = False
+        applicability = "weak_target_stress_outside_assumption9"
+    elif name == "B_entry":
+        theorem_validation = False
+        applicability = "entry_leverage_requires_author_choice"
+    return TargetSpec(name, direction, broad, theorem_validation, applicability)
 
 
 def target_value(direction: Coefficients, theta: Coefficients) -> float:
     return inner(direction, theta)
+
+
+def target_regularity_diagnostics(
+    spec: TargetSpec,
+    theta0: Coefficients,
+) -> dict[str, float | str | bool | None]:
+    """Compute true tangent projection and entry leverage diagnostics."""
+
+    ranks = tuple(numerical_rank(matrix) for matrix in theta0.matrices())
+    direction_norm = float(
+        np.sqrt(sum(np.vdot(matrix, matrix) for matrix in spec.direction.matrices()))
+    )
+    projected = tangent_project(spec.direction, theta0, ranks)
+    projected_norm = float(
+        np.sqrt(sum(np.vdot(matrix, matrix) for matrix in projected.matrices()))
+    )
+    diagnostics: dict[str, float | str | bool | None] = {
+        "target_applicability": spec.applicability,
+        "headline_theorem_target": spec.theorem_validation,
+        "true_target_direction_norm": direction_norm,
+        "true_target_tangent_norm": projected_norm,
+        "true_target_projection_ratio": (
+            projected_norm / direction_norm if direction_norm > 0.0 else float("nan")
+        ),
+        "true_entry_unit_leverage_scaled": None,
+        "true_entry_time_leverage_scaled": None,
+    }
+    if spec.name.endswith("_entry"):
+        block = theta0.A[0] if spec.name.startswith("A_") else theta0.B[0]
+        rank = ranks[0] if spec.name.startswith("A_") else ranks[1]
+        i0, t0 = paper_index(block.shape[0], 4), paper_index(block.shape[1], 2)
+        if rank > 0:
+            u, _, vt = np.linalg.svd(block, full_matrices=False)
+            diagnostics["true_entry_unit_leverage_scaled"] = float(
+                block.shape[0] * np.sum(u[i0, :rank] ** 2)
+            )
+            diagnostics["true_entry_time_leverage_scaled"] = float(
+                block.shape[1] * np.sum(vt[:rank, t0] ** 2)
+            )
+        else:
+            diagnostics["true_entry_unit_leverage_scaled"] = 0.0
+            diagnostics["true_entry_time_leverage_scaled"] = 0.0
+    return diagnostics
 
 
 def default_target_names(include_groups: bool) -> list[str]:

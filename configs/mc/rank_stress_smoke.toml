@@ -11,7 +11,7 @@ blas_threads = 1
 output_root = "results/mc"
 
 [dgp]
-target_r2 = 0.70
+target_r2 = 0.65
 calibration_draws = 1
 group_gap_pilot_draws = 1
 auto_adjust_group_gap = false

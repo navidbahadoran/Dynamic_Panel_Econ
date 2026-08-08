@@ -62,8 +62,9 @@ deliberately not ignored.
 - Enough memory for several `N x T` arrays per worker; production `400 x 400` jobs should be
   piloted before selecting the worker count
 
-The nuclear path, repeated joint post-refits, matrix-free Riesz iterations, and four split fits
-for every broad target are the principal costs.
+The nuclear path, repeated joint post-refits, matrix-free Riesz iterations, and exactly four
+split coefficient fits per replication are the principal costs. Split coefficient optimization
+is not repeated when the target direction changes.
 
 ## 6. Installation
 
@@ -102,9 +103,11 @@ python scripts\aggregate_mc.py --config configs\mc\rank_stress_smoke.toml
 python scripts\make_mc_tables.py --config configs\mc\rank_stress_smoke.toml
 ```
 
-The smoke run uses two `20 x 20` replications per DGP. It exercises rank selection, a local
-fixed-time target, a broad corrected target, diagonal/spatial variance, aggregation, and tables.
-It is a software check, not evidence about statistical performance.
+The smoke run uses one `50 x 50` replication per DGP, the smallest configured cell for which the
+prespecified 0.65 calibration is feasible in all four designs. It exercises rank selection,
+entry and fixed-time targets, theorem-applicability tagging, several broad corrected targets,
+diagonal/spatial variance, aggregation, and tables. It is a software check, not evidence about
+statistical performance.
 
 ## 8. Tests and code quality
 
@@ -171,11 +174,9 @@ There is an important reproducible feasibility problem in the supplied statistic
 with `H0=c_xi*c_H*H_raw` and `u=c_xi*u_tilde`, the lagged-outcome and persistent interactive-effect
 terms can keep pooled R-squared above 0.50 even as `c_xi` becomes arbitrarily large. In deterministic
 DGP 1 checks its numerical floor is about 0.58. Therefore the mandated 0.50 root need not exist.
-The code does not invent a replacement scaling or report a closest value: it raises a transparent
-calibration failure. The production configuration preserves 0.50; the smoke configuration uses
-the explicit feasible value 0.70 solely to test the full software pipeline. Before production,
-the econometric specification must resolve whether a different object is intended to be scaled or
-a feasible R-squared target should be prespecified.
+The old 0.50 feasibility result is retained as the reason for the prespecified active target
+`pooled_r2_target=0.65`. Smoke, pilot, Riesz-diagnostic, and production configurations all use
+0.65; the protected DGP formulas are unchanged.
 
 Calibration output includes targets, achieved moments, coefficient ranges, stability summaries,
 and primitive conditional variance summaries.
@@ -183,10 +184,9 @@ and primitive conditional variance summaries.
 Rank-stress calibration is separate for every DGP, cell, and true-rank vector and uses the actual
 rescaled stress matrices. A further structural feasibility issue is recorded, not overridden:
 when the true vector is `(1,0,2)`, the slope block is zero and both the interactive effect and
-primitive disturbance scale with `c_xi`. The resulting outcome is homogeneous in `c_xi`, so its
-pooled R-squared cannot be tuned by `c_xi`; at the current cells it is about 0.52--0.54 rather than
-0.65. The strict runner therefore refuses the common-target rank experiment until the statistical
-specification supplies a compatible resolution.
+primitive disturbance scale with `c_xi`. The outcome is homogeneous in `c_xi`. These cells set
+`c_xi=1` as an explicit normalization, record `r2_scale_identified=false`, set requested
+R-squared to null, and report the induced pooled R-squared. They are not calibration failures.
 
 ## 12. Targets and exact truth
 
@@ -198,6 +198,12 @@ Implemented targets include entries, fixed-time cross-sectional means, DGP 4 fix
 means and contrasts, full-panel means, and time-averaged group means and contrasts. Entries and
 fixed-time targets use the full-panel plug-in. Full-panel and time-averaged targets use the
 two-way split correction.
+
+Every target row stores the true ratio `||P0 D||/||D||`; entry rows also store scaled unit and
+time leverage. Fixed-time G2-minus-G1 contrasts in DGPs 1--3 are retained only as
+`weak_target_stress_outside_assumption9` and excluded from headline theorem-coverage tables. The
+same contrasts remain theorem-covered in DGP 4. `B_entry` remains a leverage diagnostic pending
+the author's slope-factor choice.
 
 ## 13. Estimator pipeline
 
@@ -238,6 +244,8 @@ They include candidate coverage of the actual true vector, exact/under/over/zero
 cap margins, candidate validity, and nuclear-path proposals. Prespecified stability checks cover
 the dense `sqrt(0.8)` nuclear grid, threshold multipliers `0.5,1,2`, IC multipliers `0.5,1,2`,
 larger caps, and best one-coordinate target changes. They are diagnostics, not rank-robust inference.
+Each sensitivity uses the same rank-at-most-cap pilot, stable candidate post-refits, and local
+candidate-completion algorithm, changing only its named tuning input.
 
 ## 15. Riesz computation
 
@@ -247,22 +255,29 @@ For every selected matrix, the tangent projector is
 P_T(Z)=UU'Z+ZVV'-UU'ZVV'.
 \]
 
-The ambient matrix-free normal operator applies `P_T A* A P_T`. Conjugate gradients are primary,
-with MINRES and LSMR fallbacks. Convergence is judged against the original empirical Riesz
-equation. The target-specific diagnostic is named
+Each fitted sample prepares one reusable nonredundant tangent-coordinate Riesz system. Its
+matrix-free Gram operator and optional Lanczos spectrum are cached across targets. Conjugate
+gradients are primary, with MINRES and LSMR fallbacks. Only the projected target right-hand side
+and solution are target-specific. The diagnostic is named
 `riesz_target_rayleigh_quotient`; its numerator and denominator both use the projected solution
 returned by the solver. It is not described as a minimum eigenvalue.
 
 A separate matrix-free Lanczos diagnostic uses exactly `r(N+T-r)` nonredundant orthonormal tangent
 coordinates per block. It reports estimated smallest and largest tangent-Gram eigenvalues and a
 condition-number estimate without introducing ambient normal-space zero eigenvalues.
+If the target tangent norm is below `target_support_tolerance`, it is classified
+`target_unsupported_selected_rank` before any Riesz iteration. When Gram diagnostics are enabled,
+eigensolver failure or an estimated minimum eigenvalue below
+`tangent_gram_min_eigenvalue_floor` suppresses the primary interval under its own status.
 
 ## 16. Two-way split-panel correction
 
 Ranks are selected once on the full panel. Independent balanced time and unit partitions then
-produce exactly four more fits with those ranks fixed. Unit splits are stratified within target
-groups. Time splits retain observed lagged outcomes even when the lag time belongs to the other
-half. Restricted directions add exactly to the original target.
+produce exactly four more coefficient fits with those ranks fixed. These fits, residuals,
+partitions, rank diagnostics, and Riesz systems are prepared once per replication and reused for
+every broad target. Unit splits are stratified within deterministic groups. Time splits retain
+observed lagged outcomes even when the lag time belongs to the other half. Restricted directions
+add exactly to the original target.
 
 The estimate is `3*phi_full - sum(phi_time_halves) - sum(phi_unit_halves)`. The corrected score uses
 three distinct fitted objects at every observation:
@@ -283,6 +298,16 @@ this is separate from the statistical threshold and never selects ranks.
 DGP 1 uses the diagonal score sum. DGPs 2--4 use Bartlett spatial weights with
 `h_N=ceil(c_sp*log(NT))`. The O(`T*N*h_N`) lag-sum implementation never constructs a dense matrix
 in production. There is no temporal HAC.
+
+The numerical fixed-rank routine solves the interior fixed-rank least-squares problem. A
+coefficient-envelope hit is treated as a failed interiority diagnostic. On the theorem's
+asymptotic interior event this coincides with the constrained estimator. The routine does not
+claim to solve a boundary-constrained problem directly.
+
+The maintained slope factor has `mu_f_b=0.6` and `kappa_f_b=0.20`; its bounded-AR support reaches
+zero and therefore does not give a deterministic lower time-leverage constant for `B_entry`.
+`scripts/diagnose_b_entry_leverage.py` reports the unapproved `kappa_f_b=0.15` alternative, whose
+factor lower bound is 0.15, without changing any active DGP configuration.
 
 ## 18. Parallel execution
 
@@ -320,6 +345,7 @@ python scripts\run_mc.py --config configs\mc\pilot.toml --resume --n-jobs 4
 - `rank/*.parquet`: compact replication-level rank-selection diagnostics
 - `summary/mc_summary.{parquet,csv}`: target-level performance statistics
 - `summary/rank_summary.{parquet,csv}`: true-rank-conditioned selection statistics
+- `summary/target_regularity.{parquet,csv}`: true projection and entry-leverage diagnostics
 - `tables/tab_mc_*.{tex,csv,parquet}`: deterministic paper-facing fragments
 - `run_manifest.json`: code identifier, failure vocabulary, requested count, frozen group means
 
@@ -333,10 +359,10 @@ python scripts\aggregate_mc.py --config configs\mc\pilot.toml
 python scripts\make_mc_tables.py --config configs\mc\pilot.toml
 ```
 
-Substitute `production.toml` only after resolving the 0.50 calibration feasibility issue and after
-timing the pilot. Builders create `tab_mc_dgp1` through `tab_mc_dgp4`, `tab_mc_main_summary`,
+Substitute `production.toml` only after the author approves the B-entry slope-factor choice and
+after timing the pilot. Builders create `tab_mc_dgp1` through `tab_mc_dgp4`, `tab_mc_main_summary`,
 `tab_mc_coeff_summary`, `tab_mc_bias_correction`, `tab_mc_dgp4_groups`, `tab_mc_rank`,
-`tab_mc_computation`, and `tab_mc_spatial_sensitivity` in matching LaTeX, CSV, and Parquet formats.
+`tab_mc_computation`, `tab_mc_target_regularity`, and `tab_mc_spatial_sensitivity` in matching LaTeX, CSV, and Parquet formats.
 Performance tables use named mathematical target panels rather than an internal target-string column.
 
 ## 23. Failure rules and diagnostics
@@ -345,7 +371,8 @@ No requested replication disappears. It produces successful target rows or a fai
 standardized status such as calibration failure, invalid cap pilot, no stable pair of start
 objectives, no valid candidate,
 nonconvergence, high stationarity residual, active coefficient bound, cap hit, Riesz failure,
-split rank loss, split target-support loss, split Riesz target instability, nonpositive variance, or an
+split rank loss, unsupported selected-rank targets, full/split tangent-Gram numerical failures,
+split Riesz target instability, nonpositive variance, or an
 unexpected exception with its type and message. Aggregation reports requested and successful
 counts plus failure counts. A selected rank at its cap never produces a primary interval, and an
 invalid candidate cannot minimize the IC. Raw/rank records include objectives, iteration counts, ranks, IC gaps,

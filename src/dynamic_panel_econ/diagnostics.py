@@ -483,11 +483,14 @@ def aggregate_riesz_diagnostic(
             "coefficient_bound_status": row.coefficient_bound_active,
         }
         rayleigh = row.riesz_target_rayleigh_quotient
-        if not np.isfinite(rayleigh) or rayleigh < target_rayleigh_floor:
+        if row.status == "riesz_target_instability" and (
+            not np.isfinite(rayleigh) or rayleigh < target_rayleigh_floor
+        ):
             events.append(
                 {
                     **base,
                     "system": "full_panel",
+                    "event_type": "riesz_target_instability",
                     "riesz_target_rayleigh_quotient": rayleigh,
                     "tangent_gram_smallest_eigenvalue": getattr(
                         row, "tangent_gram_smallest_eigenvalue", np.nan
@@ -509,21 +512,87 @@ def aggregate_riesz_diagnostic(
         split_text = getattr(row, "split_diagnostics_json", None)
         if isinstance(split_text, str) and split_text:
             for split in json.loads(split_text):
-                split_rayleigh = split.get("riesz_target_rayleigh_quotient")
-                if not np.isfinite(split_rayleigh) or split_rayleigh < target_rayleigh_floor:
+                split_rayleigh = split.get("riesz_target_rayleigh_quotient", np.nan)
+                if row.status == "split_riesz_target_instability" and (
+                    not np.isfinite(split_rayleigh)
+                    or split_rayleigh < target_rayleigh_floor
+                ):
                     events.append(
                         {
                             **base,
                             "system": f"{split['kind']}_split_{split['part']}",
+                            "event_type": "riesz_target_instability",
                             "riesz_target_rayleigh_quotient": split_rayleigh,
-                            "tangent_gram_smallest_eigenvalue": np.nan,
-                            "tangent_gram_largest_eigenvalue": np.nan,
-                            "tangent_gram_condition_number": np.nan,
+                            "tangent_gram_smallest_eigenvalue": split.get(
+                                "tangent_gram_smallest_eigenvalue", np.nan
+                            ),
+                            "tangent_gram_largest_eigenvalue": split.get(
+                                "tangent_gram_largest_eigenvalue", np.nan
+                            ),
+                            "tangent_gram_condition_number": split.get(
+                                "tangent_gram_condition_number", np.nan
+                            ),
                             "riesz_equation_residual": split.get("riesz_equation_residual"),
                             "target_tangent_norm": split.get("target_support_norm"),
                             "target_status": row.status,
                         }
                     )
+        if row.status in {
+            "tangent_gram_eigensolver_failure",
+            "tangent_gram_nearly_singular",
+        }:
+            events.append(
+                {
+                    **base,
+                    "system": "full_panel",
+                    "event_type": row.status,
+                    "riesz_target_rayleigh_quotient": rayleigh,
+                    "tangent_gram_smallest_eigenvalue": getattr(
+                        row, "tangent_gram_smallest_eigenvalue", np.nan
+                    ),
+                    "tangent_gram_largest_eigenvalue": getattr(
+                        row, "tangent_gram_largest_eigenvalue", np.nan
+                    ),
+                    "tangent_gram_condition_number": getattr(
+                        row, "tangent_gram_condition_number", np.nan
+                    ),
+                    "tangent_gram_eigensolver_status": getattr(
+                        row, "tangent_gram_eigensolver_status", "failed"
+                    ),
+                    "riesz_equation_residual": row.riesz_equation_residual,
+                    "target_tangent_norm": row.riesz_target_tangent_norm,
+                    "target_status": row.status,
+                }
+            )
+        if row.status in {
+            "split_tangent_gram_eigensolver_failure",
+            "split_tangent_gram_nearly_singular",
+        }:
+            for split in json.loads(split_text or "[]"):
+                events.append(
+                    {
+                        **base,
+                        "system": f"{split['kind']}_split_{split['part']}",
+                        "event_type": row.status,
+                        "riesz_target_rayleigh_quotient": split.get(
+                            "riesz_target_rayleigh_quotient", np.nan
+                        ),
+                        "tangent_gram_smallest_eigenvalue": split.get(
+                            "tangent_gram_smallest_eigenvalue", np.nan
+                        ),
+                        "tangent_gram_largest_eigenvalue": split.get(
+                            "tangent_gram_largest_eigenvalue", np.nan
+                        ),
+                        "tangent_gram_condition_number": split.get(
+                            "tangent_gram_condition_number", np.nan
+                        ),
+                        "riesz_equation_residual": split.get(
+                            "riesz_equation_residual", np.nan
+                        ),
+                        "target_tangent_norm": split.get("target_support_norm", np.nan),
+                        "target_status": row.status,
+                    }
+                )
     event_frame = pd.DataFrame(events)
     event_keys = (
         event_frame[["dgp", "N", "T", "replication", "target"]]
@@ -567,6 +636,24 @@ def aggregate_riesz_diagnostic(
                 "split_riesz_target_instability_rate": float(
                     (statuses == "split_riesz_target_instability").mean()
                 ),
+                "target_unsupported_rate": float(
+                    statuses.isin(
+                        [
+                            "target_unsupported_selected_rank",
+                            "split_target_unsupported_selected_rank",
+                        ]
+                    ).mean()
+                ),
+                "tangent_gram_failure_rate": float(
+                    statuses.isin(
+                        [
+                            "tangent_gram_eigensolver_failure",
+                            "tangent_gram_nearly_singular",
+                            "split_tangent_gram_eigensolver_failure",
+                            "split_tangent_gram_nearly_singular",
+                        ]
+                    ).mean()
+                ),
                 "any_target_instability_event_rate": float(
                     group["any_target_instability_event"].mean()
                 ),
@@ -594,6 +681,12 @@ def aggregate_riesz_diagnostic(
                             [
                                 "riesz_target_instability",
                                 "split_riesz_target_instability",
+                                "target_unsupported_selected_rank",
+                                "split_target_unsupported_selected_rank",
+                                "tangent_gram_eigensolver_failure",
+                                "tangent_gram_nearly_singular",
+                                "split_tangent_gram_eigensolver_failure",
+                                "split_tangent_gram_nearly_singular",
                                 "rank_at_cap",
                                 "rank_pilot_failure",
                                 "rank_selection_failure",
@@ -633,14 +726,14 @@ def write_riesz_diagnostic(
     lines = [
         r"\begingroup",
         r"\small",
-        r"\begin{longtable}{rrrrrrrrrrrrr}",
+        r"\begin{longtable}{rrrrrrrrrrrrrrr}",
         r"\caption{Riesz target-stability and tangent-Gram diagnostics}\label{tab:mc-riesz-diagnostics}" + newline,
         r"\toprule",
-        r"DGP & $N$ & $T$ & Success & Failure & Full target & Split target & Any target event & Min Gram eig. & Med. cond. & Eig. fail & Rank fail & Other " + newline,
+        r"DGP & $N$ & $T$ & Success & Failure & Unsupported & Full target & Split target & Gram fail & Any event & Min Gram eig. & Med. cond. & Eig. fail & Rank fail & Other " + newline,
         r"\midrule",
         r"\endfirsthead",
         r"\toprule",
-        r"DGP & $N$ & $T$ & Success & Failure & Full target & Split target & Any target event & Min Gram eig. & Med. cond. & Eig. fail & Rank fail & Other " + newline,
+        r"DGP & $N$ & $T$ & Success & Failure & Unsupported & Full target & Split target & Gram fail & Any event & Min Gram eig. & Med. cond. & Eig. fail & Rank fail & Other " + newline,
         r"\midrule",
         r"\endhead",
     ]
@@ -648,12 +741,14 @@ def write_riesz_diagnostic(
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ", summary["target"].drop_duplicates(), strict=False
     ):
         title = TARGET_TITLES.get(target, target)
-        lines.append(rf"\multicolumn{{13}}{{l}}{{\textit{{Panel {letter}. {title}}}}} " + newline)
+        lines.append(rf"\multicolumn{{15}}{{l}}{{\textit{{Panel {letter}. {title}}}}} " + newline)
         for row in summary[summary["target"] == target].itertuples(index=False):
             values = [
                 str(row.dgp), str(row.N), str(row.T), f"{row.success_rate:.3f}",
-                f"{row.any_failure_rate:.3f}", f"{row.full_riesz_target_instability_rate:.3f}",
+                f"{row.any_failure_rate:.3f}", f"{row.target_unsupported_rate:.3f}",
+                f"{row.full_riesz_target_instability_rate:.3f}",
                 f"{row.split_riesz_target_instability_rate:.3f}",
+                f"{row.tangent_gram_failure_rate:.3f}",
                 f"{row.any_target_instability_event_rate:.3f}",
                 f"{row.minimum_tangent_gram_eigenvalue:.3g}",
                 f"{row.median_tangent_gram_condition_number:.3g}",
@@ -665,7 +760,7 @@ def write_riesz_diagnostic(
     lines.extend(
         [
             r"\bottomrule",
-            r"\multicolumn{13}{p{0.96\linewidth}}{\footnotesize \textit{Notes:} Target events use the target-specific Rayleigh quotient. Gram eigenvalues use a separate matrix-free Lanczos calculation on a nonredundant tangent-coordinate operator, excluding ambient normal-space zeros. These are numerical diagnostics, not a proof of the maintained global objective-gap or conditioning assumptions.} " + newline,
+            r"\multicolumn{15}{p{0.96\linewidth}}{\footnotesize \textit{Notes:} Unsupported targets are detected before Riesz iteration. Target events use the target-specific Rayleigh quotient; Gram failures use the separately cached matrix-free Lanczos spectrum on nonredundant tangent coordinates. These are numerical diagnostics, not a proof of the maintained global objective-gap or conditioning assumptions.} " + newline,
             r"\end{longtable}",
             r"\endgroup",
         ]

@@ -505,12 +505,20 @@ def select_ranks(
         *,
         source_labels: list[str] | None = None,
         alternative_cap: Coefficients | None = None,
+        preliminary_path: list[NuclearFit] | None = None,
+        candidate_caps: RankVector | None = None,
+        candidate_threshold: float | None = None,
     ) -> CandidateFit:
         if ranks in evaluated:
             if source_labels:
                 evaluated[ranks].sources = sorted(set(evaluated[ranks].sources + source_labels))
             return evaluated[ranks]
-        closest = _closest_preliminary(ranks, preliminary, caps, baseline_threshold)
+        path = preliminary_path or preliminary
+        local_caps = candidate_caps or caps
+        local_threshold = (
+            baseline_threshold if candidate_threshold is None else candidate_threshold
+        )
+        closest = _closest_preliminary(ranks, path, local_caps, local_threshold)
         fit, third, reasons, start_diagnostics = _fit_candidate(
             y,
             design,
@@ -578,16 +586,51 @@ def select_ranks(
             ),
         )
 
-    while True:
-        selected = best()
-        missing = one_coordinate_neighbors(selected.ranks, caps) - evaluated.keys()
-        for ranks in sorted(missing):
-            evaluate(ranks, source_labels=[f"local_neighbor_of_{selected.ranks}"])
-        improved = best()
-        if improved.ranks == selected.ranks:
-            break
+    def complete_selection(
+        initial_pool: set[RankVector],
+        local_caps: RankVector,
+        *,
+        multiplier: float,
+        label: str,
+        alternative_cap: Coefficients | None = None,
+        preliminary_path: list[NuclearFit] | None = None,
+        threshold: float = baseline_threshold,
+    ) -> tuple[CandidateFit, set[RankVector]]:
+        pool = set(initial_pool)
+        for ranks in sorted(pool):
+            evaluate(
+                ranks,
+                source_labels=[label],
+                alternative_cap=alternative_cap,
+                preliminary_path=preliminary_path,
+                candidate_caps=local_caps,
+                candidate_threshold=threshold,
+            )
+        while True:
+            selected_local = best(multiplier=multiplier, pool=pool)
+            missing = one_coordinate_neighbors(selected_local.ranks, local_caps) - pool
+            for ranks in sorted(missing):
+                evaluate(
+                    ranks,
+                    source_labels=[f"{label}_neighbor_of_{selected_local.ranks}"],
+                    alternative_cap=alternative_cap,
+                    preliminary_path=preliminary_path,
+                    candidate_caps=local_caps,
+                    candidate_threshold=threshold,
+                )
+            pool.update(missing)
+            improved = best(multiplier=multiplier, pool=pool)
+            if improved.ranks == selected_local.ranks:
+                return improved, pool
+
+    selected, baseline_candidate_vectors = complete_selection(
+        set(candidate_ranks),
+        caps,
+        multiplier=ic_multiplier,
+        label="baseline_local_completion",
+        alternative_cap=cap_fit.theta,
+    )
     baseline_final_count = len(evaluated)
-    baseline_candidate_vectors = set(evaluated)
     baseline_sources = {
         ranks: list(item.sources) for ranks, item in evaluated.items()
     }
@@ -611,24 +654,59 @@ def select_ranks(
         threshold_results = {}
         for multiplier in threshold_sensitivity_multipliers:
             threshold = float(multiplier) * np.sqrt(n * t) / np.log(n * t)
-            ranks_set, labels, proposals = build_candidates(preliminary, cap_fit, caps, threshold)
-            for ranks in sorted(ranks_set):
-                evaluate(ranks, source_labels=labels.get(ranks))
+            threshold_cap_fit, threshold_cap_diagnostics = fit_rank_adaptive_cap_pilot(
+                y,
+                design,
+                caps,
+                preliminary,
+                threshold,
+                seed=seed,
+                fit_options=fit_options,
+                stationarity_tolerance=stationarity_tol,
+                start_objective_stability_tol=start_objective_stability_tol,
+                improvement_tolerance=rank_adaptive_improvement_tol,
+                removal_tolerance=rank_adaptive_removal_tol,
+                max_steps=rank_adaptive_max_steps,
+            )
+            ranks_set, _, proposals = build_candidates(
+                preliminary, threshold_cap_fit, caps, threshold
+            )
+            chosen, completed_pool = complete_selection(
+                ranks_set,
+                caps,
+                multiplier=ic_multiplier,
+                label=f"threshold_{multiplier}",
+                alternative_cap=threshold_cap_fit.theta,
+                threshold=threshold,
+            )
             threshold_results[str(multiplier)] = {
-                "selected_rank": best(pool=ranks_set).ranks,
-                "candidate_count": len(ranks_set),
+                "selected_rank": chosen.ranks,
+                "candidate_count_initial": len(ranks_set),
+                "candidate_count_final": len(completed_pool),
                 "path_proposals": proposals,
+                "local_completion_applied": True,
+                "cap_pilot_algorithm": threshold_cap_diagnostics["algorithm"],
             }
         penalty_results = {}
         for multiplier in ic_sensitivity_multipliers:
-            chosen = best(
+            chosen, completed_pool = complete_selection(
+                set(baseline_candidate_vectors),
+                caps,
                 multiplier=ic_multiplier * float(multiplier),
-                pool=baseline_candidate_vectors,
+                label=f"ic_{multiplier}",
+                alternative_cap=cap_fit.theta,
             )
-            penalty_results[str(multiplier)] = chosen.ranks
+            penalty_results[str(multiplier)] = {
+                "selected_rank": chosen.ranks,
+                "candidate_count_final": len(completed_pool),
+                "local_completion_applied": True,
+            }
         dense_ranks: set[RankVector] = set()
         dense_proposals: list[RankVector] = []
         dense_converged: list[bool] = []
+        dense_selected: RankVector | None = None
+        dense_completed_count = 0
+        dense_cap_algorithm: str | None = None
         if compute_dense_grid_sensitivity:
             dense = nuclear_path(
                 y,
@@ -637,49 +715,85 @@ def select_ranks(
                 epsilon=nuclear_epsilon,
                 **nuclear_options,
             )
-            dense_ranks, dense_sources, dense_proposals = build_candidates(
-                dense, cap_fit, caps, baseline_threshold
+            dense_cap_fit, dense_cap_diagnostics = fit_rank_adaptive_cap_pilot(
+                y,
+                design,
+                caps,
+                dense,
+                baseline_threshold,
+                seed=seed,
+                fit_options=fit_options,
+                stationarity_tolerance=stationarity_tol,
+                start_objective_stability_tol=start_objective_stability_tol,
+                improvement_tolerance=rank_adaptive_improvement_tol,
+                removal_tolerance=rank_adaptive_removal_tol,
+                max_steps=rank_adaptive_max_steps,
             )
-            for ranks in sorted(dense_ranks):
-                evaluate(ranks, source_labels=dense_sources.get(ranks))
+            dense_ranks, _, dense_proposals = build_candidates(
+                dense, dense_cap_fit, caps, baseline_threshold
+            )
+            dense_choice, dense_completed = complete_selection(
+                dense_ranks,
+                caps,
+                multiplier=ic_multiplier,
+                label="dense_grid",
+                alternative_cap=dense_cap_fit.theta,
+                preliminary_path=dense,
+            )
+            dense_selected = dense_choice.ranks
+            dense_completed_count = len(dense_completed)
+            dense_cap_algorithm = dense_cap_diagnostics["algorithm"]
             dense_converged = [fit.converged for fit in dense]
         larger_caps_tuple = tuple(int(value) for value in larger_rank_caps)
         larger_valid = False
         larger_selected: RankVector | None = None
+        larger_completed_count = 0
+        larger_cap_algorithm: str | None = None
         if compute_larger_cap_sensitivity:
-            larger_cap_fit = fit_fixed_rank(
+            larger_cap_fit, larger_cap_diagnostics = fit_rank_adaptive_cap_pilot(
                 y,
                 design,
                 larger_caps_tuple,
-                initial=cap_fit.theta,
+                preliminary,
+                baseline_threshold,
                 seed=seed,
-                **fit_options,
+                fit_options=fit_options,
+                stationarity_tolerance=stationarity_tol,
+                start_objective_stability_tol=start_objective_stability_tol,
+                improvement_tolerance=rank_adaptive_improvement_tol,
+                removal_tolerance=rank_adaptive_removal_tol,
+                max_steps=rank_adaptive_max_steps,
             )
-            larger_valid = not fit_invalid_reasons(
-                larger_cap_fit, larger_caps_tuple, stationarity_tol
-            )
+            larger_valid = True
+            larger_cap_algorithm = larger_cap_diagnostics["algorithm"]
             if larger_valid:
-                larger_set, larger_sources, _ = build_candidates(
+                larger_set, _, _ = build_candidates(
                     preliminary, larger_cap_fit, larger_caps_tuple, baseline_threshold
                 )
-                for ranks in sorted(larger_set):
-                    evaluate(
-                        ranks,
-                        source_labels=larger_sources.get(ranks),
-                        alternative_cap=larger_cap_fit.theta,
-                    )
-                larger_selected = best(pool=larger_set).ranks
+                larger_choice, larger_completed = complete_selection(
+                    larger_set,
+                    larger_caps_tuple,
+                    multiplier=ic_multiplier,
+                    label="larger_cap",
+                    alternative_cap=larger_cap_fit.theta,
+                )
+                larger_selected = larger_choice.ranks
+                larger_completed_count = len(larger_completed)
         sensitivity = {
             "threshold_multipliers": threshold_results,
             "ic_multipliers": penalty_results,
-            "dense_grid_selected_rank": (
-                best(pool=dense_ranks).ranks if dense_ranks else None
-            ),
+            "dense_grid_selected_rank": dense_selected,
             "dense_grid_path_proposals": dense_proposals,
             "dense_grid_converged": dense_converged,
+            "dense_grid_candidate_count_final": dense_completed_count,
+            "dense_grid_local_completion_applied": bool(dense_ranks),
+            "dense_grid_cap_pilot_algorithm": dense_cap_algorithm,
             "larger_caps": larger_caps_tuple,
             "larger_cap_valid": larger_valid,
             "larger_cap_selected_rank": larger_selected,
+            "larger_cap_candidate_count_final": larger_completed_count,
+            "larger_cap_local_completion_applied": compute_larger_cap_sensitivity,
+            "larger_cap_pilot_algorithm": larger_cap_algorithm,
         }
 
     all_records = sorted(evaluated.values(), key=lambda item: (not item.valid, item.ic, item.ranks))

@@ -21,7 +21,7 @@ class CalibrationResult:
     c_xi: float
     target_h_share: float
     achieved_h_share: float
-    target_r2: float
+    target_r2: float | None
     achieved_r2: float
     diagnostics: dict[str, Any]
 
@@ -53,7 +53,7 @@ def _calibrate_raws(
     *,
     params: DGPParameters,
     pi_h: float = 0.30,
-    target_r2: float = 0.50,
+    target_r2: float = 0.65,
     true_rank_vector: tuple[int, int, int] = (1, 1, 1),
     allow_infeasible_diagnostic: bool = False,
 ) -> CalibrationResult:
@@ -96,29 +96,41 @@ def _calibrate_raws(
             values.append(pooled_r2(y, fitted))
         return float(np.mean(values))
 
-    def root(c_xi: float) -> float:
-        return average_r2(c_xi) - target_r2
-
-    grid = np.geomspace(1e-4, 1e3, 80)
-    r2_grid = [average_r2(float(value)) for value in grid]
-    evaluations = [value - target_r2 for value in r2_grid]
-    minimum_grid_r2 = float(min(r2_grid))
-    large_c_xi_floor = float(average_r2(1e8))
+    r2_scale_identified = true_rank_vector[1] > 0
     bracket = None
-    for left, right, f_left, f_right in zip(grid[:-1], grid[1:], evaluations[:-1], evaluations[1:], strict=True):
-        if f_left == 0.0 or f_left * f_right < 0.0:
-            bracket = (float(left), float(right))
-            break
-    target_feasible = bracket is not None
-    if bracket is None and not allow_infeasible_diagnostic:
-        raise CalibrationFeasibilityError(
-            dgp, n, t, target_r2, min(minimum_grid_r2, large_c_xi_floor)
+    if r2_scale_identified:
+        def root(c_xi: float) -> float:
+            return average_r2(c_xi) - target_r2
+
+        grid = np.geomspace(1e-4, 1e3, 80)
+        r2_grid = [average_r2(float(value)) for value in grid]
+        evaluations = [value - target_r2 for value in r2_grid]
+        minimum_grid_r2 = float(min(r2_grid))
+        large_c_xi_floor = float(average_r2(1e8))
+        for left, right, f_left, f_right in zip(
+            grid[:-1], grid[1:], evaluations[:-1], evaluations[1:], strict=True
+        ):
+            if f_left == 0.0 or f_left * f_right < 0.0:
+                bracket = (float(left), float(right))
+                break
+        target_feasible: bool | None = bracket is not None
+        if bracket is None and not allow_infeasible_diagnostic:
+            raise CalibrationFeasibilityError(
+                dgp, n, t, target_r2, min(minimum_grid_r2, large_c_xi_floor)
+            )
+        c_xi = (
+            float(brentq(root, *bracket, xtol=1e-10, rtol=1e-10))
+            if bracket is not None
+            else 1.0
         )
-    c_xi = (
-        float(brentq(root, *bracket, xtol=1e-10, rtol=1e-10))
-        if bracket is not None
-        else 1.0
-    )
+        requested_r2: float | None = target_r2
+    else:
+        c_xi = 1.0
+        induced = average_r2(c_xi)
+        minimum_grid_r2 = induced
+        large_c_xi_floor = induced
+        target_feasible = None
+        requested_r2 = None
     achieved_r2 = average_r2(c_xi)
     achieved_h_share = (c_h * c_h * var_h) / (c_h * c_h * var_h + var_u)
     coefficient_summary = {
@@ -139,10 +151,17 @@ def _calibrate_raws(
         "minimum_grid_r2": minimum_grid_r2,
         "large_c_xi_r2_floor": large_c_xi_floor,
         "target_r2_feasible": target_feasible,
+        "r2_scale_identified": r2_scale_identified,
+        "requested_r2": requested_r2,
+        "c_xi_normalization": 1.0 if not r2_scale_identified else None,
         "bracket_lower": bracket[0] if bracket is not None else float("nan"),
         "bracket_upper": bracket[1] if bracket is not None else float("nan"),
-        "root_residual": achieved_r2 - target_r2,
-        "infeasible_c_xi_normalization": 1.0 if bracket is None else None,
+        "root_residual": (
+            achieved_r2 - target_r2 if r2_scale_identified else None
+        ),
+        "infeasible_c_xi_normalization": (
+            1.0 if r2_scale_identified and bracket is None else None
+        ),
         "true_rank_vector": true_rank_vector,
     }
     envelopes = coefficient_envelopes(
@@ -177,7 +196,7 @@ def _calibrate_raws(
         c_xi=c_xi,
         target_h_share=pi_h,
         achieved_h_share=float(achieved_h_share),
-        target_r2=target_r2,
+        target_r2=requested_r2,
         achieved_r2=achieved_r2,
         diagnostics=coefficient_summary,
     )
@@ -191,7 +210,7 @@ def calibrate_cell(
     *,
     params: DGPParameters | None = None,
     pi_h: float = 0.30,
-    target_r2: float = 0.50,
+    target_r2: float = 0.65,
     draws: int = 3,
 ) -> CalibrationResult:
     """Calibrate ``c_H`` and ``c_xi`` with deterministic common random numbers."""
@@ -222,7 +241,7 @@ def calibrate_rank_stress_cell(
     component_strengths: tuple[float, ...],
     params: DGPParameters | None = None,
     pi_h: float = 0.30,
-    target_r2: float = 0.50,
+    target_r2: float = 0.65,
     draws: int = 3,
     allow_infeasible_diagnostic: bool = False,
 ) -> CalibrationResult:

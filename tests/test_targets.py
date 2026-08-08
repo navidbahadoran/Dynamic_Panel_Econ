@@ -6,6 +6,7 @@ from dynamic_panel_econ.targets import (
     embedded_restriction,
     paper_index,
     target_direction,
+    target_regularity_diagnostics,
     target_value,
 )
 
@@ -39,3 +40,23 @@ def test_restricted_targets_reassemble_exactly():
     rebuilt = add(first, second)
     for actual, expected in zip(rebuilt.matrices(), direction.matrices(), strict=True):
         np.testing.assert_array_equal(actual, expected)
+
+
+def test_fixed_time_contrast_applicability_follows_dgp_progression():
+    theta = template()
+    groups = np.repeat([0, 1], 4)
+    weak = target_direction("A_G2_minus_G1_fixed_time", theta, groups, dgp=3)
+    covered = target_direction("A_G2_minus_G1_fixed_time", theta, groups, dgp=4)
+    assert weak.theorem_validation is False
+    assert weak.applicability == "weak_target_stress_outside_assumption9"
+    assert covered.theorem_validation is True
+    assert covered.applicability == "theorem_covered"
+
+
+def test_true_target_regularity_diagnostics_include_entry_leverage():
+    theta = template()
+    spec = target_direction("A_entry", theta, dgp=1)
+    diagnostics = target_regularity_diagnostics(spec, theta)
+    assert diagnostics["true_target_projection_ratio"] > 0.0
+    assert diagnostics["true_entry_unit_leverage_scaled"] >= 0.0
+    assert diagnostics["true_entry_time_leverage_scaled"] >= 0.0

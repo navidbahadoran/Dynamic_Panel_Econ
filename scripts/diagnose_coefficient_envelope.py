@@ -82,7 +82,11 @@ def main() -> None:
         values = [
             str(row.dgp), str(row.n), str(row.true_rank_vector), f"{row.c_h:.4f}",
             f"{row.c_xi:.4f}", f"{row.achieved_h_share:.4f}", f"{row.achieved_r2:.4f}",
-            "yes" if row.target_r2_feasible else "no",
+            (
+                "normalized"
+                if not row.r2_scale_identified
+                else ("yes" if row.target_r2_feasible else "no")
+            ),
             f"{row.theoretical_max_abs_A:.4f}", f"{row.theoretical_max_abs_B:.4f}",
             f"{row.theoretical_max_abs_H:.4f}", f"{row.deterministic_interior_margin:.4f}",
         ]
@@ -90,7 +94,7 @@ def main() -> None:
     lines.extend(
         [
             r"\bottomrule",
-            r"\multicolumn{12}{p{0.96\linewidth}}{\footnotesize \textit{Notes:} In infeasible rows, $c_\xi=1$ is a reporting normalization, not a successful calibration. The strict Monte Carlo runner rejects those cells.}",
+            r"\multicolumn{12}{p{0.96\linewidth}}{\footnotesize \textit{Notes:} When $r_B=0$, pooled $R^2$ is scale invariant: $c_\xi=1$ is the prespecified normalization, requested $R^2$ is not applicable, and the table reports induced $R^2$.}",
             r"\end{longtable}",
             r"\endgroup",
         ]

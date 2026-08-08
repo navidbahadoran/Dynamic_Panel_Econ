@@ -10,6 +10,9 @@ n_jobs = 8
 blas_threads = 1
 output_root = "results/mc"
 
+[dgp]
+target_r2 = 0.65
+
 [rank_stress]
 true_rank_vectors = [[1, 1, 1], [2, 1, 1], [1, 0, 2]]
 component_strengths = [1.0, 1.0]

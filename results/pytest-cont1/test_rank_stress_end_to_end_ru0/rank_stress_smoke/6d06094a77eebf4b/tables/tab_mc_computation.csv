@@ -1,3 +1,0 @@
-dgp,N,T,true_rank_vector,mean_rank_runtime_seconds,mean_candidate_count,mean_ic_gap,successful_replications,requested_replications
-1,20,20,"[1, 1, 1]",13.07658769999398,14.0,0.0554768152152012,1,1
-1,20,20,"[2, 1, 1]",15.58217429999786,12.0,0.07905350353206375,1,1

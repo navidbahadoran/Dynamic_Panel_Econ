@@ -1,0 +1,26 @@
+[run]
+name = "rank_stress"
+master_seed = 20260807
+dgps = [1, 2, 3, 4]
+cells = [[50, 50], [100, 100], [200, 200]]
+replications = 250
+chunk_size = 10
+parallel_level = "replications"
+n_jobs = 8
+blas_threads = 1
+output_root = "results/mc"
+
+[rank_stress]
+true_rank_vectors = [[1, 1, 1], [2, 1, 1], [1, 0, 2]]
+component_strengths = [1.0, 1.0]
+
+[estimation]
+rank_caps = [3, 3, 3]
+coefficient_bound = 9.0
+simulation_interior_margin = 1.0
+larger_rank_caps = [4, 4, 4]
+spatial_dimension = 1
+eta_for_penalty = 4.0
+
+[inference]
+targets = []

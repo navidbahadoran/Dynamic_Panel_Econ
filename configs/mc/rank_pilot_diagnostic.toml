@@ -1,0 +1,39 @@
+[run]
+name = "rank_pilot_diagnostic"
+master_seed = 20260807
+dgps = [1, 2, 3, 4]
+cells = [[50, 50], [100, 100], [200, 200]]
+replications = 30
+chunk_size = 5
+parallel_level = "replications"
+n_jobs = 8
+blas_threads = 1
+output_root = "results/mc"
+
+[dgp]
+# Diagnostic-only target recommended by r2_feasibility; production remains 0.50.
+target_r2 = 0.65
+calibration_draws = 50
+auto_adjust_group_gap = false
+
+[rank_stress]
+true_rank_vectors = [[1, 1, 1], [2, 1, 1], [1, 0, 2]]
+component_strengths = [1.0, 1.0]
+
+[estimation]
+rank_caps = [3, 3, 3]
+coefficient_bound = 9.0
+simulation_interior_margin = 1.0
+larger_rank_caps = [4, 4, 4]
+eta_for_penalty = 4.0
+spatial_dimension = 1
+ic_multiplier = 1.0
+threshold_multiplier = 1.0
+ic_sensitivity_multipliers = [0.5, 1.0, 2.0]
+threshold_sensitivity_multipliers = [0.5, 1.0, 2.0]
+compute_rank_sensitivities = true
+compute_dense_grid_sensitivity = false
+compute_larger_cap_sensitivity = false
+
+[inference]
+targets = []

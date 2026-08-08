@@ -1,0 +1,38 @@
+[run]
+name = "production"
+master_seed = 20260807
+dgps = [1, 2, 3, 4]
+cells = [[50, 50], [100, 100], [200, 200], [400, 400]]
+replications = 1000
+chunk_size = 20
+parallel_level = "replications"
+n_jobs = 8
+blas_threads = 1
+output_root = "results/mc"
+
+[dgp]
+calibration_draws = 50
+group_gap_pilot_draws = 500
+auto_adjust_group_gap = false
+min_abs_postscale_group_diff_a = 0.05
+prespecified_gap_grid = [0.2, 0.3, 0.4, 0.5, 0.6]
+
+[estimation]
+rank_caps = [3, 3, 3]
+coefficient_bound = 9.0
+simulation_interior_margin = 1.0
+nuclear_gamma = 0.8
+nuclear_epsilon = 0.01
+eta_for_penalty = 4.0
+spatial_dimension = 1
+larger_rank_caps = [4, 4, 4]
+
+[inference]
+targets = [
+  "A_entry", "B_entry", "A_fixed_time_mean", "B_fixed_time_mean",
+  "A_full_mean", "B_full_mean", "A_G1_fixed_time", "A_G2_fixed_time",
+  "A_G2_minus_G1_fixed_time", "A_G1_time_average", "A_G2_time_average",
+  "A_G2_minus_G1_time_average", "B_G1_fixed_time", "B_G2_fixed_time",
+  "B_G2_minus_G1_fixed_time", "B_G1_time_average", "B_G2_time_average",
+  "B_G2_minus_G1_time_average",
+]

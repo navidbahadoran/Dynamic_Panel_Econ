@@ -216,3 +216,24 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Private manuscript material - never commit
+/paper/
+/papers/
+/manuscript/
+/manuscripts/
+/draft/
+/drafts/
+/private_paper/
+/ver*.tex
+/ver*.pdf
+/*revision*.tex
+/*revision*.pdf
+/AUDIT_*.md
+
+# Machine-specific editor state and transient Monte Carlo writes
+.idea/
+.vscode/
+*.tmp
+*.partial
+results/mc/logs/*.log

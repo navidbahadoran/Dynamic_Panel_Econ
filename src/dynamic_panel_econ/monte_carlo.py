@@ -503,7 +503,11 @@ def _fit_diagnostic_record(
         "numerical_rank": json.dumps(
             tuple(numerical_rank(matrix) for matrix in fit.theta.matrices())
         ),
-        "initialization_route": initialization_route,
+        "initialization_route": (
+            initialization_route
+            if initialization_route is not None
+            else fit.diagnostics.get("diagnostic_context")
+        ),
         "start_number": start_number,
         "objective_initial": objective_initial,
         "objective_final": fit.objective,
@@ -540,6 +544,17 @@ def _fit_diagnostic_record(
         "candidate_source": candidate_source,
         "IC": ic,
         "IC_valid": ic_valid,
+        "diagnostic_context": fit.diagnostics.get("diagnostic_context"),
+        "initial_coefficient_envelope": fit.diagnostics.get(
+            "initial_coefficient_envelope"
+        ),
+        "final_coefficient_envelope": fit.diagnostics.get(
+            "final_coefficient_envelope"
+        ),
+        "coefficient_envelope_history": json.dumps(
+            fit.diagnostics.get("coefficient_envelope_history"),
+            default=_json_default,
+        ),
     }
 
 
@@ -832,6 +847,7 @@ def run_replication(
                     true_rank,
                     "fixed_rank_starts",
                 ),
+                diagnostic_context="full_fixed_rank",
                 **_fit_options(config),
             )
             rank_runtime = time.perf_counter() - selection_started

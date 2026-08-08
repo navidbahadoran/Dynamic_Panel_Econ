@@ -1,0 +1,12 @@
+method,stage,primary_status,replications_affected,target_records_affected,target_records_removed,remaining_target_records
+selected_3e-6,attempted,all,12,216,0,216
+selected_3e-6,pilot failures,rank_pilot_failure,3,54,54,162
+selected_3e-6,rank-cap suppression,rank_at_cap,7,126,126,36
+selected_3e-6,full-fit failures,full_fit_failure,0,0,0,36
+selected_3e-6,unsupported selected-rank targets,target_unsupported_selected_rank,0,0,0,36
+selected_3e-6,split-fit failures,split_fit_failure,0,0,0,36
+selected_3e-6,split-rank loss,split_rank_loss,0,0,0,36
+selected_3e-6,tangent-Gram failures,tangent_gram_nearly_singular,0,0,0,36
+selected_3e-6,Riesz failures,riesz_solver_failure,0,0,0,36
+selected_3e-6,invalid variance,invalid_variance,0,0,0,36
+selected_3e-6,nonfinite SE,nonfinite_standard_error,0,0,0,36

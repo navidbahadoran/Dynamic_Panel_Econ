@@ -390,6 +390,7 @@ def _fit_candidate(
     start_objective_stability_tol: float,
     stationarity_tolerance: float,
     start_envelope_fraction: float | None = None,
+    diagnostic_context: str = "candidate",
 ) -> tuple[FitResult, bool, list[str], dict[str, Any]]:
     prepared_starts = [adapt_initial(start, ranks) for start in starts]
     start_preparation: list[dict[str, float | bool]] = []
@@ -405,10 +406,22 @@ def _fit_candidate(
             start_preparation.append(diagnostics)
         prepared_starts = prepared
     first = fit_fixed_rank(
-        y, design, ranks, initial=prepared_starts[0], seed=seed, **fit_options
+        y,
+        design,
+        ranks,
+        initial=prepared_starts[0],
+        seed=seed,
+        diagnostic_context=f"{diagnostic_context}:start_1",
+        **fit_options,
     )
     second = fit_fixed_rank(
-        y, design, ranks, initial=prepared_starts[1], seed=seed, **fit_options
+        y,
+        design,
+        ranks,
+        initial=prepared_starts[1],
+        seed=seed,
+        diagnostic_context=f"{diagnostic_context}:start_2",
+        **fit_options,
     )
     options = [first, second]
     initially_valid = [
@@ -421,7 +434,16 @@ def _fit_candidate(
         <= start_objective_stability_tol
     )
     if not initial_stable:
-        options.append(fit_fixed_rank(y, design, ranks, seed=seed, **fit_options))
+        options.append(
+            fit_fixed_rank(
+                y,
+                design,
+                ranks,
+                seed=seed,
+                diagnostic_context=f"{diagnostic_context}:start_3",
+                **fit_options,
+            )
+        )
     valid = [
         fit
         for fit in options
@@ -449,6 +471,39 @@ def _fit_candidate(
         "objective_stability_pass": stable,
         "third_start_used": len(options) == 3,
         "start_preparation": start_preparation,
+        "start_details": [
+            {
+                "start_number": index,
+                "diagnostic_context": fit.diagnostics.get("diagnostic_context"),
+                "requested_rank": fit.ranks,
+                "numerical_rank": _numerical_rank_vector(fit.theta),
+                "objective_initial": fit.objective_history[0],
+                "objective_final": fit.objective,
+                "iterations": fit.iterations,
+                "converged": fit.converged,
+                "stationarity_residual": fit.stationarity_residual,
+                "stationarity_pass": bool(
+                    np.isfinite(fit.stationarity_residual)
+                    and fit.stationarity_residual <= stationarity_tolerance
+                ),
+                "initial_coefficient_envelope": fit.diagnostics.get(
+                    "initial_coefficient_envelope"
+                ),
+                "final_coefficient_envelope": fit.diagnostics.get(
+                    "final_coefficient_envelope"
+                ),
+                "coefficient_envelope_ratio": fit.max_envelope_ratio,
+                "coefficient_bound_pass": fit.max_envelope_ratio < 1.0,
+                "runtime_seconds": fit.diagnostics.get("runtime_seconds"),
+                "invalid_reasons": fit_invalid_reasons(
+                    fit, ranks, stationarity_tolerance
+                ),
+                "coefficient_envelope_history": fit.diagnostics.get(
+                    "coefficient_envelope_history"
+                ),
+            }
+            for index, fit in enumerate(options, start=1)
+        ],
     }
     return chosen, len(options) == 3, reasons, diagnostics
 
@@ -528,6 +583,7 @@ def fit_rank_adaptive_cap_pilot(
     def cached_fit(
         ranks: RankVector,
         starts: tuple[Coefficients, Coefficients],
+        diagnostic_context: str,
     ) -> tuple[FitResult, bool, list[str], dict[str, Any]]:
         nonlocal cache_hits, cache_misses
         prepared = []
@@ -552,6 +608,7 @@ def fit_rank_adaptive_cap_pilot(
             start_objective_stability_tol,
             stationarity_tolerance,
             start_envelope_fraction,
+            diagnostic_context,
         )
         fit_cache[key] = result
         return result
@@ -580,7 +637,9 @@ def fit_rank_adaptive_cap_pilot(
             start_envelope_fraction,
         )
         fit, third, reasons, start_diagnostics = cached_fit(
-            start_rank, (start_theta, second_theta)
+            start_rank,
+            (start_theta, second_theta),
+            f"cap_pilot_route_{route_number}:initial_rank_{start_rank}",
         )
         current = CandidateFit(
             start_rank,
@@ -613,7 +672,9 @@ def fit_rank_adaptive_cap_pilot(
         )
         if collapse_only and collapsed_rank != start_rank:
             collapsed_fit, collapsed_third, collapsed_reasons, collapsed_starts = cached_fit(
-                collapsed_rank, (fit.theta, start_theta)
+                collapsed_rank,
+                (fit.theta, start_theta),
+                f"cap_pilot_route_{route_number}:collapse_rank_{collapsed_rank}",
             )
             current = CandidateFit(
                 collapsed_rank,
@@ -667,7 +728,9 @@ def fit_rank_adaptive_cap_pilot(
                 move_initial = _rank_move_initial(y, design, current.fit, ranks)
                 closest = _closest_preliminary(ranks, preliminary, caps, threshold)
                 neighbor_fit, used_third, neighbor_reasons, neighbor_starts = cached_fit(
-                    ranks, (move_initial, closest)
+                    ranks,
+                    (move_initial, closest),
+                    f"cap_pilot_route_{route_number}:neighbor_rank_{ranks}",
                 )
                 neighbors.append(
                     CandidateFit(
@@ -920,6 +983,7 @@ def select_ranks(
             fit_options,
             start_objective_stability_tol,
             stationarity_tol,
+            diagnostic_context=f"post_refit_rank_{ranks}",
         )
         dimension = model_dimension(ranks, n, t)
         valid = not reasons

@@ -8,6 +8,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
+import pandas as pd
 import pytest
 
 import dynamic_panel_econ.rank_selection as rank_module
@@ -383,6 +384,13 @@ def test_serial_two_worker_end_to_end_equality_and_broad_schema(tmp_path):
     ).issubset(serial_raw.columns)
     assert (serial_raw["split_fit_count"] == 4).all()
     assert (serial_raw["split_coefficient_fit_count"] == 4).all()
+    fit_diagnostics = pd.read_parquet(serial_root / "fit_diagnostics.parquet")
+    split_fits = fit_diagnostics.loc[
+        fit_diagnostics["fit_type"].str.contains("_split_", na=False)
+    ]
+    assert len(split_fits) == 8
+    assert (pd.to_numeric(split_fits["runtime_seconds"]) > 0).all()
+    assert split_fits["diagnostic_context"].str.contains("_split_").all()
     assert serial_raw["true_target_projection_ratio"].notna().all()
     assert set(serial_raw["target_applicability"]) == {"theorem_covered"}
     for encoded in serial_raw["split_diagnostics_json"]:

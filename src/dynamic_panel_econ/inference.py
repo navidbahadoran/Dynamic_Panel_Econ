@@ -564,6 +564,7 @@ def prepare_split_fits(
             full_fit.ranks,
             initial=sub_initial,
             seed=part + (0 if kind == "time" else 2),
+            diagnostic_context=f"{kind}_split_{part}",
             **fit_options,
         )
         residual = sub_y - fitted_values(sub_fit.theta, sub_design)

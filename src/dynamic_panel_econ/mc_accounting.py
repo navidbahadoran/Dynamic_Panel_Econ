@@ -96,7 +96,9 @@ FIT_DIAGNOSTIC_COLUMNS = (
     "best_start_objective", "second_start_objective", "objective_stability_gap",
     "objective_stability_pass", "runtime_seconds", "exception_type",
     "exception_message", "nuclear_path_index", "lambda", "thresholded_rank",
-    "candidate_source", "IC", "IC_valid",
+    "candidate_source", "IC", "IC_valid", "diagnostic_context",
+    "initial_coefficient_envelope", "final_coefficient_envelope",
+    "coefficient_envelope_history",
 )
 
 INFERENCE_DIAGNOSTIC_COLUMNS = (

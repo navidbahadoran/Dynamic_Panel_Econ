@@ -157,6 +157,7 @@ def fit_fixed_rank(
     stationarity_tol: float = 1e-6,
     coefficient_bound: float = 9.0,
     lstsq_rcond: float = 1e-10,
+    diagnostic_context: str | None = None,
 ) -> FitResult:
     """Joint ALS for all supplied-rank coefficient matrices."""
 
@@ -169,6 +170,8 @@ def fit_fixed_rank(
     rng = np.random.default_rng(seed)
     blocks = _initial_blocks((n, t), ranks, rng, initial)
     regressors = design.regressors()
+    initial_envelope = max_abs(_to_theta(blocks, len(design.y_lags), len(design.x)))
+    envelope_history = [initial_envelope]
 
     def objective() -> float:
         residual = y - fitted_values(_to_theta(blocks, len(design.y_lags), len(design.x)), design)
@@ -210,6 +213,9 @@ def fit_fixed_rank(
                         block.factor[column] = solution[offset : offset + rank]
                         offset += rank
         value = objective()
+        envelope_history.append(
+            max_abs(_to_theta(blocks, len(design.y_lags), len(design.x)))
+        )
         if value > history[-1] + 1e-11 * max(1.0, history[-1]):
             break
         history.append(value)
@@ -237,6 +243,10 @@ def fit_fixed_rank(
             "bound_active": envelope_ratio >= 1.0,
             "singular_values": singular_values(theta),
             "runtime_seconds": time.perf_counter() - started,
+            "diagnostic_context": diagnostic_context,
+            "initial_coefficient_envelope": initial_envelope,
+            "final_coefficient_envelope": max_abs(theta),
+            "coefficient_envelope_history": envelope_history,
         },
     )
     observer = _FIXED_FIT_OBSERVER.get()

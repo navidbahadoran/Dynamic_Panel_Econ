@@ -1,0 +1,145 @@
+usage: write_mc_schemas.py [-h] [--config CONFIG] [--dgp {1,2,3,4}]
+                           [--dgp-grid DGP_GRID] [--N PANEL_N] [--T PANEL_T]
+                           [--balanced-grid BALANCED_GRID]
+                           [--replications REPLICATIONS] [--burn-in BURN_IN]
+                           [--seed SEED] [--rho-g RHO_G] [--mu-f-a MU_F_A]
+                           [--kappa-f-a KAPPA_F_A] [--mu-f-b MU_F_B]
+                           [--kappa-f-b KAPPA_F_B] [--rho-x RHO_X]
+                           [--delta-x DELTA_X] [--rho-fx RHO_FX]
+                           [--eta-x ETA_X] [--rho-s RHO_S] [--pi-h PI_H]
+                           [--stability-bound STABILITY_BOUND]
+                           [--mu-lambda-a-1 MU_LAMBDA_A_1]
+                           [--mu-lambda-a-2 MU_LAMBDA_A_2]
+                           [--sigma-lambda-a SIGMA_LAMBDA_A]
+                           [--mu-lambda-b-1 MU_LAMBDA_B_1]
+                           [--mu-lambda-b-2 MU_LAMBDA_B_2]
+                           [--sigma-lambda-b SIGMA_LAMBDA_B]
+                           [--pooled-r2-target POOLED_R2_TARGET]
+                           [--calibration-draws CALIBRATION_DRAWS]
+                           [--calibration-seed CALIBRATION_SEED]
+                           [--calibration-tolerance CALIBRATION_TOLERANCE]
+                           [--rank-mode {fixed,selected}]
+                           [--fixed-ranks FIXED_RANKS] [--rank-caps RANK_CAPS]
+                           [--true-ranks TRUE_RANKS] [--gamma GAMMA]
+                           [--epsilon EPSILON]
+                           [--threshold-multiplier THRESHOLD_MULTIPLIER]
+                           [--eta-for-penalty ETA_FOR_PENALTY]
+                           [--spatial-dimension SPATIAL_DIMENSION]
+                           [--ic-multiplier IC_MULTIPLIER]
+                           [--coefficient-bound COEFFICIENT_BOUND]
+                           [--simulation-interior-margin SIMULATION_INTERIOR_MARGIN]
+                           [--max-als-iterations MAX_ALS_ITERATIONS]
+                           [--objective-tolerance OBJECTIVE_TOLERANCE]
+                           [--stationarity-tolerance STATIONARITY_TOLERANCE]
+                           [--start-objective-stability-tol START_OBJECTIVE_STABILITY_TOL]
+                           [--max-cap-pilot-routes MAX_CAP_PILOT_ROUTES]
+                           [--start-envelope-fraction START_ENVELOPE_FRACTION]
+                           [--riesz-solver {auto,cg,minres,lsmr}]
+                           [--riesz-tolerance RIESZ_TOLERANCE]
+                           [--riesz-max-iterations RIESZ_MAX_ITERATIONS]
+                           [--target-support-tolerance TARGET_SUPPORT_TOLERANCE]
+                           [--tangent-gram-min-eigenvalue-floor TANGENT_GRAM_MIN_EIGENVALUE_FLOOR]
+                           [--variance-type {auto,diagonal,spatial}]
+                           [--c-sp C_SP] [--workers WORKERS]
+                           [--parallel-level {replications,none}]
+                           [--chunk-size CHUNK_SIZE] [--resume | --overwrite]
+                           [--output-root OUTPUT_ROOT] [--run-name RUN_NAME]
+                           [--targets TARGETS]
+                           [--save-candidate-details | --no-save-candidate-details]
+                           [--print-resolved-config] [--dry-run]
+                           [--experiment {baseline,power}]
+                           [--alternative-grid ALTERNATIVE_GRID]
+                           [--power-block {A,B}]
+
+Run the Revision-8 Monte Carlo. --pooled-r2-target calibrates the simulated
+DGP through c_xi; it is not an estimation or rank-selection tuning parameter.
+
+options:
+  -h, --help            show this help message and exit
+  --config CONFIG       Optional TOML configuration; CLI values override it.
+
+simulation:
+  --dgp {1,2,3,4}
+  --dgp-grid DGP_GRID
+  --N PANEL_N
+  --T PANEL_T
+  --balanced-grid BALANCED_GRID
+  --replications REPLICATIONS
+  --burn-in BURN_IN
+  --seed SEED
+
+DGP:
+  --rho-g RHO_G
+  --mu-f-a MU_F_A
+  --kappa-f-a KAPPA_F_A
+  --mu-f-b MU_F_B
+  --kappa-f-b KAPPA_F_B
+  --rho-x RHO_X
+  --delta-x DELTA_X
+  --rho-fx RHO_FX
+  --eta-x ETA_X
+  --rho-s RHO_S
+  --pi-h PI_H
+  --stability-bound STABILITY_BOUND
+  --mu-lambda-a-1 MU_LAMBDA_A_1
+  --mu-lambda-a-2 MU_LAMBDA_A_2
+  --sigma-lambda-a SIGMA_LAMBDA_A
+  --mu-lambda-b-1 MU_LAMBDA_B_1
+  --mu-lambda-b-2 MU_LAMBDA_B_2
+  --sigma-lambda-b SIGMA_LAMBDA_B
+
+calibration:
+  --pooled-r2-target POOLED_R2_TARGET
+                        Requested pooled DGP R-squared used to calibrate c_xi
+                        (baseline 0.65). For rank-stress r_B=0, c_xi=1 and
+                        induced R-squared is reported instead.
+  --calibration-draws CALIBRATION_DRAWS
+  --calibration-seed CALIBRATION_SEED
+  --calibration-tolerance CALIBRATION_TOLERANCE
+
+rank:
+  --rank-mode {fixed,selected}
+  --fixed-ranks FIXED_RANKS
+  --rank-caps RANK_CAPS
+  --true-ranks TRUE_RANKS
+  --gamma GAMMA
+  --epsilon EPSILON
+  --threshold-multiplier THRESHOLD_MULTIPLIER
+  --eta-for-penalty ETA_FOR_PENALTY
+  --spatial-dimension SPATIAL_DIMENSION
+  --ic-multiplier IC_MULTIPLIER
+
+optimization:
+  --coefficient-bound COEFFICIENT_BOUND
+  --simulation-interior-margin SIMULATION_INTERIOR_MARGIN
+  --max-als-iterations MAX_ALS_ITERATIONS
+  --objective-tolerance OBJECTIVE_TOLERANCE
+  --stationarity-tolerance STATIONARITY_TOLERANCE
+  --start-objective-stability-tol START_OBJECTIVE_STABILITY_TOL
+  --max-cap-pilot-routes MAX_CAP_PILOT_ROUTES
+  --start-envelope-fraction START_ENVELOPE_FRACTION
+
+Riesz and variance:
+  --riesz-solver {auto,cg,minres,lsmr}
+  --riesz-tolerance RIESZ_TOLERANCE
+  --riesz-max-iterations RIESZ_MAX_ITERATIONS
+  --target-support-tolerance TARGET_SUPPORT_TOLERANCE
+  --tangent-gram-min-eigenvalue-floor TANGENT_GRAM_MIN_EIGENVALUE_FLOOR
+  --variance-type {auto,diagonal,spatial}
+  --c-sp C_SP
+
+execution and output:
+  --workers, --n-jobs WORKERS
+  --parallel-level {replications,none}
+  --chunk-size CHUNK_SIZE
+  --resume
+  --overwrite
+  --output-root OUTPUT_ROOT
+  --run-name RUN_NAME
+  --targets TARGETS
+  --save-candidate-details, --no-save-candidate-details
+  --print-resolved-config
+  --dry-run
+  --experiment {baseline,power}
+  --alternative-grid ALTERNATIVE_GRID
+  --power-block {A,B}

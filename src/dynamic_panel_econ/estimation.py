@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -22,6 +25,12 @@ from .core import (
 from .lowrank import singular_values, tangent_project, truncated_matrix
 
 Array = NDArray[np.float64]
+_FIXED_FIT_OBSERVER: ContextVar[Callable[[FitResult], None] | None] = ContextVar(
+    "fixed_fit_observer", default=None
+)
+_NUCLEAR_FIT_OBSERVER: ContextVar[Callable[[NuclearFit], None] | None] = ContextVar(
+    "nuclear_fit_observer", default=None
+)
 
 
 @dataclass(slots=True)
@@ -56,6 +65,30 @@ class NuclearFit:
     iterations: int
     objective_history: list[float]
     singular_values: list[list[float]]
+
+
+@contextmanager
+def observe_fixed_rank_fits(
+    observer: Callable[[FitResult], None],
+) -> Iterator[None]:
+    """Collect every actual supplied-rank numerical fit in the current worker."""
+
+    token = _FIXED_FIT_OBSERVER.set(observer)
+    try:
+        yield
+    finally:
+        _FIXED_FIT_OBSERVER.reset(token)
+
+
+@contextmanager
+def observe_nuclear_fits(
+    observer: Callable[[NuclearFit], None],
+) -> Iterator[None]:
+    token = _NUCLEAR_FIT_OBSERVER.set(observer)
+    try:
+        yield
+    finally:
+        _NUCLEAR_FIT_OBSERVER.reset(token)
 
 
 def _to_theta(blocks: list[FactorBlock], p: int, k: int) -> Coefficients:
@@ -186,7 +219,7 @@ def fit_fixed_rank(
     converged = bool(converged or stationarity <= stationarity_tol)
     envelope_ratio = max_abs(theta) / coefficient_bound
     # Objective convergence and the stationarity diagnostic are stored separately.
-    return FitResult(
+    result = FitResult(
         theta=theta,
         ranks=ranks,
         objective=history[-1],
@@ -202,6 +235,10 @@ def fit_fixed_rank(
             "singular_values": singular_values(theta),
         },
     )
+    observer = _FIXED_FIT_OBSERVER.get()
+    if observer is not None:
+        observer(result)
+    return result
 
 
 def _svt(matrix: Array, threshold: float) -> Array:
@@ -303,9 +340,13 @@ def fit_nuclear(
             converged = True
             break
         lipschitz = max(lipschitz * 0.9, 1e-12)
-    return NuclearFit(
+    result = NuclearFit(
         theta, penalty, history[-1], converged, _iteration, history, singular_values(theta)
     )
+    observer = _NUCLEAR_FIT_OBSERVER.get()
+    if observer is not None:
+        observer(result)
+    return result
 
 
 def nuclear_path(

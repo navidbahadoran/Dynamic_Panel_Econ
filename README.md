@@ -103,6 +103,62 @@ python scripts\aggregate_mc.py --config configs\mc\rank_stress_smoke.toml
 python scripts\make_mc_tables.py --config configs\mc\rank_stress_smoke.toml
 ```
 
+### Fixed-rank and selected-rank modes
+
+The two primary methods share DGP seeds, targets, Riesz inference, split correction, variance
+estimation, and failure rules. Fixed-rank mode bypasses every rank-selection operation:
+
+```powershell
+python scripts\run_mc.py --dgp-grid 1,2,3,4 --balanced-grid 50,100,200,400 `
+  --replications 1000 --rank-mode fixed --fixed-ranks 1,1,1 `
+  --pooled-r2-target 0.65 --workers 8 --output-root results/mc/production_fixed --resume
+```
+
+Selected-rank mode runs the complete Revision-8 selection pipeline. An author-approved fixed
+positive IC multiplier must be supplied for production:
+
+```powershell
+python scripts\run_mc.py --dgp-grid 1,2,3,4 --balanced-grid 50,100,200,400 `
+  --replications 1000 --rank-mode selected --rank-caps 2,2,2 `
+  --ic-multiplier APPROVED_CONSTANT --pooled-r2-target 0.65 --workers 8 `
+  --output-root results/mc/production_selected --resume
+```
+
+Run `python scripts/run_mc.py --help` for the complete interface. Configuration precedence is
+CLI over TOML over package defaults. `--dry-run --print-resolved-config` resolves and displays a
+design without calibration, fitting, inference, or output. Every executed run writes
+`command.txt`, `resolved_config.toml`, and `manifest.json`/`run_manifest.json` with the Git commit
+and CLI arguments.
+
+`--pooled-r2-target` is solely a DGP calibration parameter. It is not estimator tuning, rank
+selection tuning, or an estimated-model fit target. Calibration chooses `c_xi` so the simulated
+DGP attains the requested pooled coefficient of determination when scale is identified. The
+baseline inference design uses 0.65. In rank-stress cells with `r_B=0`, `c_xi=1` remains the
+normalization, the requested R-squared is not imposed, and the induced R-squared is reported.
+
+### Lossless Monte Carlo accounting and reporting
+
+Every attempted replication receives one mutually exclusive `primary_status`. Point performance
+uses every finite numerically valid estimate; inference performance additionally requires a
+finite positive standard error and variance. No estimate is trimmed or winsorized. The optional
+median/MAD `extreme_estimate_flag` is descriptive and never changes bias, RMSE, coverage, power,
+or rejection inclusion.
+
+The canonical reporting command is:
+
+```powershell
+python scripts\report_mc.py --input-run results/mc/production_fixed/RUN `
+  --input-run results/mc/production_selected/RUN `
+  --output-dir results/mc/method_comparison --tables all --figures all
+```
+
+Individual artifacts use `--table optimization`, `--table failure_accounting`,
+`--figure rmse`, `--figure coverage`, `--figure runtime`, or `--figure power_A`. Reporting refuses
+to overwrite an existing artifact unless `--overwrite` is explicit. Failure and retained-share
+denominators always use attempted replications; coverage and rejection use valid-inference
+replications. Runtime summaries retain all completed runtimes and report mean, median, p10, p90,
+and p95.
+
 The smoke run uses one `50 x 50` replication per DGP, the smallest configured cell for which the
 prespecified 0.65 calibration is feasible in all four designs. It exercises rank selection,
 entry and fixed-time targets, theorem-applicability tagging, several broad corrected targets,

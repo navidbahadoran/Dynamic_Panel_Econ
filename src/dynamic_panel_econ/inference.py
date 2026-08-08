@@ -203,6 +203,7 @@ def solve_riesz(
     residuals: np.ndarray | None = None,
     tolerance: float = 1e-8,
     max_iter: int = 1000,
+    solver_preference: str = "auto",
     system: RieszSystem | None = None,
 ) -> RieszResult:
     """Solve one target RHS on a reusable empirical tangent-Gram system."""
@@ -216,8 +217,11 @@ def solve_riesz(
         nonlocal iteration_count
         iteration_count += 1
 
-    solution, info = cg(operator, rhs, rtol=tolerance, atol=0.0, maxiter=max_iter, callback=callback)
-    solver = "cg"
+    if solver_preference not in {"auto", "cg", "minres", "lsmr"}:
+        raise ValueError("unknown Riesz solver preference")
+    solution = np.zeros_like(rhs)
+    info = 1
+    solver = solver_preference if solver_preference != "auto" else "cg"
 
     def inaccurate(vector: np.ndarray, code: int) -> bool:
         if code != 0 or not np.all(np.isfinite(vector)):
@@ -225,11 +229,20 @@ def solve_riesz(
         relative = np.linalg.norm(operator @ vector - rhs) / max(np.linalg.norm(rhs), 1e-15)
         return bool(relative > max(10 * tolerance, 1e-7))
 
-    if inaccurate(solution, info):
+    if solver_preference in {"auto", "cg"}:
+        solution, info = cg(
+            operator, rhs, rtol=tolerance, atol=0.0, maxiter=max_iter, callback=callback
+        )
+        solver = "cg"
+    if solver_preference == "minres" or (
+        solver_preference == "auto" and inaccurate(solution, info)
+    ):
         iteration_count = 0
         solution, info = minres(operator, rhs, rtol=tolerance, maxiter=max_iter, callback=callback)
         solver = "minres"
-    if inaccurate(solution, info):
+    if solver_preference == "lsmr" or (
+        solver_preference == "auto" and inaccurate(solution, info)
+    ):
         least_squares = lsmr(operator, rhs, atol=tolerance, btol=tolerance, maxiter=max_iter)
         solution = least_squares[0]
         info = 0 if least_squares[1] in {1, 2} else least_squares[1]
@@ -392,6 +405,7 @@ def infer_target(
     c_sp: float = 1.0,
     riesz_tolerance: float = 1e-8,
     riesz_max_iter: int = 1000,
+    riesz_solver: str = "auto",
     compute_tangent_gram: bool = False,
     tangent_gram_tolerance: float = 1e-5,
     tangent_gram_max_iter: int = 500,
@@ -445,6 +459,7 @@ def infer_target(
         residuals=residuals,
         tolerance=riesz_tolerance,
         max_iter=riesz_max_iter,
+        solver_preference=riesz_solver,
         system=system,
     )
     scores = riesz.weights * residuals
@@ -610,6 +625,7 @@ def infer_corrected_target(
     c_sp: float = 1.0,
     riesz_tolerance: float = 1e-8,
     riesz_max_iter: int = 1000,
+    riesz_solver: str = "auto",
     target_rayleigh_floor: float = 1e-12,
     target_support_tolerance: float = 1e-12,
     tangent_gram_min_eigenvalue_floor: float = 1e-10,
@@ -625,6 +641,7 @@ def infer_corrected_target(
         c_sp=c_sp,
         riesz_tolerance=riesz_tolerance,
         riesz_max_iter=riesz_max_iter,
+        riesz_solver=riesz_solver,
         target_support_tolerance=target_support_tolerance,
         tangent_gram_min_eigenvalue_floor=tangent_gram_min_eigenvalue_floor,
         riesz_system=full_system,
@@ -695,6 +712,7 @@ def infer_corrected_target(
             residuals=record.residuals,
             tolerance=riesz_tolerance,
             max_iter=riesz_max_iter,
+            solver_preference=riesz_solver,
             system=record.riesz_system,
         )
         diagnostics.update(

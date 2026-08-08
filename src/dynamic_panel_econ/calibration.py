@@ -56,6 +56,7 @@ def _calibrate_raws(
     target_r2: float = 0.65,
     true_rank_vector: tuple[int, int, int] = (1, 1, 1),
     allow_infeasible_diagnostic: bool = False,
+    tolerance: float = 1e-10,
 ) -> CalibrationResult:
     """Calibrate a fixed collection of baseline or actual stress-design raw draws."""
 
@@ -119,7 +120,7 @@ def _calibrate_raws(
                 dgp, n, t, target_r2, min(minimum_grid_r2, large_c_xi_floor)
             )
         c_xi = (
-            float(brentq(root, *bracket, xtol=1e-10, rtol=1e-10))
+            float(brentq(root, *bracket, xtol=tolerance, rtol=tolerance))
             if bracket is not None
             else 1.0
         )
@@ -212,6 +213,7 @@ def calibrate_cell(
     pi_h: float = 0.30,
     target_r2: float = 0.65,
     draws: int = 3,
+    tolerance: float = 1e-10,
 ) -> CalibrationResult:
     """Calibrate ``c_H`` and ``c_xi`` with deterministic common random numbers."""
 
@@ -228,6 +230,7 @@ def calibrate_cell(
         params=params,
         pi_h=pi_h,
         target_r2=target_r2,
+        tolerance=tolerance,
     )
 
 
@@ -244,6 +247,7 @@ def calibrate_rank_stress_cell(
     target_r2: float = 0.65,
     draws: int = 3,
     allow_infeasible_diagnostic: bool = False,
+    tolerance: float = 1e-10,
 ) -> CalibrationResult:
     """Calibrate using the actual rescaled rank-stress coefficient matrices."""
 
@@ -278,4 +282,5 @@ def calibrate_rank_stress_cell(
         target_r2=target_r2,
         true_rank_vector=true_rank_vector,
         allow_infeasible_diagnostic=allow_infeasible_diagnostic,
+        tolerance=tolerance,
     )

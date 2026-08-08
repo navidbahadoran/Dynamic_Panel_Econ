@@ -2,12 +2,22 @@
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
 
-from .core import Coefficients, Design, adjoint, fitted_values, from_matrices
+from .core import (
+    Coefficients,
+    Design,
+    adjoint,
+    fitted_values,
+    from_matrices,
+    max_abs,
+    scale,
+    zeros_like,
+)
 from .estimation import FitResult, NuclearFit, adapt_initial, fit_fixed_rank, nuclear_path
 from .lowrank import numerical_rank, tangent_project, threshold_rank, truncated_matrix
 
@@ -20,6 +30,10 @@ class RankSelectionFailure(RuntimeError):
 
 class RankPilotFailure(RankSelectionFailure):
     """Raised when the imposed rank-cap pilot fails a paper diagnostic."""
+
+    def __init__(self, message: str, diagnostics: dict[str, Any] | None = None) -> None:
+        super().__init__(message)
+        self.diagnostics = diagnostics or {}
 
 
 @dataclass(slots=True)
@@ -42,6 +56,20 @@ class RankSelectionResult:
     nuclear_fits: list[NuclearFit]
     cap_fit: FitResult
     diagnostics: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
+class CapPilotRoute:
+    """One deterministic, distinct-rank nuclear-space cap-pilot route."""
+
+    path_index: int | None
+    rank: RankVector
+    theta: Coefficients
+    penalty: float | None
+    nuclear_objective: float | None
+    first_path_index: int | None
+    best_path_index: int | None
+    source: str
 
 
 def model_dimension(ranks: RankVector, n: int, t: int) -> int:
@@ -163,6 +191,195 @@ def _closest_preliminary(
     return min(scored, key=lambda item: (item[0], item[1]))[2]
 
 
+def _theta_fingerprint(theta: Coefficients) -> str:
+    digest = hashlib.sha256()
+    for matrix in theta.matrices():
+        digest.update(np.ascontiguousarray(matrix).view(np.uint8))
+    return digest.hexdigest()
+
+
+def _rescale_cap_start(
+    theta: Coefficients,
+    coefficient_bound: float,
+    start_envelope_fraction: float,
+) -> tuple[Coefficients, dict[str, float | bool]]:
+    """Common-scale one numerical start into a strict interior envelope."""
+
+    original = max_abs(theta)
+    applied = (
+        min(1.0, start_envelope_fraction * coefficient_bound / original)
+        if original > 0.0
+        else 1.0
+    )
+    rescaled = scale(theta, applied)
+    return rescaled, {
+        "original_max_abs_coefficient": original,
+        "applied_common_scale": applied,
+        "rescaled_max_abs_coefficient": max_abs(rescaled),
+        "common_rescaling_used": applied < 1.0,
+    }
+
+
+def _synthetic_cap_start(
+    template: Coefficients,
+    ranks: RankVector,
+    threshold: float,
+) -> Coefficients:
+    """Create a deterministic, very-low-rank singular-space start."""
+
+    matrices = []
+    for matrix, rank in zip(template.matrices(), ranks, strict=True):
+        proposal = np.zeros_like(matrix)
+        for component in range(rank):
+            row = np.cos((component + 1) * np.arange(matrix.shape[0], dtype=float))
+            col = np.cos((component + 1) * np.arange(matrix.shape[1], dtype=float))
+            row /= np.linalg.norm(row)
+            col /= np.linalg.norm(col)
+            proposal += (1.25 + 0.05 * component) * threshold * np.outer(row, col)
+        matrices.append(proposal)
+    return from_matrices(matrices, len(template.A), len(template.B))
+
+
+def _cap_pilot_routes(
+    preliminary: list[NuclearFit],
+    threshold: float,
+    caps: RankVector,
+    *,
+    max_routes: int,
+    coefficient_bound: float,
+) -> tuple[list[CapPilotRoute], list[dict[str, Any]]]:
+    """Select bounded, distinct-rank routes from the complete nuclear path."""
+
+    occurrences: dict[RankVector, list[int]] = {}
+    for index, fit in enumerate(preliminary):
+        occurrences.setdefault(_rank_vector(fit.theta, threshold, caps), []).append(index)
+
+    catalog: list[dict[str, Any]] = []
+    representatives: dict[RankVector, int] = {}
+    for rank, indices in occurrences.items():
+        first_index = indices[0]
+        interior = [
+            index
+            for index in indices
+            if np.isfinite(max_abs(preliminary[index].theta))
+            and max_abs(preliminary[index].theta) < coefficient_bound
+        ]
+        eligible = interior or indices
+        best_index = min(
+            eligible,
+            key=lambda index: (preliminary[index].objective, index),
+        )
+        # Earlier/high-penalty singular spaces are preferred for the lowest ranks;
+        # other ranks use their best-objective occurrence.
+        representatives[rank] = best_index
+        catalog.append(
+            {
+                "rank_vector": rank,
+                "first_path_index": first_index,
+                "best_path_index": best_index,
+                "occurrence_count": len(indices),
+            }
+        )
+
+    ordered_ranks = sorted(occurrences, key=lambda rank: (sum(rank), rank))
+    required: list[RankVector] = []
+    zero_rank = tuple(0 for _ in caps)
+    if zero_rank in occurrences:
+        required.append(zero_rank)
+    nonzero = [rank for rank in ordered_ranks if any(rank)]
+    for rank in nonzero[:2]:
+        representatives[rank] = occurrences[rank][0]
+        required.append(rank)
+    interior_indices = [
+        index
+        for index, fit in enumerate(preliminary)
+        if max_abs(fit.theta) < coefficient_bound and fit.converged
+    ]
+    if interior_indices:
+        best_interior_index = min(
+            interior_indices,
+            key=lambda index: (preliminary[index].objective, index),
+        )
+        best_interior_rank = _rank_vector(
+            preliminary[best_interior_index].theta, threshold, caps
+        )
+        representatives[best_interior_rank] = best_interior_index
+        required.append(best_interior_rank)
+    if ordered_ranks:
+        required.append(ordered_ranks[-1])
+
+    selected_ranks: list[RankVector] = []
+    for rank in [*required, *ordered_ranks]:
+        if rank not in selected_ranks:
+            selected_ranks.append(rank)
+        if len(selected_ranks) >= max_routes:
+            break
+
+    routes: list[CapPilotRoute] = []
+    for rank in selected_ranks:
+        index = representatives[rank]
+        indices = occurrences[rank]
+        best_index = min(
+            indices, key=lambda candidate: (preliminary[candidate].objective, candidate)
+        )
+        fit = preliminary[index]
+        routes.append(
+            CapPilotRoute(
+                index,
+                rank,
+                fit.theta,
+                fit.penalty,
+                fit.objective,
+                indices[0],
+                best_index,
+                "nuclear_path",
+            )
+        )
+
+    if zero_rank not in occurrences and len(routes) < max_routes:
+        routes.insert(
+            0,
+            CapPilotRoute(
+                None,
+                zero_rank,
+                zeros_like(preliminary[0].theta),
+                None,
+                None,
+                None,
+                None,
+                "synthetic_zero",
+            ),
+        )
+    selected = {route.rank for route in routes}
+    synthetic_low_ranks = [
+        tuple(1 if index == block and caps[index] > 0 else 0 for index in range(len(caps)))
+        for block in range(len(caps))
+        if caps[block] > 0
+    ]
+    minimum_route_count = min(4, max_routes)
+    for rank in synthetic_low_ranks:
+        if len(routes) >= minimum_route_count:
+            break
+        if rank in selected:
+            continue
+        routes.append(
+            CapPilotRoute(
+                None,
+                rank,
+                _synthetic_cap_start(preliminary[0].theta, rank, threshold),
+                None,
+                None,
+                None,
+                None,
+                "synthetic_very_low_rank",
+            )
+        )
+        selected.add(rank)
+    return routes[:max_routes], sorted(
+        catalog, key=lambda item: (sum(item["rank_vector"]), item["rank_vector"])
+    )
+
+
 def _fit_candidate(
     y: np.ndarray,
     design: Design,
@@ -172,12 +389,26 @@ def _fit_candidate(
     fit_options: dict[str, Any],
     start_objective_stability_tol: float,
     stationarity_tolerance: float,
+    start_envelope_fraction: float | None = None,
 ) -> tuple[FitResult, bool, list[str], dict[str, Any]]:
+    prepared_starts = [adapt_initial(start, ranks) for start in starts]
+    start_preparation: list[dict[str, float | bool]] = []
+    if start_envelope_fraction is not None:
+        prepared = []
+        for start in prepared_starts:
+            rescaled, diagnostics = _rescale_cap_start(
+                start,
+                float(fit_options.get("coefficient_bound", 9.0)),
+                start_envelope_fraction,
+            )
+            prepared.append(rescaled)
+            start_preparation.append(diagnostics)
+        prepared_starts = prepared
     first = fit_fixed_rank(
-        y, design, ranks, initial=adapt_initial(starts[0], ranks), seed=seed, **fit_options
+        y, design, ranks, initial=prepared_starts[0], seed=seed, **fit_options
     )
     second = fit_fixed_rank(
-        y, design, ranks, initial=adapt_initial(starts[1], ranks), seed=seed, **fit_options
+        y, design, ranks, initial=prepared_starts[1], seed=seed, **fit_options
     )
     options = [first, second]
     initially_valid = [
@@ -217,6 +448,7 @@ def _fit_candidate(
         "best_two_objective_gap": best_two_gap,
         "objective_stability_pass": stable,
         "third_start_used": len(options) == 3,
+        "start_preparation": start_preparation,
     }
     return chosen, len(options) == 3, reasons, diagnostics
 
@@ -267,35 +499,99 @@ def fit_rank_adaptive_cap_pilot(
     improvement_tolerance: float,
     removal_tolerance: float,
     max_steps: int,
+    max_routes: int = 6,
+    start_envelope_fraction: float = 0.8,
 ) -> tuple[FitResult, dict[str, Any]]:
     """Compute one rank-at-most-cap pilot by local rank-adaptive loss descent."""
 
     if not preliminary:
         raise RankPilotFailure("rank-cap pilot requires a nonempty nuclear path")
-    route_indices = [len(preliminary) - 1, len(preliminary) // 2]
-    route_results: list[tuple[CandidateFit, list[dict[str, Any]], RankVector]] = []
+    coefficient_bound = float(fit_options.get("coefficient_bound", 9.0))
+    routes, route_catalog = _cap_pilot_routes(
+        preliminary,
+        threshold,
+        caps,
+        max_routes=max_routes,
+        coefficient_bound=coefficient_bound,
+    )
+    route_results: list[
+        tuple[CandidateFit, list[dict[str, Any]], CapPilotRoute]
+    ] = []
     route_attempts: list[dict[str, Any]] = []
+    fit_cache: dict[
+        tuple[RankVector, str, str],
+        tuple[FitResult, bool, list[str], dict[str, Any]],
+    ] = {}
+    cache_hits = 0
+    cache_misses = 0
 
-    for route_index in route_indices:
-        start_theta = preliminary[route_index].theta
-        start_rank = _rank_vector(start_theta, threshold, caps)
-        second_theta = preliminary[max(0, route_index - 1)].theta
-        fit, third, reasons, start_diagnostics = _fit_candidate(
+    def cached_fit(
+        ranks: RankVector,
+        starts: tuple[Coefficients, Coefficients],
+    ) -> tuple[FitResult, bool, list[str], dict[str, Any]]:
+        nonlocal cache_hits, cache_misses
+        prepared = []
+        for start in starts:
+            adapted = adapt_initial(start, ranks)
+            rescaled, _ = _rescale_cap_start(
+                adapted, coefficient_bound, start_envelope_fraction
+            )
+            prepared.append(rescaled)
+        key = (ranks, _theta_fingerprint(prepared[0]), _theta_fingerprint(prepared[1]))
+        if key in fit_cache:
+            cache_hits += 1
+            return fit_cache[key]
+        cache_misses += 1
+        result = _fit_candidate(
             y,
             design,
-            start_rank,
-            (start_theta, second_theta),
+            ranks,
+            starts,
             seed,
             fit_options,
             start_objective_stability_tol,
             stationarity_tolerance,
+            start_envelope_fraction,
+        )
+        fit_cache[key] = result
+        return result
+
+    for route_number, route in enumerate(routes):
+        start_theta = route.theta
+        start_rank = route.rank
+        if route.path_index is None:
+            second_theta = zeros_like(start_theta)
+            second_path_index = None
+        else:
+            alternatives = [
+                index
+                for index in (route.first_path_index, route.best_path_index)
+                if index is not None and index != route.path_index
+            ]
+            second_path_index = (
+                alternatives[0]
+                if alternatives
+                else max(0, route.path_index - 1)
+            )
+            second_theta = preliminary[second_path_index].theta
+        prepared_start, preparation = _rescale_cap_start(
+            adapt_initial(start_theta, start_rank),
+            coefficient_bound,
+            start_envelope_fraction,
+        )
+        fit, third, reasons, start_diagnostics = cached_fit(
+            start_rank, (start_theta, second_theta)
         )
         current = CandidateFit(
             start_rank,
             fit,
             float("nan"),
             model_dimension(start_rank, *y.shape),
-            [f"nuclear_path_{route_index}"],
+            [
+                f"nuclear_path_{route.path_index}"
+                if route.path_index is not None
+                else "synthetic_zero_start"
+            ],
             third,
             not reasons,
             reasons,
@@ -309,15 +605,60 @@ def fit_rank_adaptive_cap_pilot(
                 "move": "start",
             }
         ]
+        collapsed_rank = _numerical_rank_vector(fit.theta)
+        collapse_only = bool(reasons) and all(
+            reason.startswith("numerical_rank_support:")
+            or reason == "objective_stability_failed"
+            for reason in reasons
+        )
+        if collapse_only and collapsed_rank != start_rank:
+            collapsed_fit, collapsed_third, collapsed_reasons, collapsed_starts = cached_fit(
+                collapsed_rank, (fit.theta, start_theta)
+            )
+            current = CandidateFit(
+                collapsed_rank,
+                collapsed_fit,
+                float("nan"),
+                model_dimension(collapsed_rank, *y.shape),
+                [f"numerical_collapse_of_{start_rank}"],
+                collapsed_third,
+                not collapsed_reasons,
+                collapsed_reasons,
+                collapsed_starts,
+            )
+            path.append(
+                {
+                    "ranks": collapsed_rank,
+                    "objective": collapsed_fit.objective,
+                    "valid": current.valid,
+                    "move": "numerical_rank_collapse",
+                }
+            )
         route_attempt = {
-            "nuclear_path_index": route_index,
+            "route_number": route_number,
+            "route_source": route.source,
+            "nuclear_path_index": route.path_index,
+            "secondary_path_index": second_path_index,
+            "nuclear_penalty": route.penalty,
+            "nuclear_objective": route.nuclear_objective,
+            "first_path_index_for_rank": route.first_path_index,
+            "best_path_index_for_rank": route.best_path_index,
             "start_rank_vector": start_rank,
+            "original_start_max_abs_coefficient": preparation[
+                "original_max_abs_coefficient"
+            ],
+            "start_common_scale": preparation["applied_common_scale"],
+            "rescaled_start_max_abs_coefficient": preparation[
+                "rescaled_max_abs_coefficient"
+            ],
+            "start_common_rescaling_used": preparation["common_rescaling_used"],
+            "prepared_start_fingerprint": _theta_fingerprint(prepared_start),
             "start_fit_reasons": reasons,
             "start_fit_diagnostics": start_diagnostics,
             "path": path,
         }
         route_attempts.append(route_attempt)
-        visited = {start_rank}
+        visited = {start_rank, current.ranks}
         for _ in range(max_steps):
             if not current.valid:
                 break
@@ -325,15 +666,8 @@ def fit_rank_adaptive_cap_pilot(
             for ranks in sorted(one_coordinate_neighbors(current.ranks, caps) - visited):
                 move_initial = _rank_move_initial(y, design, current.fit, ranks)
                 closest = _closest_preliminary(ranks, preliminary, caps, threshold)
-                neighbor_fit, used_third, neighbor_reasons, neighbor_starts = _fit_candidate(
-                    y,
-                    design,
-                    ranks,
-                    (move_initial, closest),
-                    seed,
-                    fit_options,
-                    start_objective_stability_tol,
-                    stationarity_tolerance,
+                neighbor_fit, used_third, neighbor_reasons, neighbor_starts = cached_fit(
+                    ranks, (move_initial, closest)
                 )
                 neighbors.append(
                     CandidateFit(
@@ -350,12 +684,12 @@ def fit_rank_adaptive_cap_pilot(
                 )
                 visited.add(ranks)
             valid_neighbors = [item for item in neighbors if item.valid]
-            scale = max(1.0, abs(current.fit.objective))
+            objective_scale = max(1.0, abs(current.fit.objective))
             improvements = [
                 item
                 for item in valid_neighbors
                 if item.fit.objective
-                < current.fit.objective - improvement_tolerance * scale
+                < current.fit.objective - improvement_tolerance * objective_scale
             ]
             move = "loss_improvement"
             if improvements:
@@ -366,7 +700,7 @@ def fit_rank_adaptive_cap_pilot(
                     for item in valid_neighbors
                     if item.dimension < current.dimension
                     and item.fit.objective
-                    <= current.fit.objective + removal_tolerance * scale
+                    <= current.fit.objective + removal_tolerance * objective_scale
                 ]
                 if not removals:
                     break
@@ -382,11 +716,18 @@ def fit_rank_adaptive_cap_pilot(
                 }
             )
         if current.valid:
-            route_results.append((current, path, start_rank))
+            route_results.append((current, path, route))
         route_attempt.update(
             {
                 "final_rank_vector": current.ranks,
+                "final_numerical_rank_vector": _numerical_rank_vector(current.fit.theta),
+                "final_thresholded_rank_vector": _rank_vector(
+                    current.fit.theta, threshold, caps
+                ),
                 "final_objective": current.fit.objective,
+                "final_stationarity_residual": current.fit.stationarity_residual,
+                "final_max_envelope_ratio": current.fit.max_envelope_ratio,
+                "final_converged": current.fit.converged,
                 "final_valid": current.valid,
                 "final_reasons": current.invalid_reasons,
             }
@@ -394,33 +735,80 @@ def fit_rank_adaptive_cap_pilot(
 
     ordered = sorted(route_results, key=lambda item: item[0].fit.objective)
     if len(ordered) < 2:
+        failure_diagnostics = {
+            "attempted_route_count": len(routes),
+            "valid_route_count": len(ordered),
+            "stable_route_count": 0,
+            "objective_stability_pass": False,
+            "outer_start_attempts": route_attempts,
+        }
         raise RankPilotFailure(
             "rank-adaptive cap pilot has fewer than two valid outer starts: "
-            f"{route_attempts!r}"
+            f"{len(ordered)} of {len(routes)} routes valid",
+            failure_diagnostics,
         )
     outer_gap = abs(ordered[0][0].fit.objective - ordered[1][0].fit.objective) / max(
         1.0, abs(ordered[0][0].fit.objective)
     )
     if outer_gap > start_objective_stability_tol:
+        failure_diagnostics = {
+            "attempted_route_count": len(routes),
+            "valid_route_count": len(ordered),
+            "stable_route_count": 1,
+            "best_two_objective_gap": outer_gap,
+            "objective_stability_pass": False,
+            "outer_start_attempts": route_attempts,
+        }
         raise RankPilotFailure(
             "rank-adaptive cap pilot objective stability failed: "
-            f"best-two normalized gap={outer_gap:.6g}"
+            f"best-two normalized gap={outer_gap:.6g}",
+            failure_diagnostics,
         )
     chosen = ordered[0][0]
+    best_objective = ordered[0][0].fit.objective
+    stable_routes = [
+        item
+        for item in ordered
+        if abs(item[0].fit.objective - best_objective)
+        / max(1.0, abs(best_objective))
+        <= start_objective_stability_tol
+    ]
+    stable_numerical_ranks = [
+        _numerical_rank_vector(item[0].fit.theta) for item in stable_routes
+    ]
+    stable_thresholded_ranks = [
+        _rank_vector(item[0].fit.theta, threshold, caps) for item in stable_routes
+    ]
     return chosen.fit, {
         "algorithm": "rank_adaptive_at_most_cap",
-        "outer_start_rank_vectors": [item[2] for item in ordered],
+        "route_catalog": route_catalog,
+        "attempted_route_count": len(routes),
+        "valid_route_count": len(ordered),
+        "stable_route_count": len(stable_routes),
+        "outer_start_rank_vectors": [item[2].rank for item in ordered],
+        "outer_start_path_indices": [item[2].path_index for item in ordered],
         "outer_final_rank_vectors": [item[0].ranks for item in ordered],
         "outer_objectives": [item[0].fit.objective for item in ordered],
         "outer_paths": [item[1] for item in ordered],
         "outer_start_attempts": route_attempts,
         "best_two_objective_gap": outer_gap,
         "objective_stability_pass": True,
+        "stable_final_numerical_rank_vectors": stable_numerical_ranks,
+        "stable_final_thresholded_rank_vectors": stable_thresholded_ranks,
+        "stable_final_numerical_ranks_agree": len(set(stable_numerical_ranks)) == 1,
+        "stable_final_thresholded_ranks_agree": len(set(stable_thresholded_ranks)) == 1,
+        "route_fit_cache_hits": cache_hits,
+        "route_fit_cache_misses": cache_misses,
         "numerical_rank_before_thresholding": _numerical_rank_vector(chosen.fit.theta),
         "objective": chosen.fit.objective,
         "stationarity_residual": chosen.fit.stationarity_residual,
         "max_envelope_ratio": chosen.fit.max_envelope_ratio,
-        "starting_values": "two deterministic nuclear-path singular-space starts",
+        "starting_values": (
+            "up to six distinct-rank deterministic nuclear-path routes, including "
+            "low-rank and zero routes when admissible"
+        ),
+        "start_envelope_fraction": start_envelope_fraction,
+        "coefficient_bound": coefficient_bound,
     }
 
 
@@ -449,6 +837,8 @@ def select_ranks(
     rank_adaptive_improvement_tol: float = 1e-7,
     rank_adaptive_removal_tol: float = 1e-7,
     rank_adaptive_max_steps: int = 12,
+    rank_adaptive_max_routes: int = 6,
+    cap_pilot_start_envelope_fraction: float = 0.8,
     dense_nuclear_gamma: float = float(np.sqrt(0.8)),
     threshold_sensitivity_multipliers: list[float] | tuple[float, ...] = (0.5, 1.0, 2.0),
     ic_sensitivity_multipliers: list[float] | tuple[float, ...] = (0.5, 1.0, 2.0),
@@ -493,6 +883,8 @@ def select_ranks(
         improvement_tolerance=rank_adaptive_improvement_tol,
         removal_tolerance=rank_adaptive_removal_tol,
         max_steps=rank_adaptive_max_steps,
+        max_routes=rank_adaptive_max_routes,
+        start_envelope_fraction=cap_pilot_start_envelope_fraction,
     )
     candidate_ranks, sources, path_ranks = build_candidates(
         preliminary, cap_fit, caps, baseline_threshold
@@ -667,6 +1059,8 @@ def select_ranks(
                 improvement_tolerance=rank_adaptive_improvement_tol,
                 removal_tolerance=rank_adaptive_removal_tol,
                 max_steps=rank_adaptive_max_steps,
+                max_routes=rank_adaptive_max_routes,
+                start_envelope_fraction=cap_pilot_start_envelope_fraction,
             )
             ranks_set, _, proposals = build_candidates(
                 preliminary, threshold_cap_fit, caps, threshold
@@ -730,6 +1124,8 @@ def select_ranks(
                 improvement_tolerance=rank_adaptive_improvement_tol,
                 removal_tolerance=rank_adaptive_removal_tol,
                 max_steps=rank_adaptive_max_steps,
+                max_routes=rank_adaptive_max_routes,
+                start_envelope_fraction=cap_pilot_start_envelope_fraction,
             )
             dense_ranks, _, dense_proposals = build_candidates(
                 dense, dense_cap_fit, caps, baseline_threshold
@@ -765,6 +1161,8 @@ def select_ranks(
                 improvement_tolerance=rank_adaptive_improvement_tol,
                 removal_tolerance=rank_adaptive_removal_tol,
                 max_steps=rank_adaptive_max_steps,
+                max_routes=rank_adaptive_max_routes,
+                start_envelope_fraction=cap_pilot_start_envelope_fraction,
             )
             larger_valid = True
             larger_cap_algorithm = larger_cap_diagnostics["algorithm"]

@@ -64,6 +64,8 @@ DEFAULTS: dict[str, Any] = {
         "rank_adaptive_improvement_tol": 1e-7,
         "rank_adaptive_removal_tol": 1e-7,
         "rank_adaptive_max_steps": 12,
+        "rank_adaptive_max_routes": 6,
+        "cap_pilot_start_envelope_fraction": 0.8,
         "dense_nuclear_gamma": 0.8944271909999159,
         "threshold_sensitivity_multipliers": [0.5, 1.0, 2.0],
         "ic_sensitivity_multipliers": [0.5, 1.0, 2.0],
@@ -126,6 +128,11 @@ def validate_config(config: dict[str, Any]) -> None:
         raise ValueError("coefficient_bound must exceed simulation_interior_margin")
     if float(estimation["start_objective_stability_tol"]) <= 0.0:
         raise ValueError("start_objective_stability_tol must be positive")
+    if int(estimation["rank_adaptive_max_routes"]) < 2:
+        raise ValueError("rank_adaptive_max_routes must be at least two")
+    start_fraction = float(estimation["cap_pilot_start_envelope_fraction"])
+    if not 0.0 < start_fraction < 1.0:
+        raise ValueError("cap_pilot_start_envelope_fraction must be strictly between zero and one")
     if float(config["inference"]["split_relative_rank_floor"]) <= 0.0:
         raise ValueError("split_relative_rank_floor must be positive")
     if float(config["inference"]["tangent_gram_min_eigenvalue_floor"]) <= 0.0:

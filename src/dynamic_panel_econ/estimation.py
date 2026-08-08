@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -65,6 +66,7 @@ class NuclearFit:
     iterations: int
     objective_history: list[float]
     singular_values: list[list[float]]
+    runtime_seconds: float | None = None
 
 
 @contextmanager
@@ -158,6 +160,7 @@ def fit_fixed_rank(
 ) -> FitResult:
     """Joint ALS for all supplied-rank coefficient matrices."""
 
+    started = time.perf_counter()
     n, t = y.shape
     if design.shape != y.shape or len(ranks) != len(design.y_lags) + len(design.x) + 1:
         raise ValueError("incompatible data, design, and rank vector")
@@ -233,6 +236,7 @@ def fit_fixed_rank(
             "stationarity_pass": stationarity <= stationarity_tol,
             "bound_active": envelope_ratio >= 1.0,
             "singular_values": singular_values(theta),
+            "runtime_seconds": time.perf_counter() - started,
         },
     )
     observer = _FIXED_FIT_OBSERVER.get()
@@ -307,6 +311,7 @@ def fit_nuclear(
 ) -> NuclearFit:
     """Monotone proximal-gradient solution of the convex screening problem."""
 
+    started = time.perf_counter()
     n, t = y.shape
     theta = initial.copy() if initial is not None else zeros_for_design(design)
     weights = penalty_weights(design)
@@ -341,7 +346,14 @@ def fit_nuclear(
             break
         lipschitz = max(lipschitz * 0.9, 1e-12)
     result = NuclearFit(
-        theta, penalty, history[-1], converged, _iteration, history, singular_values(theta)
+        theta,
+        penalty,
+        history[-1],
+        converged,
+        _iteration,
+        history,
+        singular_values(theta),
+        time.perf_counter() - started,
     )
     observer = _NUCLEAR_FIT_OBSERVER.get()
     if observer is not None:

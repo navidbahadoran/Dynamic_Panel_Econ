@@ -1,0 +1,7 @@
+- `bias`: Monte Carlo bias by method and sample size.
+- `rmse`: Monte Carlo rmse by method and sample size.
+- `coverage`: Monte Carlo coverage by method and sample size.
+- `failure_rate`: Monte Carlo failure rate by method and sample size.
+- `retained_share`: Monte Carlo retained share by method and sample size.
+- `runtime`: Monte Carlo runtime by method and sample size.
+- `interval_length`: Monte Carlo interval length by method and sample size.

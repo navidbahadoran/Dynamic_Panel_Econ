@@ -1,0 +1,4 @@
+method,coefficient_fit_count,convergence_rate,iteration_cap_hit_rate,stationarity_failure_rate,coefficient_bound_hit_rate,objective_stability_evaluated_count,objective_stability_failure_rate,numerical_rank_loss_rate,median_runtime_seconds,p90_runtime_seconds,maximum_runtime_seconds,median_stationarity_residual,maximum_accepted_stationarity_residual,median_objective_stability_gap,maximum_accepted_objective_stability_gap
+fixed_rank,56,1.0,0.0,0.017857142857142905,0.14285714285714285,0,,0.0,,,,4.603751462303121e-05,7.401963016333796e-05,,
+selected_3e-6,1611,1.0,0.0,0.0012414649286157653,0.3308504034761018,121,0.5702479338842975,0.0,,,,2.7159854344611887e-05,9.73547200630113e-05,1.1875333598567165e-06,5.89155776953004e-06
+selected_4e-6,1630,1.0,0.0,0.0012269938650306678,0.32699386503067485,499,0.5390781563126252,0.0,,,,2.731030994029992e-05,9.73547200630113e-05,1.4122153636061742e-06,7.99672449705595e-06

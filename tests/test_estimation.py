@@ -21,6 +21,7 @@ def test_joint_als_rank_zero_and_monotone_objective():
     y, design, theta = synthetic()
     initial = Coefficients([theta.A[0]], [np.zeros_like(theta.B[0])], theta.H)
     fit = fit_fixed_rank(y, design, (1, 0, 1), initial=initial, max_sweeps=100, objective_rtol=1e-9)
+    assert fit.diagnostics["runtime_seconds"] >= 0.0
     np.testing.assert_array_equal(fit.theta.B[0], np.zeros_like(theta.B[0]))
     assert numerical_rank(fit.theta.A[0]) == 1
     assert all(b <= a + 1e-10 for a, b in pairwise(fit.objective_history))
@@ -35,5 +36,6 @@ def test_noiseless_joint_fit_recovers_fitted_values():
 def test_lambda_maximum_gives_zero_nuclear_solution():
     y, design, _ = synthetic(noise=0.1)
     fit = fit_nuclear(y, design, 1.001 * lambda_maximum(y, design), max_iter=30)
+    assert fit.runtime_seconds is not None and fit.runtime_seconds >= 0.0
     assert max(np.linalg.norm(matrix) for matrix in fit.theta.matrices()) < 1e-8
     assert all(b <= a + 1e-10 for a, b in pairwise(fit.objective_history))

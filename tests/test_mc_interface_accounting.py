@@ -25,6 +25,7 @@ from dynamic_panel_econ.mc_accounting import (
 from dynamic_panel_econ.method_reporting import _write_exclusive
 from dynamic_panel_econ.monte_carlo import (
     _calibration_failure_task_rows,
+    _dgp_realization_hash,
     _worker,
     run_replication,
 )
@@ -98,13 +99,25 @@ def test_methods_share_semantic_replication_identity_and_dgp_draw(monkeypatch) -
 
     monkeypatch.setattr("dynamic_panel_econ.monte_carlo.generate_panel", capture)
     monkeypatch.setattr("dynamic_panel_econ.monte_carlo.fit_fixed_rank", lambda *a, **k: _fit())
-    run_replication((1, 4, 4, 0, None), _config("fixed"), {"c_h": 1, "c_xi": 1})
+    fixed_rows = run_replication(
+        (1, 4, 4, 0, None), _config("fixed"), {"c_h": 1, "c_xi": 1}
+    )
     monkeypatch.setattr(
         "dynamic_panel_econ.monte_carlo.select_ranks",
         lambda *a, **k: (_ for _ in ()).throw(RankSelectionFailure("stop after draw")),
     )
-    run_replication((1, 4, 4, 0, None), _config("selected"), {"c_h": 1, "c_xi": 1})
+    selected_rows = run_replication(
+        (1, 4, 4, 0, None), _config("selected"), {"c_h": 1, "c_xi": 1}
+    )
     assert states[0] == states[1]
+    assert fixed_rows[0]["dgp_realization_hash"] == selected_rows[0]["dgp_realization_hash"]
+
+
+def test_dgp_realization_hash_includes_calibration() -> None:
+    panel = _panel()
+    baseline = _dgp_realization_hash(panel, {"c_h": 1.0, "c_xi": 1.0})
+    changed = _dgp_realization_hash(panel, {"c_h": 1.0, "c_xi": 2.0})
+    assert baseline != changed
 
 
 def test_failed_attempt_remains_in_worker_records(monkeypatch) -> None:

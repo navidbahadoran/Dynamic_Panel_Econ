@@ -74,7 +74,7 @@ STATUS_ALIASES = {
 }
 
 REPLICATION_COLUMNS = (
-    "run_id", "semantic_replication_id", "dgp", "N", "T", "replication", "method", "target",
+    "run_id", "semantic_replication_id", "dgp_realization_hash", "dgp", "N", "T", "replication", "method", "target",
     "primary_status", "completed_dgp_replication", "point_estimate_valid",
     "inference_valid", "retained_for_bias_rmse", "retained_for_coverage",
     "retained_for_rejection", "supplied_rank_vector", "selected_rank_vector",
@@ -87,7 +87,7 @@ REPLICATION_COLUMNS = (
 )
 
 FIT_DIAGNOSTIC_COLUMNS = (
-    "run_id", "semantic_replication_id", "dgp", "N", "T", "replication", "method", "fit_type", "target",
+    "run_id", "semantic_replication_id", "dgp_realization_hash", "dgp", "N", "T", "replication", "method", "fit_type", "target",
     "requested_rank", "numerical_rank", "initialization_route", "start_number",
     "objective_initial", "objective_final", "relative_objective_change", "iterations",
     "convergence_flag", "iteration_cap_hit", "stationarity_residual",
@@ -100,7 +100,7 @@ FIT_DIAGNOSTIC_COLUMNS = (
 )
 
 INFERENCE_DIAGNOSTIC_COLUMNS = (
-    "run_id", "semantic_replication_id", "dgp", "N", "T", "replication", "method", "target",
+    "run_id", "semantic_replication_id", "dgp_realization_hash", "dgp", "N", "T", "replication", "method", "target",
     "primary_status", "target_tangent_norm", "target_supported", "riesz_iterations",
     "riesz_residual", "riesz_converged", "riesz_target_rayleigh_quotient",
     "tangent_gram_min_eigenvalue", "tangent_gram_max_eigenvalue",

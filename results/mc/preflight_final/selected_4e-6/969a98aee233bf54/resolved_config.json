@@ -1,0 +1,157 @@
+{
+  "config": {
+    "dgp": {
+      "auto_adjust_group_gap": false,
+      "burn_in": 50,
+      "calibration_draws": 50,
+      "calibration_seed": 20260810,
+      "calibration_tolerance": 1e-10,
+      "delta_x": 0.5,
+      "eta_x": 0.3,
+      "group_gap_pilot_draws": 500,
+      "kappa_f_a": 0.1,
+      "kappa_f_b": 0.2,
+      "min_abs_postscale_group_diff_a": 0.05,
+      "mu_f_a": 0.5,
+      "mu_f_b": 0.6,
+      "mu_lambda_a_1": 0.8999999999999999,
+      "mu_lambda_a_2": 1.1,
+      "mu_lambda_b_1": 0.8,
+      "mu_lambda_b_2": 1.2,
+      "pi_h": 0.3,
+      "prespecified_gap_grid": [
+        0.2,
+        0.3,
+        0.4,
+        0.5,
+        0.6
+      ],
+      "resolved_group_gap": 0.20000000000000007,
+      "rho_fx": 0.0,
+      "rho_g": 0.5,
+      "rho_s": 0.5,
+      "rho_x": 0.5,
+      "sigma_lambda_a": 0.08,
+      "sigma_lambda_b": 0.25,
+      "stability_bound": 0.85,
+      "target_r2": 0.65
+    },
+    "estimation": {
+      "cap_pilot_start_envelope_fraction": 0.8,
+      "coefficient_bound": 9.0,
+      "compute_dense_grid_sensitivity": false,
+      "compute_larger_cap_sensitivity": false,
+      "compute_rank_sensitivities": false,
+      "dense_nuclear_gamma": 0.8944271909999159,
+      "dykstra_max_iter": 100,
+      "dykstra_tol": 1e-09,
+      "eta_for_penalty": 4.0,
+      "fixed_ranks": [
+        1,
+        1,
+        1
+      ],
+      "ic_multiplier": 4e-06,
+      "ic_sensitivity_multipliers": [
+        0.5,
+        1.0,
+        2.0
+      ],
+      "larger_rank_caps": [
+        4,
+        4,
+        4
+      ],
+      "lstsq_rcond": 1e-10,
+      "max_sweeps": 300,
+      "nuclear_epsilon": 0.01,
+      "nuclear_gamma": 0.8,
+      "nuclear_max_iter": 500,
+      "nuclear_tol": 1e-07,
+      "objective_rtol": 1e-05,
+      "rank_adaptive_improvement_tol": 1e-07,
+      "rank_adaptive_max_routes": 6,
+      "rank_adaptive_max_steps": 12,
+      "rank_adaptive_removal_tol": 1e-07,
+      "rank_caps": [
+        2,
+        2,
+        2
+      ],
+      "simulation_interior_margin": 1.0,
+      "spatial_dimension": 1,
+      "start_objective_stability_tol": 1e-05,
+      "stationarity_tol": 0.0001,
+      "threshold_multiplier": 1.0,
+      "threshold_sensitivity_multipliers": [
+        0.5,
+        1.0,
+        2.0
+      ]
+    },
+    "inference": {
+      "compute_tangent_gram": true,
+      "riesz_max_iter": 1000,
+      "riesz_solver": "auto",
+      "riesz_target_rayleigh_floor": 1e-12,
+      "riesz_tol": 1e-08,
+      "spatial_c": 1.0,
+      "split_relative_rank_floor": 1e-10,
+      "tangent_gram_max_iter": 500,
+      "tangent_gram_min_eigenvalue_floor": 1e-10,
+      "tangent_gram_tol": 1e-05,
+      "target_support_tolerance": 1e-12,
+      "targets": [
+        "A_entry",
+        "B_entry",
+        "A_fixed_time_mean",
+        "B_fixed_time_mean",
+        "A_full_mean",
+        "B_full_mean",
+        "A_G1_fixed_time",
+        "A_G2_fixed_time",
+        "A_G2_minus_G1_fixed_time",
+        "A_G1_time_average",
+        "A_G2_time_average",
+        "A_G2_minus_G1_time_average",
+        "B_G1_fixed_time",
+        "B_G2_fixed_time",
+        "B_G2_minus_G1_fixed_time",
+        "B_G1_time_average",
+        "B_G2_time_average",
+        "B_G2_minus_G1_time_average"
+      ],
+      "variance_type": "auto"
+    },
+    "run": {
+      "alternative_grid": [
+        0.0
+      ],
+      "blas_threads": 1,
+      "cells": [
+        [
+          50,
+          50
+        ]
+      ],
+      "chunk_size": 3,
+      "dgps": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "experiment": "baseline",
+      "master_seed": 20260810,
+      "n_jobs": 4,
+      "name": "selected_4e-6",
+      "output_root": "results/mc/preflight_final",
+      "parallel_level": "replications",
+      "power_block": "A",
+      "rank_mode": "selected",
+      "replications": 3,
+      "save_candidate_details": true
+    }
+  },
+  "config_hash": "969a98aee233bf54"
+}

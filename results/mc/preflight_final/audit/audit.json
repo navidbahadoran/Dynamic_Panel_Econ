@@ -1,0 +1,57 @@
+{
+  "attempted_method_replications": 36,
+  "unique_dgp_draws": 12,
+  "matched_hashes_pass": true,
+  "fixed_success": 11,
+  "fixed_failures": {
+    "coefficient_bound_hit": 1
+  },
+  "fixed_point_retained": 198,
+  "fixed_inference_retained": 198,
+  "fixed_target_attempts": 216,
+  "fixed_gram_min": 0.12949551284988664,
+  "fixed_gram_condition_max": 465.96251405946947,
+  "fixed_riesz_failure_count": 0,
+  "selected": [
+    {
+      "method": "selected_3e-6",
+      "attempted": 12,
+      "pilot_success": 9,
+      "candidate_coverage_count": 9,
+      "candidate_coverage_share_of_pilot_success": 1.0,
+      "true_rank_absent_count": 0,
+      "ic_choice_failure_given_coverage_count": 7,
+      "ic_choice_failure_given_coverage_share": 0.7777777777777778,
+      "exact_recovery_count": 2,
+      "underselection_count": 1,
+      "overselection_count": 7,
+      "selected_zero_vector_count": 0,
+      "rank_cap_hit_count": 7,
+      "selected_rank_distribution": "{\"[1, 1, 1]\": 2, \"[1, 1, 2]\": 4, \"[2, 1, 0]\": 1, \"[2, 1, 1]\": 2}",
+      "median_replication_runtime_seconds": 87.49683045000711,
+      "total_replication_runtime_seconds": 1064.3336183000065
+    },
+    {
+      "method": "selected_4e-6",
+      "attempted": 12,
+      "pilot_success": 9,
+      "candidate_coverage_count": 9,
+      "candidate_coverage_share_of_pilot_success": 1.0,
+      "true_rank_absent_count": 0,
+      "ic_choice_failure_given_coverage_count": 3,
+      "ic_choice_failure_given_coverage_share": 0.33333333333333337,
+      "exact_recovery_count": 6,
+      "underselection_count": 2,
+      "overselection_count": 1,
+      "selected_zero_vector_count": 0,
+      "rank_cap_hit_count": 1,
+      "selected_rank_distribution": "{\"[1, 0, 0]\": 1, \"[1, 0, 1]\": 1, \"[1, 1, 1]\": 6, \"[1, 1, 2]\": 1}",
+      "median_replication_runtime_seconds": 88.48340365001059,
+      "total_replication_runtime_seconds": 1063.7976640999696
+    }
+  ],
+  "all_accounting_reconciled": true,
+  "exactly_four_shared_split_fits_pass": true,
+  "fit_runtime_available_in_executed_outputs": false,
+  "go_no_go": "NO-GO: return evidence to author; do not launch medium or production"
+}

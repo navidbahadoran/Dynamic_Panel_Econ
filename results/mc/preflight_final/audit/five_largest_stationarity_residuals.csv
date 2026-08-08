@@ -1,0 +1,6 @@
+method,semantic_replication_id,dgp,replication,fit_type,requested_rank,numerical_rank,runtime_seconds,stationarity_residual,objective_stability_gap
+selected_4e-6,dgp3_N50_T50_r00000_truth1-1-1,3,0,coefficient_fit,"[2, 0, 0]","[2, 0, 0]",,9.73547200630113e-05,
+selected_4e-6,dgp3_N50_T50_r00000_truth1-1-1,3,0,coefficient_fit,"[2, 0, 0]","[2, 0, 0]",,9.73547200630113e-05,
+selected_3e-6,dgp3_N50_T50_r00000_truth1-1-1,3,0,coefficient_fit,"[2, 0, 0]","[2, 0, 0]",,9.73547200630113e-05,
+selected_3e-6,dgp3_N50_T50_r00000_truth1-1-1,3,0,coefficient_fit,"[2, 0, 0]","[2, 0, 0]",,9.73547200630113e-05,
+selected_4e-6,dgp3_N50_T50_r00002_truth1-1-1,3,2,coefficient_fit,"[2, 0, 0]","[2, 0, 0]",,9.731131977903775e-05,

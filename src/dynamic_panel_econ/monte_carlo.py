@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import subprocess
@@ -526,7 +527,11 @@ def _fit_diagnostic_record(
         "second_start_objective": None,
         "objective_stability_gap": None,
         "objective_stability_pass": None,
-        "runtime_seconds": runtime_seconds,
+        "runtime_seconds": (
+            runtime_seconds
+            if runtime_seconds is not None
+            else fit.diagnostics.get("runtime_seconds")
+        ),
         "exception_type": None,
         "exception_message": None,
         "nuclear_path_index": None,
@@ -571,7 +576,8 @@ def _nuclear_fit_diagnostic_record(
         "sigma_1": None, "sigma_r": None, "sigma_r_over_sigma_1": None,
         "best_start_objective": None, "second_start_objective": None,
         "objective_stability_gap": None, "objective_stability_pass": None,
-        "runtime_seconds": None, "exception_type": None, "exception_message": None,
+        "runtime_seconds": fit.runtime_seconds,
+        "exception_type": None, "exception_message": None,
         "nuclear_path_index": path_index, "lambda": fit.penalty,
         "thresholded_rank": None, "candidate_source": "nuclear_screening",
         "IC": None, "IC_valid": None,
@@ -733,6 +739,31 @@ def _use_spatial_variance(config: dict[str, Any], dgp: int) -> bool:
     return dgp >= 2
 
 
+def _dgp_realization_hash(panel: Any, calibration: dict[str, Any]) -> str:
+    """Hash the complete realized estimation sample and frozen DGP calibration."""
+
+    digest = hashlib.sha256()
+    arrays = (
+        ("y", panel.y),
+        *((f"regressor_{index}", value) for index, value in enumerate(panel.design.regressors())),
+        *((f"theta0_{index}", value) for index, value in enumerate(panel.theta0.matrices())),
+        ("u", panel.u),
+        ("u_tilde", panel.u_tilde),
+        ("u_tilde_lag", panel.u_tilde_lag),
+        ("groups", panel.groups),
+    )
+    for name, value in arrays:
+        array = np.ascontiguousarray(value)
+        digest.update(name.encode("ascii"))
+        digest.update(str(array.dtype).encode("ascii"))
+        digest.update(np.asarray(array.shape, dtype=np.int64).tobytes())
+        digest.update(array.tobytes())
+    for name in ("c_h", "c_xi"):
+        digest.update(name.encode("ascii"))
+        digest.update(np.float64(calibration[name]).tobytes())
+    return digest.hexdigest()
+
+
 def run_replication(
     task: Task,
     config: dict[str, Any],
@@ -778,6 +809,7 @@ def run_replication(
         arrays = [panel.y, *panel.design.regressors(), *panel.theta0.matrices(), panel.u]
         if not all(np.all(np.isfinite(array)) for array in arrays):
             return [_failure_record(task, config, "nonfinite_input", "generated array is nonfinite")]
+        panel.diagnostics["dgp_realization_hash"] = _dgp_realization_hash(panel, calibration)
 
         selection_started = time.perf_counter()
         selection = None
@@ -859,7 +891,15 @@ def run_replication(
                     or "stable" in detail.lower()
                     else "rank_selection_failure"
                 )
-                return [_failure_record(task, config, status, detail)]
+                return [
+                    _failure_record(
+                        task,
+                        config,
+                        status,
+                        detail,
+                        {"dgp_realization_hash": panel.diagnostics["dgp_realization_hash"]},
+                    )
+                ]
             rank_runtime = time.perf_counter() - selection_started
             rank_status = "rank_at_cap" if selection.diagnostics["selected_rank_at_cap"] else "success"
             rank_row = _rank_record(
@@ -873,14 +913,50 @@ def run_replication(
             fit = selection.selected.fit
         rank_row["replication_runtime_seconds"] = time.perf_counter() - started
         if rank_status != "success":
-            return [rank_row, _failure_record(task, config, rank_status, "selected rank equals imposed cap")]
+            return [
+                rank_row,
+                _failure_record(
+                    task,
+                    config,
+                    rank_status,
+                    "selected rank equals imposed cap",
+                    {"dgp_realization_hash": panel.diagnostics["dgp_realization_hash"]},
+                ),
+            ]
 
         if not fit.converged:
-            return [rank_row, _failure_record(task, config, "full_fit_failure", f"rank={fit.ranks}")]
+            return [
+                rank_row,
+                _failure_record(
+                    task,
+                    config,
+                    "full_fit_failure",
+                    f"rank={fit.ranks}",
+                    {"dgp_realization_hash": panel.diagnostics["dgp_realization_hash"]},
+                ),
+            ]
         if fit.stationarity_residual > float(config["estimation"]["stationarity_tol"]):
-            return [rank_row, _failure_record(task, config, "full_fit_failure", str(fit.stationarity_residual))]
+            return [
+                rank_row,
+                _failure_record(
+                    task,
+                    config,
+                    "full_fit_failure",
+                    str(fit.stationarity_residual),
+                    {"dgp_realization_hash": panel.diagnostics["dgp_realization_hash"]},
+                ),
+            ]
         if fit.max_envelope_ratio >= 1.0:
-            return [rank_row, _failure_record(task, config, "coefficient_bound_hit", str(fit.max_envelope_ratio))]
+            return [
+                rank_row,
+                _failure_record(
+                    task,
+                    config,
+                    "coefficient_bound_hit",
+                    str(fit.max_envelope_ratio),
+                    {"dgp_realization_hash": panel.diagnostics["dgp_realization_hash"]},
+                ),
+            ]
 
         target_specs = [
             target_direction(str(name), panel.theta0, panel.groups, dgp=dgp)
@@ -1292,6 +1368,16 @@ def _worker(payload: tuple[Task, dict[str, Any], dict[str, Any]]) -> list[dict[s
         for index, fit in enumerate(observed_nuclear_fits)
     ]
     rows.extend([*nuclear_rows, *exact_fit_rows])
+    dgp_realization_hash = next(
+        (
+            row.get("dgp_realization_hash")
+            for row in rows
+            if row.get("dgp_realization_hash") is not None
+        ),
+        None,
+    )
+    for row in rows:
+        row.setdefault("dgp_realization_hash", dgp_realization_hash)
     dgp, n, t, replication, true_rank = _task_parts(task)
     failures = [row for row in rows if row["record_type"] == "failure"]
     primary_status = (
@@ -1341,6 +1427,7 @@ def _worker(payload: tuple[Task, dict[str, Any], dict[str, Any]]) -> list[dict[s
             "semantic_replication_id": semantic_replication_id(
                 dgp, n, t, replication, true_rank
             ),
+            "dgp_realization_hash": dgp_realization_hash,
             "replication_runtime_seconds": max(
                 (float(row.get("replication_runtime_seconds", 0.0) or 0.0) for row in rows),
                 default=0.0,

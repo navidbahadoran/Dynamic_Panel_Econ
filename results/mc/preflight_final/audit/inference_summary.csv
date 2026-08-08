@@ -1,0 +1,4 @@
+method,target_attempts,target_support_rate,tangent_gram_failure_rate,riesz_failure_rate_conditional_on_support,invalid_variance_rate,nonfinite_standard_error_rate,point_retained_count,point_retained_share,inference_retained_count,inference_retained_share,extreme_estimate_flag_count
+fixed_rank,216,1.0,0.0,0.0,0.0,0.0,198,0.9166666666666666,198,0.9166666666666666,6
+selected_3e-6,216,1.0,0.0,0.0,0.0,0.0,36,0.16666666666666666,36,0.16666666666666666,0
+selected_4e-6,216,0.875,0.0,0.0,0.125,0.125,144,0.6666666666666666,126,0.5833333333333334,0

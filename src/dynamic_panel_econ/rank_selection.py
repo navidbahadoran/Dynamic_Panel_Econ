@@ -22,6 +22,7 @@ from .estimation import FitResult, NuclearFit, adapt_initial, fit_fixed_rank, nu
 from .lowrank import numerical_rank, tangent_project, threshold_rank, truncated_matrix
 
 RankVector = tuple[int, ...]
+BEST_BASIN_PERTURBATION_MAGNITUDES = (1e-4, 3e-4, 1e-3)
 
 
 class RankSelectionFailure(RuntimeError):
@@ -218,6 +219,303 @@ def _rescale_cap_start(
         "rescaled_max_abs_coefficient": max_abs(rescaled),
         "common_rescaling_used": applied < 1.0,
     }
+
+
+def _objective_at(y: np.ndarray, design: Design, theta: Coefficients) -> float:
+    residual = y - fitted_values(theta, design)
+    return float(np.vdot(residual, residual) / (2.0 * y.size))
+
+
+def _rank_preserving_perturbation(
+    theta: Coefficients,
+    ranks: RankVector,
+    magnitude: float,
+) -> Coefficients:
+    """Apply a deterministic canonical-SVD perturbation without clipping entries."""
+
+    perturbed: list[np.ndarray] = []
+    for block_index, (matrix, rank) in enumerate(
+        zip(theta.matrices(), ranks, strict=True)
+    ):
+        if rank == 0:
+            perturbed.append(np.zeros_like(matrix))
+            continue
+        u, singular, vt = np.linalg.svd(matrix, full_matrices=False)
+        u = u[:, :rank]
+        v = vt[:rank].T
+        singular = singular[:rank]
+        row_grid = np.arange(1, matrix.shape[0] + 1, dtype=float)[:, None]
+        col_grid = np.arange(1, matrix.shape[1] + 1, dtype=float)[:, None]
+        component_grid = np.arange(1, rank + 1, dtype=float)[None, :]
+        du = np.sin((block_index + 1) * row_grid * component_grid)
+        dv = np.cos((block_index + 2) * col_grid * component_grid)
+        du -= u @ (u.T @ du)
+        dv -= v @ (v.T @ dv)
+        u_new, _ = np.linalg.qr(u + magnitude * du, mode="reduced")
+        v_new, _ = np.linalg.qr(v + magnitude * dv, mode="reduced")
+        signs = np.where(np.arange(rank) % 2 == 0, 1.0, -1.0)
+        scale = max(float(singular[0]), 1.0)
+        singular_new = singular + magnitude * scale * signs
+        floor = max(np.finfo(float).eps * scale, magnitude**2 * scale)
+        singular_new = np.maximum(singular_new, floor)
+        perturbed.append((u_new * singular_new) @ v_new.T)
+    return from_matrices(perturbed, len(theta.A), len(theta.B))
+
+
+def _confirmation_record(
+    fit: FitResult,
+    start: Coefficients,
+    base: Coefficients,
+    start_id: str,
+    magnitude: float,
+    best_objective: float,
+    ranks: RankVector,
+    stationarity_tolerance: float,
+    objective_tolerance: float,
+    y: np.ndarray,
+    design: Design,
+) -> dict[str, Any]:
+    reasons = fit_invalid_reasons(fit, ranks, stationarity_tolerance)
+    gap = abs(fit.objective - best_objective) / max(1.0, abs(best_objective))
+    return {
+        "route_type": "basin_confirmation",
+        "confirmation_start_id": start_id,
+        "perturbation_magnitude": magnitude,
+        "perturbation_norm": float(
+            np.sqrt(
+                sum(
+                    np.linalg.norm(after - before) ** 2
+                    for before, after in zip(
+                        start.matrices(), base.matrices(), strict=True
+                    )
+                )
+            )
+        ),
+        "starting_objective": _objective_at(y, design, start),
+        "final_objective": fit.objective,
+        "convergence": fit.converged,
+        "stationarity": fit.stationarity_residual,
+        "coefficient_envelope": max_abs(fit.theta),
+        "numerical_rank": _numerical_rank_vector(fit.theta),
+        "runtime": fit.diagnostics.get("runtime_seconds"),
+        "objective_gap_to_best": gap,
+        "valid": not reasons,
+        "invalid_reasons": reasons,
+        "confirmation_pass": not reasons and gap <= objective_tolerance,
+    }
+
+
+def _confirm_best_basin(
+    y: np.ndarray,
+    design: Design,
+    best_fit: FitResult,
+    ranks: RankVector,
+    *,
+    fit_options: dict[str, Any],
+    seed: int | np.random.SeedSequence,
+    stationarity_tolerance: float,
+    objective_tolerance: float,
+    start_envelope_fraction: float,
+    diagnostic_context: str,
+) -> tuple[list[FitResult], list[dict[str, Any]], bool]:
+    """Try to reproduce one best basin from independent deterministic perturbations."""
+
+    coefficient_bound = float(fit_options.get("coefficient_bound", 9.0))
+    base, _ = _rescale_cap_start(
+        adapt_initial(best_fit.theta, ranks), coefficient_bound, start_envelope_fraction
+    )
+    fits: list[FitResult] = []
+    records: list[dict[str, Any]] = []
+    for index, magnitude in enumerate(BEST_BASIN_PERTURBATION_MAGNITUDES, start=1):
+        start = _rank_preserving_perturbation(base, ranks, magnitude)
+        if max_abs(start) >= coefficient_bound or _numerical_rank_vector(start) != ranks:
+            records.append(
+                {
+                    "route_type": "basin_confirmation",
+                    "confirmation_start_id": f"confirmation_{index}",
+                    "perturbation_magnitude": magnitude,
+                    "perturbation_norm": float("nan"),
+                    "starting_objective": _objective_at(y, design, start),
+                    "final_objective": float("nan"),
+                    "convergence": False,
+                    "stationarity": float("nan"),
+                    "coefficient_envelope": max_abs(start),
+                    "numerical_rank": _numerical_rank_vector(start),
+                    "runtime": 0.0,
+                    "objective_gap_to_best": float("nan"),
+                    "valid": False,
+                    "invalid_reasons": ["confirmation_start_not_strictly_interior"],
+                    "confirmation_pass": False,
+                }
+            )
+            continue
+        fit = fit_fixed_rank(
+            y,
+            design,
+            ranks,
+            initial=start,
+            seed=seed,
+            diagnostic_context=f"{diagnostic_context}:confirmation_{index}",
+            **fit_options,
+        )
+        fits.append(fit)
+        records.append(
+            _confirmation_record(
+                fit,
+                start,
+                base,
+                f"confirmation_{index}",
+                magnitude,
+                best_fit.objective,
+                ranks,
+                stationarity_tolerance,
+                objective_tolerance,
+                y,
+                design,
+            )
+        )
+    return fits, records, sum(record["confirmation_pass"] for record in records) >= 2
+
+
+def fit_fixed_rank_multistart(
+    y: np.ndarray,
+    design: Design,
+    ranks: RankVector,
+    *,
+    seed: int | np.random.SeedSequence,
+    fit_options: dict[str, Any],
+    stationarity_tolerance: float,
+    start_objective_stability_tol: float,
+    start_envelope_fraction: float = 0.8,
+) -> tuple[FitResult, dict[str, Any]]:
+    """Verify a supplied-rank solution with three deterministic starts and confirmation."""
+
+    rng = np.random.default_rng(seed)
+    additional_seeds = [int(value) for value in rng.integers(0, 2**32 - 1, size=2)]
+    start_seeds: list[int | np.random.SeedSequence] = [seed, *additional_seeds]
+    original_fits = [
+        fit_fixed_rank(
+            y,
+            design,
+            ranks,
+            seed=start_seed,
+            diagnostic_context=f"full_fixed_rank:original_start_{index}",
+            **fit_options,
+        )
+        for index, start_seed in enumerate(start_seeds, start=1)
+    ]
+    original_records = []
+    for index, (start_seed, fit) in enumerate(
+        zip(start_seeds, original_fits, strict=True), start=1
+    ):
+        reasons = fit_invalid_reasons(fit, ranks, stationarity_tolerance)
+        original_records.append(
+            {
+                "route_type": "original",
+                "start_id": f"original_start_{index}",
+                "deterministic_seed": (
+                    f"baseline:{start_seed.entropy}:{start_seed.spawn_key}"
+                    if isinstance(start_seed, np.random.SeedSequence)
+                    else str(start_seed)
+                ),
+                "final_objective": fit.objective,
+                "convergence": fit.converged,
+                "stationarity": fit.stationarity_residual,
+                "coefficient_envelope": max_abs(fit.theta),
+                "numerical_rank": _numerical_rank_vector(fit.theta),
+                "runtime": fit.diagnostics.get("runtime_seconds"),
+                "valid": not reasons,
+                "invalid_reasons": reasons,
+            }
+        )
+    valid_original = sorted(
+        [fit for fit in original_fits if not fit_invalid_reasons(fit, ranks, stationarity_tolerance)],
+        key=lambda fit: fit.objective,
+    )
+    credible = sorted(
+        original_fits,
+        key=lambda fit: (
+            len(
+                [
+                    reason
+                    for reason in fit_invalid_reasons(fit, ranks, stationarity_tolerance)
+                    if reason != "coefficient_bound_active"
+                ]
+            ),
+            fit.objective,
+        ),
+    )
+    numerical_best_objective = min(fit.objective for fit in original_fits)
+    for record in original_records:
+        record["objective_gap_to_best"] = abs(
+            float(record["final_objective"]) - numerical_best_objective
+        ) / max(1.0, abs(numerical_best_objective))
+    best = valid_original[0] if valid_original else credible[0]
+    matching_original = [
+        fit
+        for fit in valid_original
+        if abs(fit.objective - best.objective) / max(1.0, abs(best.objective))
+        <= start_objective_stability_tol
+    ]
+    confirmation_fits: list[FitResult] = []
+    confirmation_records: list[dict[str, Any]] = []
+    confirmation_pass = False
+    acceptance_basis = "original_route_stability"
+    stable = len(matching_original) >= 2
+    if not stable and valid_original:
+        confirmation_fits, confirmation_records, confirmation_pass = _confirm_best_basin(
+            y,
+            design,
+            best,
+            ranks,
+            fit_options=fit_options,
+            seed=start_seeds[0],
+            stationarity_tolerance=stationarity_tolerance,
+            objective_tolerance=start_objective_stability_tol,
+            start_envelope_fraction=start_envelope_fraction,
+            diagnostic_context="full_fixed_rank",
+        )
+        stable = confirmation_pass
+        acceptance_basis = "confirmed_best_basin" if stable else "failure"
+    elif not stable:
+        acceptance_basis = "failure"
+    valid_confirmation = [
+        fit
+        for fit in confirmation_fits
+        if not fit_invalid_reasons(fit, ranks, stationarity_tolerance)
+    ]
+    eligible = [*valid_original, *valid_confirmation]
+    chosen = min(eligible, key=lambda fit: fit.objective) if eligible else best
+    ordered_objectives = sorted(fit.objective for fit in valid_original)
+    diagnostics = {
+        "algorithm": "fixed_rank_three_deterministic_starts_with_best_basin_confirmation",
+        "requested_rank": ranks,
+        "objective_stability_tolerance": start_objective_stability_tol,
+        "original_start_count": 3,
+        "original_start_records": original_records,
+        "original_best_objective": ordered_objectives[0] if ordered_objectives else best.objective,
+        "original_second_best_objective": (
+            ordered_objectives[1] if len(ordered_objectives) >= 2 else float("nan")
+        ),
+        "original_stability_gap": (
+            abs(ordered_objectives[1] - ordered_objectives[0])
+            / max(1.0, abs(ordered_objectives[0]))
+            if len(ordered_objectives) >= 2
+            else float("nan")
+        ),
+        "confirmation_start_records": confirmation_records,
+        "confirmation_best_objective": min(
+            (record["final_objective"] for record in confirmation_records if record["valid"]),
+            default=float("nan"),
+        ),
+        "number_confirmation_valid": sum(record["valid"] for record in confirmation_records),
+        "number_confirmation_matching_best": sum(
+            record["confirmation_pass"] for record in confirmation_records
+        ),
+        "objective_stability_pass": stable,
+        "final_acceptance_basis": acceptance_basis,
+    }
+    return chosen, diagnostics
 
 
 def _synthetic_cap_start(
@@ -696,6 +994,7 @@ def fit_rank_adaptive_cap_pilot(
                 }
             )
         route_attempt = {
+            "route_type": "original",
             "route_number": route_number,
             "route_source": route.source,
             "nuclear_path_index": route.path_index,
@@ -797,38 +1096,73 @@ def fit_rank_adaptive_cap_pilot(
         )
 
     ordered = sorted(route_results, key=lambda item: item[0].fit.objective)
-    if len(ordered) < 2:
-        failure_diagnostics = {
-            "attempted_route_count": len(routes),
-            "valid_route_count": len(ordered),
-            "stable_route_count": 0,
-            "objective_stability_pass": False,
-            "outer_start_attempts": route_attempts,
-        }
-        raise RankPilotFailure(
-            "rank-adaptive cap pilot has fewer than two valid outer starts: "
-            f"{len(ordered)} of {len(routes)} routes valid",
-            failure_diagnostics,
-        )
-    outer_gap = abs(ordered[0][0].fit.objective - ordered[1][0].fit.objective) / max(
-        1.0, abs(ordered[0][0].fit.objective)
+    best_objective = ordered[0][0].fit.objective if ordered else float("nan")
+    second_objective = ordered[1][0].fit.objective if len(ordered) >= 2 else float("nan")
+    outer_gap = (
+        abs(best_objective - second_objective) / max(1.0, abs(best_objective))
+        if len(ordered) >= 2
+        else float("nan")
     )
-    if outer_gap > start_objective_stability_tol:
-        failure_diagnostics = {
-            "attempted_route_count": len(routes),
-            "valid_route_count": len(ordered),
-            "stable_route_count": 1,
-            "best_two_objective_gap": outer_gap,
-            "objective_stability_pass": False,
-            "outer_start_attempts": route_attempts,
-        }
-        raise RankPilotFailure(
-            "rank-adaptive cap pilot objective stability failed: "
-            f"best-two normalized gap={outer_gap:.6g}",
-            failure_diagnostics,
+    original_stable = len(ordered) >= 2 and outer_gap <= start_objective_stability_tol
+    confirmation_fits: list[FitResult] = []
+    confirmation_records: list[dict[str, Any]] = []
+    confirmation_pass = False
+    acceptance_basis = "original_route_stability" if original_stable else "failure"
+    if ordered and not original_stable:
+        confirmation_fits, confirmation_records, confirmation_pass = _confirm_best_basin(
+            y,
+            design,
+            ordered[0][0].fit,
+            ordered[0][0].ranks,
+            fit_options=fit_options,
+            seed=seed,
+            stationarity_tolerance=stationarity_tolerance,
+            objective_tolerance=start_objective_stability_tol,
+            start_envelope_fraction=start_envelope_fraction,
+            diagnostic_context="cap_pilot_best_basin",
         )
+        if confirmation_pass:
+            acceptance_basis = "confirmed_best_basin"
+    confirmation_valid = [record for record in confirmation_records if record["valid"]]
+    confirmation_matching = [
+        record for record in confirmation_records if record["confirmation_pass"]
+    ]
+    common_diagnostics = {
+        "attempted_route_count": len(routes),
+        "valid_route_count": len(ordered),
+        "stable_route_count": (
+            sum(
+                abs(item[0].fit.objective - best_objective)
+                / max(1.0, abs(best_objective))
+                <= start_objective_stability_tol
+                for item in ordered
+            )
+            if ordered
+            else 0
+        ),
+        "best_two_objective_gap": outer_gap,
+        "objective_stability_pass": original_stable or confirmation_pass,
+        "outer_start_attempts": route_attempts,
+        "basin_confirmation_attempts": confirmation_records,
+        "original_best_objective": best_objective,
+        "original_second_best_objective": second_objective,
+        "original_stability_gap": outer_gap,
+        "confirmation_best_objective": min(
+            (record["final_objective"] for record in confirmation_valid),
+            default=float("nan"),
+        ),
+        "number_confirmation_valid": len(confirmation_valid),
+        "number_confirmation_matching_best": len(confirmation_matching),
+        "final_pilot_acceptance_basis": acceptance_basis,
+    }
+    if not ordered or not (original_stable or confirmation_pass):
+        reason = (
+            "rank-adaptive cap pilot has no valid outer route"
+            if not ordered
+            else "rank-adaptive cap pilot best basin was not independently reproduced"
+        )
+        raise RankPilotFailure(reason, common_diagnostics)
     chosen = ordered[0][0]
-    best_objective = ordered[0][0].fit.objective
     stable_routes = [
         item
         for item in ordered
@@ -854,8 +1188,18 @@ def fit_rank_adaptive_cap_pilot(
         "outer_objectives": [item[0].fit.objective for item in ordered],
         "outer_paths": [item[1] for item in ordered],
         "outer_start_attempts": route_attempts,
+        "basin_confirmation_attempts": confirmation_records,
         "best_two_objective_gap": outer_gap,
         "objective_stability_pass": True,
+        "original_best_objective": best_objective,
+        "original_second_best_objective": second_objective,
+        "original_stability_gap": outer_gap,
+        "confirmation_best_objective": common_diagnostics[
+            "confirmation_best_objective"
+        ],
+        "number_confirmation_valid": len(confirmation_valid),
+        "number_confirmation_matching_best": len(confirmation_matching),
+        "final_pilot_acceptance_basis": acceptance_basis,
         "stable_final_numerical_rank_vectors": stable_numerical_ranks,
         "stable_final_thresholded_rank_vectors": stable_thresholded_ranks,
         "stable_final_numerical_ranks_agree": len(set(stable_numerical_ranks)) == 1,

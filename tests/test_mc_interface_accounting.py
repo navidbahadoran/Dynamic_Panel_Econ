@@ -66,7 +66,10 @@ def _fit() -> FitResult:
 
 def test_fixed_rank_mode_skips_selection(monkeypatch) -> None:
     monkeypatch.setattr("dynamic_panel_econ.monte_carlo.generate_panel", lambda *a, **k: _panel())
-    monkeypatch.setattr("dynamic_panel_econ.monte_carlo.fit_fixed_rank", lambda *a, **k: _fit())
+    monkeypatch.setattr(
+        "dynamic_panel_econ.monte_carlo.fit_fixed_rank_multistart",
+        lambda *a, **k: (_fit(), {"objective_stability_pass": True}),
+    )
     monkeypatch.setattr(
         "dynamic_panel_econ.monte_carlo.select_ranks",
         lambda *a, **k: pytest.fail("fixed mode entered rank selection"),
@@ -98,7 +101,10 @@ def test_methods_share_semantic_replication_identity_and_dgp_draw(monkeypatch) -
         return _panel()
 
     monkeypatch.setattr("dynamic_panel_econ.monte_carlo.generate_panel", capture)
-    monkeypatch.setattr("dynamic_panel_econ.monte_carlo.fit_fixed_rank", lambda *a, **k: _fit())
+    monkeypatch.setattr(
+        "dynamic_panel_econ.monte_carlo.fit_fixed_rank_multistart",
+        lambda *a, **k: (_fit(), {"objective_stability_pass": True}),
+    )
     fixed_rows = run_replication(
         (1, 4, 4, 0, None), _config("fixed"), {"c_h": 1, "c_xi": 1}
     )
@@ -144,7 +150,7 @@ def test_worker_fit_diagnostics_reconcile_executed_fits(monkeypatch) -> None:
     rows = _worker(((1, 4, 4, 0, None), _config("fixed"), {"c_h": 1, "c_xi": 1}))
     expected = next(row["expected_fit_count"] for row in rows if row["record_type"] == "replication")
     actual = sum(row["record_type"] == "fit_diagnostic" for row in rows)
-    assert expected == actual == 1
+    assert expected == actual == 3
 
 
 def _attempts() -> pd.DataFrame:
@@ -184,6 +190,24 @@ def test_nonfinite_estimate_has_explicit_status() -> None:
     flagged = apply_retention_flags(records)
     assert flagged.iloc[0].primary_status == "nonfinite_estimate"
     assert not flagged.iloc[0].retained_for_bias_rmse
+
+
+def test_primary_failure_cannot_retain_finite_inference() -> None:
+    records = _targets().iloc[:1].assign(primary_status="split_fit_failure")
+    flagged = apply_retention_flags(records)
+    row = flagged.iloc[0]
+    assert row.point_estimate_valid
+    assert not row.inference_valid
+    assert row.primary_status == "split_fit_failure"
+
+
+def test_nonfatal_warning_can_coexist_with_success() -> None:
+    records = _targets().iloc[:1].assign(warning_flags='["diagnostic_warning"]')
+    flagged = apply_retention_flags(records)
+    row = flagged.iloc[0]
+    assert row.primary_status == "success"
+    assert row.inference_valid
+    assert row.warning_flags == '["diagnostic_warning"]'
 
 
 def test_extreme_finite_flag_never_controls_retention() -> None:

@@ -26,7 +26,6 @@ from .dgp import (
     group_gap_pilot,
 )
 from .estimation import (
-    fit_fixed_rank,
     observe_fixed_rank_fits,
     observe_nuclear_fits,
 )
@@ -46,7 +45,12 @@ from .mc_accounting import (
     method_name,
     semantic_replication_id,
 )
-from .rank_selection import RankPilotFailure, RankSelectionFailure, select_ranks
+from .rank_selection import (
+    RankPilotFailure,
+    RankSelectionFailure,
+    fit_fixed_rank_multistart,
+    select_ranks,
+)
 from .seeds import seed_sequence
 from .targets import target_direction, target_regularity_diagnostics, target_value
 
@@ -377,6 +381,28 @@ def _rank_record(
         ),
         "cap_pilot_start_attempts": json.dumps(
             cap_pilot["outer_start_attempts"], sort_keys=True, default=_json_default
+        ),
+        "cap_pilot_confirmation_attempts": json.dumps(
+            cap_pilot.get("basin_confirmation_attempts", []),
+            sort_keys=True,
+            default=_json_default,
+        ),
+        "cap_pilot_original_best_objective": cap_pilot.get("original_best_objective"),
+        "cap_pilot_original_second_best_objective": cap_pilot.get(
+            "original_second_best_objective"
+        ),
+        "cap_pilot_original_stability_gap": cap_pilot.get("original_stability_gap"),
+        "cap_pilot_confirmation_best_objective": cap_pilot.get(
+            "confirmation_best_objective"
+        ),
+        "cap_pilot_number_confirmation_valid": cap_pilot.get(
+            "number_confirmation_valid", 0
+        ),
+        "cap_pilot_number_confirmation_matching_best": cap_pilot.get(
+            "number_confirmation_matching_best", 0
+        ),
+        "cap_pilot_final_acceptance_basis": cap_pilot.get(
+            "final_pilot_acceptance_basis"
         ),
         "rank_runtime_seconds": rank_runtime,
         "rank_diagnostics_json": (
@@ -834,7 +860,7 @@ def run_replication(
                 if task[4] is not None
                 else tuple(int(value) for value in config["estimation"]["fixed_ranks"])
             )
-            fit = fit_fixed_rank(
+            fit, fixed_rank_verification = fit_fixed_rank_multistart(
                 panel.y,
                 panel.design,
                 supplied_ranks,
@@ -847,13 +873,22 @@ def run_replication(
                     true_rank,
                     "fixed_rank_starts",
                 ),
-                diagnostic_context="full_fixed_rank",
-                **_fit_options(config),
+                fit_options=_fit_options(config),
+                stationarity_tolerance=float(config["estimation"]["stationarity_tol"]),
+                start_objective_stability_tol=float(
+                    config["estimation"]["start_objective_stability_tol"]
+                ),
+                start_envelope_fraction=float(
+                    config["estimation"]["cap_pilot_start_envelope_fraction"]
+                ),
             )
             rank_runtime = time.perf_counter() - selection_started
             rank_status = "success"
             rank_row = _fixed_rank_record(
                 task, config, fit, rank_runtime, panel.diagnostics
+            )
+            rank_row["fixed_rank_multistart_diagnostics"] = json.dumps(
+                fixed_rank_verification, sort_keys=True, default=_json_default
             )
         else:
             try:
@@ -889,6 +924,32 @@ def run_replication(
                                 pilot.get("outer_start_attempts", []),
                                 sort_keys=True,
                                 default=_json_default,
+                            ),
+                            "cap_pilot_confirmation_attempts": json.dumps(
+                                pilot.get("basin_confirmation_attempts", []),
+                                sort_keys=True,
+                                default=_json_default,
+                            ),
+                            "cap_pilot_original_best_objective": pilot.get(
+                                "original_best_objective"
+                            ),
+                            "cap_pilot_original_second_best_objective": pilot.get(
+                                "original_second_best_objective"
+                            ),
+                            "cap_pilot_original_stability_gap": pilot.get(
+                                "original_stability_gap"
+                            ),
+                            "cap_pilot_confirmation_best_objective": pilot.get(
+                                "confirmation_best_objective"
+                            ),
+                            "cap_pilot_number_confirmation_valid": pilot.get(
+                                "number_confirmation_valid", 0
+                            ),
+                            "cap_pilot_number_confirmation_matching_best": pilot.get(
+                                "number_confirmation_matching_best", 0
+                            ),
+                            "cap_pilot_final_acceptance_basis": pilot.get(
+                                "final_pilot_acceptance_basis", "failure"
                             ),
                             "replication_runtime_seconds": time.perf_counter() - started,
                             **{
@@ -970,6 +1031,31 @@ def run_replication(
                     config,
                     "coefficient_bound_hit",
                     str(fit.max_envelope_ratio),
+                    {"dgp_realization_hash": panel.diagnostics["dgp_realization_hash"]},
+                ),
+            ]
+        if tuple(numerical_rank(matrix) for matrix in fit.theta.matrices()) != fit.ranks:
+            return [
+                rank_row,
+                _failure_record(
+                    task,
+                    config,
+                    "full_fit_failure",
+                    "fixed-rank numerical rank was not preserved",
+                    {"dgp_realization_hash": panel.diagnostics["dgp_realization_hash"]},
+                ),
+            ]
+        if (
+            config["run"]["rank_mode"] == "fixed"
+            and not fixed_rank_verification["objective_stability_pass"]
+        ):
+            return [
+                rank_row,
+                _failure_record(
+                    task,
+                    config,
+                    "full_fit_failure",
+                    "fixed-rank best objective was not independently reproduced",
                     {"dgp_realization_hash": panel.diagnostics["dgp_realization_hash"]},
                 ),
             ]
@@ -1128,6 +1214,7 @@ def run_replication(
                 "run_id": config_hash(config),
                 "method": method_name(config["run"]["rank_mode"]),
                 "primary_status": canonical_status(status),
+                "warning_flags": json.dumps([]),
                 "semantic_replication_id": semantic_replication_id(
                     dgp, n, t, replication, true_rank
                 ),

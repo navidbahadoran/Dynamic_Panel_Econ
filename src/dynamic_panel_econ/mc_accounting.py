@@ -81,7 +81,7 @@ REPLICATION_COLUMNS = (
     "cap_pilot_rank", "candidate_coverage", "rank_selection_diagnostics",
     "estimate", "truth", "standard_error", "variance", "covered_95pct",
     "reject_zero_5pct", "extreme_estimate_flag", "replication_runtime_seconds",
-    "exception_type", "exception_message",
+    "exception_type", "exception_message", "warning_flags",
     "expected_fit_count", "nominal_delta", "realized_true_contrast",
     "null_or_alternative", "power_block",
 )
@@ -191,18 +191,33 @@ def apply_retention_flags(records: pd.DataFrame) -> pd.DataFrame:
         errors="coerce",
     )
     point = np.isfinite(estimate)
-    inference = point & np.isfinite(standard_error) & (standard_error > 0.0) & np.isfinite(variance) & (variance > 0.0)
+    finite_inference = (
+        point
+        & np.isfinite(standard_error)
+        & (standard_error > 0.0)
+        & np.isfinite(variance)
+        & (variance > 0.0)
+    )
+    status = result.get("primary_status", pd.Series("success", index=result.index)).astype(str)
+    status = status.map(canonical_status)
+    status = status.mask(~point & status.eq("success"), "nonfinite_estimate")
+    status = status.mask(point & ~np.isfinite(standard_error) & status.eq("success"), "nonfinite_standard_error")
+    status = status.mask(
+        point & np.isfinite(standard_error) & (standard_error <= 0.0) & status.eq("success"),
+        "invalid_variance",
+    )
+    status = status.mask(point & np.isfinite(standard_error) & (~np.isfinite(variance) | (variance <= 0.0)) & status.eq("success"), "invalid_variance")
+    inference = finite_inference & status.eq("success")
     result["point_estimate_valid"] = point
     result["inference_valid"] = inference
     result["retained_for_bias_rmse"] = point
     result["retained_for_coverage"] = inference
     result["retained_for_rejection"] = inference
-    status = result.get("primary_status", pd.Series("success", index=result.index)).astype(str)
-    status = status.map(canonical_status)
-    status = status.mask(~point & status.eq("success"), "nonfinite_estimate")
-    status = status.mask(point & ~np.isfinite(standard_error) & status.eq("success"), "nonfinite_standard_error")
-    status = status.mask(point & np.isfinite(standard_error) & (~np.isfinite(variance) | (variance <= 0.0)) & status.eq("success"), "invalid_variance")
     result["primary_status"] = status
+    if "warning_flags" not in result:
+        result["warning_flags"] = "[]"
+    if not result["inference_valid"].eq(result["primary_status"].eq("success")).all():
+        raise ValueError("primary-status and inference-retention invariant failed")
     result["extreme_estimate_flag"] = False
     group_columns = [column for column in ("dgp", "N", "T", "method", "target") if column in result]
     for _, indices in result.groupby(group_columns, dropna=False, sort=False).groups.items():
@@ -345,6 +360,8 @@ def reconcile_summary(summary: pd.DataFrame) -> None:
             raise ValueError("attempted replication accounting does not reconcile")
         if not 0 <= int(row["R_inference"]) <= int(row["R_point"]) <= attempted:
             raise ValueError("retention denominators do not reconcile")
+        if int(row["R_inference"]) != successes:
+            raise ValueError("successful inference count does not equal R_inference")
 
 
 def reconcile_fit_rows(fit_rows: pd.DataFrame, expected_fit_counts: pd.DataFrame) -> None:

@@ -89,6 +89,61 @@ def test_strict_cap_pilot_acceptance_requires_two_valid_outer_routes(monkeypatch
     assert caught.value.diagnostics["attempted_route_count"] == 4
     assert caught.value.diagnostics["valid_route_count"] == 1
     assert caught.value.diagnostics["objective_stability_pass"] is False
+    assert all(
+        route["route_type"] == "original"
+        for route in caught.value.diagnostics["outer_start_attempts"]
+    )
+
+
+def test_unique_best_original_route_is_accepted_only_after_two_confirmations(
+    monkeypatch,
+) -> None:
+    zero = _theta((0, 0, 0))
+    preliminary = [NuclearFit(zero, 1.0, 0.0, True, 1, [0.0], [[], [], []])]
+    objectives = iter([1.0, 2.0, 3.0, 4.0])
+
+    def unique_routes(y, design, ranks, starts, *args, **kwargs):
+        fit = _fit(ranks, next(objectives))
+        return fit, False, [], {"objective_stability_pass": True}
+
+    confirmations = [
+        {
+            "route_type": "basin_confirmation",
+            "final_objective": 1.0 + gap,
+            "valid": True,
+            "confirmation_pass": True,
+        }
+        for gap in (2e-6, 4e-6)
+    ]
+    monkeypatch.setattr(rank_module, "_fit_candidate", unique_routes)
+    monkeypatch.setattr(
+        rank_module,
+        "_confirm_best_basin",
+        lambda *args, **kwargs: ([_fit((0, 0, 0))] * 2, confirmations, True),
+    )
+    _, diagnostics = rank_module.fit_rank_adaptive_cap_pilot(
+        np.zeros((6, 6)),
+        Design([np.ones((6, 6))], [np.ones((6, 6))]),
+        (2, 2, 2),
+        preliminary,
+        0.1,
+        seed=1,
+        fit_options={"coefficient_bound": 9.0},
+        stationarity_tolerance=1e-6,
+        start_objective_stability_tol=1e-5,
+        improvement_tolerance=1e-7,
+        removal_tolerance=1e-7,
+        max_steps=0,
+    )
+    assert diagnostics["original_best_objective"] == 1.0
+    assert diagnostics["original_second_best_objective"] == 2.0
+    assert diagnostics["final_pilot_acceptance_basis"] == "confirmed_best_basin"
+    assert diagnostics["number_confirmation_matching_best"] == 2
+    assert len(diagnostics["outer_start_attempts"]) == 4
+    assert all(
+        route["route_type"] == "original"
+        for route in diagnostics["outer_start_attempts"]
+    )
 
 
 def test_preflight_controls_preserve_revision8_bound_and_tau_formula() -> None:

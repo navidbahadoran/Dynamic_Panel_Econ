@@ -683,6 +683,7 @@ def select_ranks(
                 "selected_rank": chosen.ranks,
                 "candidate_count_initial": len(ranks_set),
                 "candidate_count_final": len(completed_pool),
+                "candidate_rank_vectors": sorted(completed_pool),
                 "path_proposals": proposals,
                 "local_completion_applied": True,
                 "cap_pilot_algorithm": threshold_cap_diagnostics["algorithm"],
@@ -699,6 +700,7 @@ def select_ranks(
             penalty_results[str(multiplier)] = {
                 "selected_rank": chosen.ranks,
                 "candidate_count_final": len(completed_pool),
+                "candidate_rank_vectors": sorted(completed_pool),
                 "local_completion_applied": True,
             }
         dense_ranks: set[RankVector] = set()

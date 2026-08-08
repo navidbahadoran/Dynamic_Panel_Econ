@@ -1,0 +1,133 @@
+{
+  "config": {
+    "dgp": {
+      "auto_adjust_group_gap": false,
+      "burn_in": 50,
+      "calibration_draws": 1,
+      "delta_x": 0.5,
+      "eta_x": 0.3,
+      "group_gap_pilot_draws": 1,
+      "min_abs_postscale_group_diff_a": 0.05,
+      "mu_lambda_a_1": 0.8999999999999999,
+      "mu_lambda_a_2": 1.1,
+      "mu_lambda_b_1": 0.8,
+      "mu_lambda_b_2": 1.2,
+      "pi_h": 0.3,
+      "prespecified_gap_grid": [
+        0.2,
+        0.3,
+        0.4,
+        0.5
+      ],
+      "resolved_group_gap": 0.20000000000000007,
+      "rho_g": 0.5,
+      "rho_s": 0.5,
+      "rho_x": 0.5,
+      "sigma_lambda_a": 0.08,
+      "sigma_lambda_b": 0.25,
+      "target_r2": 0.65
+    },
+    "estimation": {
+      "coefficient_bound": 9.0,
+      "compute_dense_grid_sensitivity": true,
+      "compute_larger_cap_sensitivity": true,
+      "compute_rank_sensitivities": false,
+      "dense_nuclear_gamma": 0.8944271909999159,
+      "dykstra_max_iter": 30,
+      "dykstra_tol": 1e-07,
+      "eta_for_penalty": 4.0,
+      "ic_multiplier": 5e-05,
+      "ic_sensitivity_multipliers": [
+        0.5,
+        1.0,
+        2.0
+      ],
+      "larger_rank_caps": [
+        4,
+        4,
+        4
+      ],
+      "lstsq_rcond": 1e-10,
+      "max_sweeps": 300,
+      "nuclear_epsilon": 0.64,
+      "nuclear_gamma": 0.8,
+      "nuclear_max_iter": 40,
+      "nuclear_tol": 1e-05,
+      "objective_rtol": 1e-05,
+      "rank_adaptive_improvement_tol": 1e-07,
+      "rank_adaptive_max_steps": 12,
+      "rank_adaptive_removal_tol": 1e-07,
+      "rank_caps": [
+        3,
+        3,
+        3
+      ],
+      "simulation_interior_margin": 1.0,
+      "spatial_dimension": 1,
+      "start_objective_stability_tol": 1e-05,
+      "stationarity_tol": 0.05,
+      "threshold_multiplier": 1.0,
+      "threshold_sensitivity_multipliers": [
+        0.5,
+        1.0,
+        2.0
+      ]
+    },
+    "inference": {
+      "compute_tangent_gram": false,
+      "riesz_max_iter": 1000,
+      "riesz_target_rayleigh_floor": 1e-12,
+      "riesz_tol": 1e-08,
+      "spatial_c": 1.0,
+      "split_relative_rank_floor": 1e-10,
+      "tangent_gram_max_iter": 500,
+      "tangent_gram_min_eigenvalue_floor": 1e-10,
+      "tangent_gram_tol": 1e-05,
+      "target_support_tolerance": 1e-12,
+      "targets": []
+    },
+    "rank_stress": {
+      "component_strengths": [
+        1.0,
+        1.0
+      ],
+      "true_rank_vectors": [
+        [
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          1,
+          1
+        ],
+        [
+          1,
+          0,
+          2
+        ]
+      ]
+    },
+    "run": {
+      "blas_threads": 1,
+      "cells": [
+        [
+          20,
+          20
+        ]
+      ],
+      "chunk_size": 1,
+      "dgps": [
+        1
+      ],
+      "master_seed": 20260809,
+      "n_jobs": 1,
+      "name": "rank_stress_smoke",
+      "output_root": "results/mc",
+      "parallel_level": "none",
+      "replications": 1
+    }
+  },
+  "config_hash": "b3fc84e75cbfb718"
+}

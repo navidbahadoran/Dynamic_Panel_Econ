@@ -1,0 +1,32 @@
+{
+  "config_hash": "903b1b6b80c05efa",
+  "git_commit": "33792a1ac83b8c96a2b3a34bc104ce73ebe68c95",
+  "failure_codes": [
+    "success",
+    "calibration_failure",
+    "nonfinite_input",
+    "full_fit_not_converged",
+    "first_order_residual_high",
+    "coefficient_bound_active",
+    "rank_at_cap",
+    "rank_pilot_failure",
+    "rank_selection_failure",
+    "riesz_not_converged",
+    "riesz_nearly_singular",
+    "split_fit_not_converged",
+    "split_rank_loss",
+    "split_target_support_loss",
+    "split_gram_nearly_singular",
+    "spatial_variance_failure",
+    "nonpositive_variance",
+    "unexpected_exception"
+  ],
+  "frozen_group_means_a": [
+    0.8999999999999999,
+    1.1
+  ],
+  "requested_replications_per_cell": 2,
+  "true_rank_designs": [
+    null
+  ]
+}

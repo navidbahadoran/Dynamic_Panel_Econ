@@ -1,0 +1,21 @@
+\begingroup
+\small
+\begin{longtable}{rrlrrrrrr}
+\caption{Computation and numerical diagnostics}\label{tab:mc-computation}\\
+\toprule
+DGP & $N$ & $T$ & True rank & Rank sec. & Candidates & IC gap & Success & Requested \\
+\midrule
+\endfirsthead
+\toprule
+DGP & $N$ & $T$ & True rank & Rank sec. & Candidates & IC gap & Success & Requested \\
+\midrule
+\endhead
+\multicolumn{9}{l}{\textit{Panel A. Replication-level rank computation}} \\
+1 & 20 & 20 & [1, 0, 2] & 9.940 & 11.000 & 0.084 & 1 & 1 \\
+1 & 20 & 20 & [1, 1, 1] & 10.638 & 14.000 & 0.033 & 1 & 1 \\
+1 & 20 & 20 & [2, 1, 1] & 14.961 & 11.000 & 0.331 & 1 & 1 \\
+\addlinespace
+\bottomrule
+\multicolumn{9}{p{0.96\linewidth}}{\footnotesize \textit{Notes:} Quantities are replication-level and are not duplicated by inference target.} \\
+\end{longtable}
+\endgroup

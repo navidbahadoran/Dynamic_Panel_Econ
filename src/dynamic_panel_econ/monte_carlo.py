@@ -318,9 +318,17 @@ def _rank_record(
         record[f"ic_multiplier_{multiplier}_selected_rank"] = json.dumps(
             result["selected_rank"]
         )
+        record[f"ic_multiplier_{multiplier}_true_rank_in_candidates"] = (
+            true_rank
+            in {tuple(rank) for rank in result.get("candidate_rank_vectors", [])}
+        )
     for multiplier, result in sensitivity.get("threshold_multipliers", {}).items():
         record[f"threshold_multiplier_{multiplier}_selected_rank"] = json.dumps(
             result["selected_rank"]
+        )
+        record[f"threshold_multiplier_{multiplier}_true_rank_in_candidates"] = (
+            true_rank
+            in {tuple(rank) for rank in result.get("candidate_rank_vectors", [])}
         )
     for index, block in enumerate(("A", "B", "H")):
         record[f"{block}_underselected"] = selected[index] < true_rank[index]

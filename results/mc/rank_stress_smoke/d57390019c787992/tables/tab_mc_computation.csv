@@ -1,0 +1,4 @@
+dgp,N,T,true_rank_vector,mean_rank_runtime_seconds,mean_candidate_count,mean_ic_gap,successful_replications,requested_replications
+1,20,20,"[1, 0, 2]",9.9400089999981,11.0,0.08377450400684117,1,1
+1,20,20,"[1, 1, 1]",10.637800799995603,14.0,0.032917498026237446,1,1
+1,20,20,"[2, 1, 1]",14.9609408000033,11.0,0.3311644922566219,1,1

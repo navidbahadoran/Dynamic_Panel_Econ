@@ -1,0 +1,20 @@
+{
+  "replications": 12,
+  "cap_pilot_success_rate": 0.6666666666666666,
+  "candidate_coverage_rate": 0.6666666666666666,
+  "selected_rank_distribution": {
+    "[0, 0, 0]": 8,
+    "failure": 4
+  },
+  "runtime_seconds": {
+    "count": 12.0,
+    "mean": 102.65990481666692,
+    "std": 14.829361186420105,
+    "min": 77.53603990000556,
+    "25%": 97.2278081000004,
+    "50%": 105.16762804999598,
+    "75%": 108.61722964999717,
+    "max": 129.48000789999787
+  },
+  "truth_envelope_failure_count": 0
+}

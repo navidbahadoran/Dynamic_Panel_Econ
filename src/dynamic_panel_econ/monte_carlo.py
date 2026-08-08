@@ -176,6 +176,8 @@ def _selection_options(config: dict[str, Any]) -> dict[str, Any]:
         "rank_adaptive_improvement_tol",
         "rank_adaptive_removal_tol",
         "rank_adaptive_max_steps",
+        "rank_adaptive_max_routes",
+        "cap_pilot_start_envelope_fraction",
         "dense_nuclear_gamma",
         "threshold_sensitivity_multipliers",
         "ic_sensitivity_multipliers",
@@ -206,9 +208,15 @@ def _task_parts(task: Task) -> tuple[int, int, int, int, tuple[int, ...]]:
     return dgp, n, t, replication, tuple(stress_rank or (1, 1, 1))
 
 
-def _failure_record(task: Task, config: dict[str, Any], status: str, detail: str) -> dict[str, Any]:
+def _failure_record(
+    task: Task,
+    config: dict[str, Any],
+    status: str,
+    detail: str,
+    extra: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     dgp, n, t, replication, true_rank = _task_parts(task)
-    return {
+    record = {
         "record_type": "failure",
         "dgp": dgp,
         "N": n,
@@ -221,6 +229,9 @@ def _failure_record(task: Task, config: dict[str, Any], status: str, detail: str
         "config_hash": config_hash(config),
         "git_commit": _git_commit(),
     }
+    if extra:
+        record.update(extra)
+    return record
 
 
 def _rank_record(
@@ -229,6 +240,7 @@ def _rank_record(
     selection: Any,
     rank_runtime: float,
     status: str,
+    panel_diagnostics: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     dgp, n, t, replication, true_rank = _task_parts(task)
     diagnostics = selection.diagnostics
@@ -306,6 +318,15 @@ def _rank_record(
         ),
         "cap_pilot_best_two_objective_gap": cap_pilot["best_two_objective_gap"],
         "cap_pilot_objective_stability_pass": cap_pilot["objective_stability_pass"],
+        "cap_pilot_attempted_route_count": cap_pilot.get("attempted_route_count", 0),
+        "cap_pilot_valid_route_count": cap_pilot.get("valid_route_count", 0),
+        "cap_pilot_stable_route_count": cap_pilot.get("stable_route_count", 0),
+        "cap_pilot_stable_final_numerical_ranks_agree": cap_pilot.get(
+            "stable_final_numerical_ranks_agree", False
+        ),
+        "cap_pilot_stable_final_thresholded_ranks_agree": cap_pilot.get(
+            "stable_final_thresholded_ranks_agree", False
+        ),
         "cap_pilot_start_attempts": json.dumps(
             cap_pilot["outer_start_attempts"], sort_keys=True, default=_json_default
         ),
@@ -335,6 +356,10 @@ def _rank_record(
         record[f"{block}_overselected"] = selected[index] > true_rank[index]
         record[f"{block}_true_rank"] = true_rank[index]
         record[f"{block}_selected_rank"] = selected[index]
+    if panel_diagnostics:
+        record.update(
+            {key: value for key, value in panel_diagnostics.items() if np.isscalar(value)}
+        )
     return record
 
 
@@ -432,12 +457,51 @@ def run_replication(
                 **_selection_options(config),
             )
         except RankPilotFailure as exc:
-            return [_failure_record(task, config, "rank_pilot_failure", str(exc))]
+            pilot = exc.diagnostics
+            return [
+                _failure_record(
+                    task,
+                    config,
+                    "rank_pilot_failure",
+                    str(exc),
+                    {
+                        "cap_pilot_attempted_route_count": pilot.get(
+                            "attempted_route_count", 0
+                        ),
+                        "cap_pilot_valid_route_count": pilot.get("valid_route_count", 0),
+                        "cap_pilot_stable_route_count": pilot.get(
+                            "stable_route_count", 0
+                        ),
+                        "cap_pilot_objective_stability_pass": pilot.get(
+                            "objective_stability_pass", False
+                        ),
+                        "cap_pilot_start_attempts": json.dumps(
+                            pilot.get("outer_start_attempts", []),
+                            sort_keys=True,
+                            default=_json_default,
+                        ),
+                        "replication_runtime_seconds": time.perf_counter() - started,
+                        **{
+                            key: value
+                            for key, value in panel.diagnostics.items()
+                            if np.isscalar(value)
+                        },
+                    },
+                )
+            ]
         except RankSelectionFailure as exc:
             return [_failure_record(task, config, "rank_selection_failure", str(exc))]
         rank_runtime = time.perf_counter() - selection_started
         rank_status = "rank_at_cap" if selection.diagnostics["selected_rank_at_cap"] else "success"
-        rank_row = _rank_record(task, config, selection, rank_runtime, rank_status)
+        rank_row = _rank_record(
+            task,
+            config,
+            selection,
+            rank_runtime,
+            rank_status,
+            panel.diagnostics,
+        )
+        rank_row["replication_runtime_seconds"] = time.perf_counter() - started
         if rank_status != "success":
             return [rank_row, _failure_record(task, config, rank_status, "selected rank equals imposed cap")]
 

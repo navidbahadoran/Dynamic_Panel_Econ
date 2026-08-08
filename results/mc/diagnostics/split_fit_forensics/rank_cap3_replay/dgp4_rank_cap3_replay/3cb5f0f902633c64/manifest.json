@@ -1,0 +1,49 @@
+{
+  "config_hash": "3cb5f0f902633c64",
+  "git_commit": "8626492ebaa11513146bf2de62c13f83cd6c0dd4",
+  "cli_argv": [
+    "scripts\\run_mc.py",
+    "--config",
+    "configs\\mc\\dgp4_rank_cap3_replay.toml"
+  ],
+  "rank_mode": "selected",
+  "method": "selected_rank",
+  "failure_codes": [
+    "success",
+    "calibration_failure",
+    "nonfinite_input",
+    "full_fit_not_converged",
+    "first_order_residual_high",
+    "coefficient_bound_active",
+    "rank_at_cap",
+    "rank_pilot_failure",
+    "rank_selection_failure",
+    "target_unsupported_selected_rank",
+    "split_target_unsupported_selected_rank",
+    "tangent_gram_eigensolver_failure",
+    "tangent_gram_nearly_singular",
+    "split_tangent_gram_eigensolver_failure",
+    "split_tangent_gram_nearly_singular",
+    "riesz_not_converged",
+    "riesz_target_instability",
+    "split_fit_not_converged",
+    "split_rank_loss",
+    "split_target_support_loss",
+    "split_riesz_target_instability",
+    "spatial_variance_failure",
+    "nonpositive_variance",
+    "unexpected_exception"
+  ],
+  "frozen_group_means_a": [
+    0.8999999999999999,
+    1.1
+  ],
+  "requested_replications_per_cell": 3,
+  "true_rank_designs": [
+    null
+  ],
+  "coefficient_bound_B": 9.0,
+  "required_simulation_interior_margin": 1.0,
+  "maximum_deterministic_coefficient_envelope": 6.72532448795568,
+  "deterministic_interior_margin": 2.27467551204432
+}

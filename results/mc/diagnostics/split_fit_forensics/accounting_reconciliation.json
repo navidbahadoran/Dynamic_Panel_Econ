@@ -1,0 +1,36 @@
+{
+  "dgp4_cap3_replay": {
+    "attempted_replications": 3,
+    "diagnostic_replay": true,
+    "replication_indices": [
+      3,
+      4,
+      5
+    ]
+  },
+  "n100_fixed": {
+    "actual_split_fits": 48,
+    "attempted_replications": 12,
+    "replication_indices": [
+      6,
+      7,
+      8
+    ],
+    "semantic_id_overlap_with_n50": 0,
+    "target_records": 216
+  },
+  "n50_fit_level": {
+    "failed_bundle_fit_rows": 56,
+    "invalid_split_fits": 27
+  },
+  "n50_fixed": {
+    "attempted_replications": 12,
+    "target_records": 216,
+    "unique_semantic_replication_ids": 12
+  },
+  "n50_selected": {
+    "attempted_replications": 12,
+    "target_records": 216,
+    "unique_semantic_replication_ids": 12
+  }
+}

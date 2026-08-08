@@ -1,0 +1,25 @@
+\begingroup
+\small
+\begin{longtable}{rrrrrrrrrrrrrrrrr}
+\caption{Rank-selection performance}\label{tab:mc-rank}\\
+\toprule
+DGP & $N$ & $T$ & Candidate cover & Exact recover & A under & A over & B under & B over & H under & H over & Zero recover & Cap hit & Candidates & IC gap & Success & Requested \\
+\midrule
+\endfirsthead
+\toprule
+DGP & $N$ & $T$ & Candidate cover & Exact recover & A under & A over & B under & B over & H under & H over & Zero recover & Cap hit & Candidates & IC gap & Success & Requested \\
+\midrule
+\endhead
+\multicolumn{17}{l}{\textit{Panel A. True rank vector [1, 0, 2]}} \\
+1 & 20 & 20 & 0.000 & 0.000 & 1.000 & 0.000 & 0.000 & 0.000 & 1.000 & 0.000 & 1.000 & 0.000 & 11.000 & 0.084 & 1 & 1 \\
+\addlinespace
+\multicolumn{17}{l}{\textit{Panel B. True rank vector [1, 1, 1]}} \\
+1 & 20 & 20 & 1.000 & 0.000 & 0.000 & 0.000 & 1.000 & 0.000 & 1.000 & 0.000 & 1.000 & 0.000 & 14.000 & 0.033 & 1 & 1 \\
+\addlinespace
+\multicolumn{17}{l}{\textit{Panel C. True rank vector [2, 1, 1]}} \\
+1 & 20 & 20 & 0.000 & 0.000 & 1.000 & 0.000 & 1.000 & 0.000 & 1.000 & 0.000 & 1.000 & 0.000 & 11.000 & 0.331 & 1 & 1 \\
+\addlinespace
+\bottomrule
+\multicolumn{17}{p{0.96\linewidth}}{\footnotesize \textit{Notes:} Rows are unique by DGP, panel cell, and true-rank design; no inference-target duplication is present.} \\
+\end{longtable}
+\endgroup

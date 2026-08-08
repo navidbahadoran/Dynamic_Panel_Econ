@@ -1,0 +1,3 @@
+dgp,N,T,true_rank_vector,candidate_coverage,exact_rank_recovery,A_underselection,A_overselection,B_underselection,B_overselection,H_underselection,H_overselection,zero_rank_recovery,cap_hit_rate,mean_candidate_count,mean_ic_gap,mean_rank_runtime_seconds,successful_replications,requested_replications,rank_records
+1,20,20,"[1, 1, 1]",1.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,1.0,0.0,14.0,0.0554768152152012,13.07658769999398,1,1,1
+1,20,20,"[2, 1, 1]",0.0,0.0,1.0,0.0,0.0,0.0,1.0,0.0,1.0,0.0,12.0,0.07905350353206375,15.58217429999786,1,1,1

@@ -1,0 +1,13 @@
+N,T,quantity,truth_field,true
+20,20,$A$: group 1 mean,A_G1_fixed_time_true,0.4314473812800014
+20,20,$A$: group 2 mean,A_G2_fixed_time_true,0.5156860180160718
+20,20,$A$: group 2 minus group 1,A_G2_minus_G1_fixed_time_true,0.08423863673607046
+20,20,$A$: group 1 mean,A_G1_time_average_true,0.4513341022650876
+20,20,$A$: group 2 mean,A_G2_time_average_true,0.5394555537721373
+20,20,$A$: group 2 minus group 1,A_G2_minus_G1_time_average_true,0.0881214515070497
+20,20,$B$: group 1 mean,B_G1_fixed_time_true,0.4425134306345814
+20,20,$B$: group 2 mean,B_G2_fixed_time_true,0.8018372227398816
+20,20,$B$: group 2 minus group 1,B_G2_minus_G1_fixed_time_true,0.3593237921053002
+20,20,$B$: group 1 mean,B_G1_time_average_true,0.3407090061285142
+20,20,$B$: group 2 mean,B_G2_time_average_true,0.6173669414842022
+20,20,$B$: group 2 minus group 1,B_G2_minus_G1_time_average_true,0.27665793535568806

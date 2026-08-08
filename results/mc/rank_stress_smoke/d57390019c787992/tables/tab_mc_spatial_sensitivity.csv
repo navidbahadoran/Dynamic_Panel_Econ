@@ -1,0 +1,1 @@
+dgp,N,T,target,true_rank_vector,mean_truth,mean_estimate,bias,rmse,mc_sd,mean_estimated_se,se_to_mc_sd,size_5pct,coverage_95pct,power_against_zero,successful_replications,requested_replications,plugin_bias,corrected_bias,plugin_rmse,corrected_rmse,corrected_mean_se,mean_rank_runtime_seconds,mean_inference_runtime_seconds,mean_replication_runtime_seconds,spatial_c

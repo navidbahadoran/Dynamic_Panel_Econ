@@ -1,0 +1,39 @@
+[run]
+name = "riesz_diagnostic"
+master_seed = 20260807
+dgps = [1, 2, 3, 4]
+cells = [[50, 50], [100, 100]]
+replications = 100
+chunk_size = 5
+parallel_level = "replications"
+n_jobs = 8
+blas_threads = 1
+output_root = "results/mc"
+
+[dgp]
+# Common inference target selected after the deterministic R2-feasibility exercise.
+target_r2 = 0.65
+calibration_draws = 50
+mu_lambda_a_1 = 0.9
+mu_lambda_a_2 = 1.1
+auto_adjust_group_gap = false
+
+[estimation]
+rank_caps = [3, 3, 3]
+coefficient_bound = 9.0
+simulation_interior_margin = 1.0
+larger_rank_caps = [4, 4, 4]
+eta_for_penalty = 4.0
+spatial_dimension = 1
+compute_rank_sensitivities = false
+
+[inference]
+compute_tangent_gram = true
+targets = [
+  "A_entry", "B_entry", "A_fixed_time_mean", "B_fixed_time_mean",
+  "A_full_mean", "B_full_mean", "A_G1_fixed_time", "A_G2_fixed_time",
+  "A_G2_minus_G1_fixed_time", "A_G1_time_average", "A_G2_time_average",
+  "A_G2_minus_G1_time_average", "B_G1_fixed_time", "B_G2_fixed_time",
+  "B_G2_minus_G1_fixed_time", "B_G1_time_average", "B_G2_time_average",
+  "B_G2_minus_G1_time_average",
+]

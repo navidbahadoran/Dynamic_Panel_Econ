@@ -18,6 +18,7 @@ DEFAULTS: dict[str, Any] = {
         "dgps": [1, 2, 3, 4],
         "cells": [[50, 50]],
         "replications": 1000,
+        "replication_start": 0,
         "chunk_size": 20,
         "parallel_level": "replications",
         "n_jobs": 1,
@@ -135,6 +136,8 @@ def validate_config(config: dict[str, Any]) -> None:
         raise ValueError("experiment must be baseline or power")
     if int(run["replications"]) < 1 or int(run["chunk_size"]) < 1:
         raise ValueError("replications and chunk_size must be positive")
+    if int(run["replication_start"]) < 0:
+        raise ValueError("replication_start must be nonnegative")
     for n, t in run["cells"]:
         if int(n) < 2 or int(t) < 2:
             raise ValueError("panel dimensions must be at least two")

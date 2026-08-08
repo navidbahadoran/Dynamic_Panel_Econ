@@ -1,0 +1,53 @@
+[run]
+name = "fixed"
+rank_mode = "fixed"
+master_seed = 20260810
+dgps = [1, 2, 3, 4]
+cells = [[50, 50]]
+replication_start = 3
+replications = 3
+chunk_size = 3
+parallel_level = "replications"
+n_jobs = 4
+blas_threads = 1
+output_root = "results/mc/preflight_independent_final"
+
+[dgp]
+target_r2 = 0.65
+calibration_draws = 50
+group_gap_pilot_draws = 500
+auto_adjust_group_gap = false
+min_abs_postscale_group_diff_a = 0.05
+prespecified_gap_grid = [0.2, 0.3, 0.4, 0.5, 0.6]
+
+[estimation]
+fixed_ranks = [1, 1, 1]
+rank_caps = [2, 2, 2]
+coefficient_bound = 9.0
+simulation_interior_margin = 1.0
+nuclear_gamma = 0.8
+nuclear_epsilon = 0.01
+eta_for_penalty = 4.0
+spatial_dimension = 1
+max_sweeps = 300
+objective_rtol = 1e-5
+stationarity_tol = 1e-4
+start_objective_stability_tol = 1e-5
+ic_multiplier = 0.000004
+threshold_multiplier = 1.0
+rank_adaptive_max_routes = 6
+cap_pilot_start_envelope_fraction = 0.8
+compute_rank_sensitivities = false
+compute_dense_grid_sensitivity = false
+compute_larger_cap_sensitivity = false
+
+[inference]
+compute_tangent_gram = true
+targets = [
+  "A_entry", "B_entry", "A_fixed_time_mean", "B_fixed_time_mean",
+  "A_full_mean", "B_full_mean", "A_G1_fixed_time", "A_G2_fixed_time",
+  "A_G2_minus_G1_fixed_time", "A_G1_time_average", "A_G2_time_average",
+  "A_G2_minus_G1_time_average", "B_G1_fixed_time", "B_G2_fixed_time",
+  "B_G2_minus_G1_fixed_time", "B_G1_time_average", "B_G2_time_average",
+  "B_G2_minus_G1_time_average",
+]

@@ -84,6 +84,16 @@ FAILURE_CODES = (
 Task = tuple[int, int, int, int, tuple[int, ...] | None]
 
 
+def _replication_chunks(run: dict[str, Any]) -> list[tuple[int, int]]:
+    start = int(run.get("replication_start", 0))
+    stop = start + int(run["replications"])
+    chunk_size = int(run["chunk_size"])
+    return [
+        (begin, min(stop, begin + chunk_size))
+        for begin in range(start, stop, chunk_size)
+    ]
+
+
 def _json_default(value: Any) -> Any:
     if isinstance(value, np.generic):
         return value.item()
@@ -1706,7 +1716,6 @@ def run_monte_carlo(
     pd.DataFrame(calibration_rows).to_parquet(root / "calibration.parquet", index=False)
 
     replications = int(resolved["run"]["replications"])
-    chunk_size = int(resolved["run"]["chunk_size"])
     # A command-line worker override is an execution detail, not part of the
     # resolved statistical design or its content-addressed run identity.
     jobs = int(resolved["run"]["n_jobs"] if n_jobs is None else n_jobs)
@@ -1720,8 +1729,7 @@ def run_monte_carlo(
                     if calibration_key in calibrations
                     else None
                 )
-                for begin in range(0, replications, chunk_size):
-                    end = min(replications, begin + chunk_size)
+                for begin, end in _replication_chunks(resolved["run"]):
                     stem = f"dgp{dgp}_N{n}_T{t}{rank_suffix}_r{begin:05d}-{end - 1:05d}.parquet"
                     target_destination = root / "raw" / stem
                     rank_destination = root / "rank" / stem

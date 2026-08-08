@@ -1,0 +1,20 @@
+{
+  "fixed_rank": {
+    "R_attempted": 216,
+    "R_point": 198,
+    "R_inference": 134,
+    "primary_success": 134,
+    "primary_failures": 82,
+    "semantic_id_overlap_with_prior_preflight": 0
+  },
+  "selected_rank": {
+    "R_attempted": 216,
+    "R_point": 162,
+    "R_inference": 114,
+    "primary_success": 114,
+    "primary_failures": 102,
+    "semantic_id_overlap_with_prior_preflight": 0
+  },
+  "matched_draws": 12,
+  "all_dgp_hashes_match": true
+}

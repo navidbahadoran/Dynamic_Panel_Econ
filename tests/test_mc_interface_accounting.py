@@ -26,6 +26,7 @@ from dynamic_panel_econ.method_reporting import _write_exclusive
 from dynamic_panel_econ.monte_carlo import (
     _calibration_failure_task_rows,
     _dgp_realization_hash,
+    _replication_chunks,
     _worker,
     run_replication,
 )
@@ -124,6 +125,11 @@ def test_dgp_realization_hash_includes_calibration() -> None:
     baseline = _dgp_realization_hash(panel, {"c_h": 1.0, "c_xi": 1.0})
     changed = _dgp_realization_hash(panel, {"c_h": 1.0, "c_xi": 2.0})
     assert baseline != changed
+
+
+def test_independent_preflight_replication_indices_are_new_and_chunked() -> None:
+    run = {"replication_start": 3, "replications": 3, "chunk_size": 2}
+    assert _replication_chunks(run) == [(3, 5), (5, 6)]
 
 
 def test_failed_attempt_remains_in_worker_records(monkeypatch) -> None:

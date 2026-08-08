@@ -1,0 +1,13 @@
+semantic_replication_id,dgp,replication,primary_status,replication_runtime_seconds
+dgp1_N50_T50_r00003_truth1-1-1,1,3,success,1.6109239000070374
+dgp1_N50_T50_r00004_truth1-1-1,1,4,success,1.7629023999907076
+dgp1_N50_T50_r00005_truth1-1-1,1,5,success,1.7272669000085443
+dgp2_N50_T50_r00003_truth1-1-1,2,3,success,1.8649264999839943
+dgp2_N50_T50_r00004_truth1-1-1,2,4,success,1.895178400009172
+dgp2_N50_T50_r00005_truth1-1-1,2,5,success,1.7642563999979757
+dgp3_N50_T50_r00003_truth1-1-1,3,3,success,2.1469885999977123
+dgp3_N50_T50_r00004_truth1-1-1,3,4,success,1.912419400003273
+dgp3_N50_T50_r00005_truth1-1-1,3,5,success,2.636613500013482
+dgp4_N50_T50_r00003_truth1-1-1,4,3,success,1.9656743999803439
+dgp4_N50_T50_r00004_truth1-1-1,4,4,coefficient_bound_hit,0.15579290001187474
+dgp4_N50_T50_r00005_truth1-1-1,4,5,success,1.9369278000085615

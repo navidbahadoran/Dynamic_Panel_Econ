@@ -61,67 +61,8 @@ def test_cap_start_rescaling_is_one_common_factor_without_clipping() -> None:
         assert np.linalg.matrix_rank(after) == np.linalg.matrix_rank(before)
 
 
-def test_strict_cap_pilot_acceptance_requires_two_valid_outer_routes(monkeypatch) -> None:
-    zero = _theta((0, 0, 0))
-    preliminary = [NuclearFit(zero, 1.0, 0.0, True, 1, [0.0], [[], [], []])]
-
-    def one_valid(y, design, ranks, starts, *args, **kwargs):
-        fit = _fit(ranks)
-        reasons = [] if ranks == (0, 0, 0) else ["stationarity_high"]
-        return fit, False, reasons, {"objective_stability_pass": not reasons}
-
-    monkeypatch.setattr(rank_module, "_fit_candidate", one_valid)
-    with pytest.raises(rank_module.RankPilotFailure) as caught:
-        rank_module.fit_rank_adaptive_cap_pilot(
-            np.zeros((6, 6)),
-            Design([np.ones((6, 6))], [np.ones((6, 6))]),
-            (2, 2, 2),
-            preliminary,
-            0.1,
-            seed=1,
-            fit_options={"coefficient_bound": 9.0},
-            stationarity_tolerance=1e-6,
-            start_objective_stability_tol=1e-6,
-            improvement_tolerance=1e-7,
-            removal_tolerance=1e-7,
-            max_steps=0,
-        )
-    assert caught.value.diagnostics["attempted_route_count"] == 4
-    assert caught.value.diagnostics["valid_route_count"] == 1
-    assert caught.value.diagnostics["objective_stability_pass"] is False
-    assert all(
-        route["route_type"] == "original"
-        for route in caught.value.diagnostics["outer_start_attempts"]
-    )
-
-
-def test_unique_best_original_route_is_accepted_only_after_two_confirmations(
-    monkeypatch,
-) -> None:
-    zero = _theta((0, 0, 0))
-    preliminary = [NuclearFit(zero, 1.0, 0.0, True, 1, [0.0], [[], [], []])]
-    objectives = iter([1.0, 2.0, 3.0, 4.0])
-
-    def unique_routes(y, design, ranks, starts, *args, **kwargs):
-        fit = _fit(ranks, next(objectives))
-        return fit, False, [], {"objective_stability_pass": True}
-
-    confirmations = [
-        {
-            "route_type": "basin_confirmation",
-            "final_objective": 1.0 + gap,
-            "valid": True,
-            "confirmation_pass": True,
-        }
-        for gap in (2e-6, 4e-6)
-    ]
-    monkeypatch.setattr(rank_module, "_fit_candidate", unique_routes)
-    monkeypatch.setattr(
-        rank_module,
-        "_confirm_best_basin",
-        lambda *args, **kwargs: ([_fit((0, 0, 0))] * 2, confirmations, True),
-    )
-    _, diagnostics = rank_module.fit_rank_adaptive_cap_pilot(
+def _pilot(preliminary):
+    return rank_module.fit_rank_adaptive_cap_pilot(
         np.zeros((6, 6)),
         Design([np.ones((6, 6))], [np.ones((6, 6))]),
         (2, 2, 2),
@@ -135,15 +76,123 @@ def test_unique_best_original_route_is_accepted_only_after_two_confirmations(
         removal_tolerance=1e-7,
         max_steps=0,
     )
+
+
+def test_cap_pilot_fails_when_no_route_is_valid(monkeypatch) -> None:
+    zero = _theta((0, 0, 0))
+    preliminary = [NuclearFit(zero, 1.0, 0.0, True, 1, [0.0], [[], [], []])]
+
+    def all_invalid(y, design, ranks, starts, *args, **kwargs):
+        fit = _fit(ranks)
+        return fit, False, ["stationarity_high"], {"objective_stability_pass": False}
+
+    monkeypatch.setattr(rank_module, "_fit_candidate", all_invalid)
+    with pytest.raises(rank_module.RankPilotFailure) as caught:
+        _pilot(preliminary)
+    assert caught.value.diagnostics["attempted_route_count"] == 4
+    assert caught.value.diagnostics["valid_route_count"] == 0
+    assert caught.value.diagnostics["objective_stability_pass"] is False
+
+
+def test_one_valid_route_is_accepted_with_disagreement_warning(monkeypatch) -> None:
+    zero = _theta((0, 0, 0))
+    preliminary = [NuclearFit(zero, 1.0, 0.0, True, 1, [0.0], [[], [], []])]
+
+    def one_valid(y, design, ranks, starts, *args, **kwargs):
+        fit = _fit(ranks)
+        reasons = [] if ranks == (0, 0, 0) else ["stationarity_high"]
+        return fit, False, reasons, {"objective_stability_pass": not reasons}
+
+    monkeypatch.setattr(rank_module, "_fit_candidate", one_valid)
+    monkeypatch.setattr(
+        rank_module, "_confirm_best_basin", lambda *args, **kwargs: ([], [], False)
+    )
+    fit, diagnostics = _pilot(preliminary)
+    assert fit.ranks == (0, 0, 0)
+    assert diagnostics["valid_route_count"] == 1
+    assert diagnostics["pilot_multistart_disagreement"]
+    assert not diagnostics["multistart_objective_agreement"]
+    assert all(
+        route["route_type"] == "original"
+        for route in diagnostics["outer_start_attempts"]
+    )
+
+
+def test_unique_lower_valid_objective_is_selected_despite_disagreement(
+    monkeypatch,
+) -> None:
+    zero = _theta((0, 0, 0))
+    preliminary = [NuclearFit(zero, 1.0, 0.0, True, 1, [0.0], [[], [], []])]
+    objectives = iter([1.0, 2.0, 3.0, 4.0])
+
+    def unique_routes(y, design, ranks, starts, *args, **kwargs):
+        fit = _fit(ranks, next(objectives))
+        return fit, False, [], {"objective_stability_pass": True}
+
+    monkeypatch.setattr(rank_module, "_fit_candidate", unique_routes)
+    monkeypatch.setattr(
+        rank_module,
+        "_confirm_best_basin",
+        lambda *args, **kwargs: ([], [], False),
+    )
+    fit, diagnostics = _pilot(preliminary)
+    assert fit.objective == 1.0
     assert diagnostics["original_best_objective"] == 1.0
     assert diagnostics["original_second_best_objective"] == 2.0
-    assert diagnostics["final_pilot_acceptance_basis"] == "confirmed_best_basin"
-    assert diagnostics["number_confirmation_matching_best"] == 2
+    assert diagnostics["pilot_multistart_disagreement"]
+    assert diagnostics["final_pilot_acceptance_basis"] == (
+        "best_valid_route_disagreement_warning"
+    )
     assert len(diagnostics["outer_start_attempts"]) == 4
     assert all(
         route["route_type"] == "original"
         for route in diagnostics["outer_start_attempts"]
     )
+
+
+def test_two_agreeing_valid_routes_set_agreement_diagnostic(monkeypatch) -> None:
+    zero = _theta((0, 0, 0))
+    preliminary = [NuclearFit(zero, 1.0, 0.0, True, 1, [0.0], [[], [], []])]
+    objectives = iter([1.0, 1.0 + 5e-6, 2.0, 3.0])
+
+    monkeypatch.setattr(
+        rank_module,
+        "_fit_candidate",
+        lambda y, design, ranks, starts, *args, **kwargs: (
+            _fit(ranks, next(objectives)),
+            False,
+            [],
+            {"objective_stability_pass": True},
+        ),
+    )
+    _, diagnostics = _pilot(preliminary)
+    assert diagnostics["multistart_objective_agreement"]
+    assert not diagnostics["pilot_multistart_disagreement"]
+    assert diagnostics["normalized_objective_gap"] == pytest.approx(5e-6)
+
+
+def test_invalid_lowest_objective_is_excluded(monkeypatch) -> None:
+    zero = _theta((0, 0, 0))
+    preliminary = [NuclearFit(zero, 1.0, 0.0, True, 1, [0.0], [[], [], []])]
+    objectives = iter([0.5, 1.0, 2.0, 3.0])
+    calls = 0
+
+    def route_fit(y, design, ranks, starts, *args, **kwargs):
+        nonlocal calls
+        objective = next(objectives)
+        calls += 1
+        reasons = ["coefficient_bound_active"] if calls == 1 else []
+        return _fit(ranks, objective), False, reasons, {
+            "objective_stability_pass": not reasons
+        }
+
+    monkeypatch.setattr(rank_module, "_fit_candidate", route_fit)
+    monkeypatch.setattr(
+        rank_module, "_confirm_best_basin", lambda *args, **kwargs: ([], [], False)
+    )
+    fit, diagnostics = _pilot(preliminary)
+    assert fit.objective == 1.0
+    assert diagnostics["best_valid_objective"] == 1.0
 
 
 def test_preflight_controls_preserve_revision8_bound_and_tau_formula() -> None:

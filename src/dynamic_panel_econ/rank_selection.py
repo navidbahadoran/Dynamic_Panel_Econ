@@ -1107,7 +1107,11 @@ def fit_rank_adaptive_cap_pilot(
     confirmation_fits: list[FitResult] = []
     confirmation_records: list[dict[str, Any]] = []
     confirmation_pass = False
-    acceptance_basis = "original_route_stability" if original_stable else "failure"
+    acceptance_basis = (
+        "best_valid_route_agreement"
+        if original_stable
+        else "best_valid_route_disagreement_warning"
+    )
     if ordered and not original_stable:
         confirmation_fits, confirmation_records, confirmation_pass = _confirm_best_basin(
             y,
@@ -1121,12 +1125,13 @@ def fit_rank_adaptive_cap_pilot(
             start_envelope_fraction=start_envelope_fraction,
             diagnostic_context="cap_pilot_best_basin",
         )
-        if confirmation_pass:
-            acceptance_basis = "confirmed_best_basin"
     confirmation_valid = [record for record in confirmation_records if record["valid"]]
     confirmation_matching = [
         record for record in confirmation_records if record["confirmation_pass"]
     ]
+    multistart_agreement = original_stable or confirmation_pass
+    if confirmation_pass and not original_stable:
+        acceptance_basis = "best_valid_route_confirmed_agreement"
     common_diagnostics = {
         "attempted_route_count": len(routes),
         "valid_route_count": len(ordered),
@@ -1141,7 +1146,14 @@ def fit_rank_adaptive_cap_pilot(
             else 0
         ),
         "best_two_objective_gap": outer_gap,
-        "objective_stability_pass": original_stable or confirmation_pass,
+        "objective_stability_pass": multistart_agreement,
+        "best_valid_objective": best_objective,
+        "second_best_valid_objective": second_objective,
+        "normalized_objective_gap": outer_gap,
+        "multistart_objective_agreement": multistart_agreement,
+        "pilot_multistart_disagreement": not multistart_agreement,
+        "basin_confirmation_attempted": bool(ordered and not original_stable),
+        "basin_confirmation_success": confirmation_pass,
         "outer_start_attempts": route_attempts,
         "basin_confirmation_attempts": confirmation_records,
         "original_best_objective": best_objective,
@@ -1155,13 +1167,11 @@ def fit_rank_adaptive_cap_pilot(
         "number_confirmation_matching_best": len(confirmation_matching),
         "final_pilot_acceptance_basis": acceptance_basis,
     }
-    if not ordered or not (original_stable or confirmation_pass):
-        reason = (
-            "rank-adaptive cap pilot has no valid outer route"
-            if not ordered
-            else "rank-adaptive cap pilot best basin was not independently reproduced"
+    if not ordered:
+        common_diagnostics["final_pilot_acceptance_basis"] = "failure"
+        raise RankPilotFailure(
+            "rank-adaptive cap pilot has no valid outer route", common_diagnostics
         )
-        raise RankPilotFailure(reason, common_diagnostics)
     chosen = ordered[0][0]
     stable_routes = [
         item
@@ -1190,7 +1200,14 @@ def fit_rank_adaptive_cap_pilot(
         "outer_start_attempts": route_attempts,
         "basin_confirmation_attempts": confirmation_records,
         "best_two_objective_gap": outer_gap,
-        "objective_stability_pass": True,
+        "objective_stability_pass": multistart_agreement,
+        "best_valid_objective": best_objective,
+        "second_best_valid_objective": second_objective,
+        "normalized_objective_gap": outer_gap,
+        "multistart_objective_agreement": multistart_agreement,
+        "pilot_multistart_disagreement": not multistart_agreement,
+        "basin_confirmation_attempted": not original_stable,
+        "basin_confirmation_success": confirmation_pass,
         "original_best_objective": best_objective,
         "original_second_best_objective": second_objective,
         "original_stability_gap": outer_gap,

@@ -13,6 +13,7 @@ import pandas as pd
 
 from dynamic_panel_econ.dgp import generate_panel
 from dynamic_panel_econ.estimation import nuclear_path
+from dynamic_panel_econ.lowrank import threshold_rank
 from dynamic_panel_econ.mc_accounting import apply_retention_flags
 from dynamic_panel_econ.monte_carlo import _params, run_replication
 from dynamic_panel_econ.rank_selection import RankPilotFailure, fit_rank_adaptive_cap_pilot
@@ -118,7 +119,7 @@ def _cap_replay(dgp: int, replication: int) -> dict[str, Any]:
     caps = tuple(int(value) for value in estimation["rank_caps"])
     threshold = float(estimation["threshold_multiplier"]) * 50.0 / np.log(2500.0)
     try:
-        _, diagnostics = fit_rank_adaptive_cap_pilot(
+        cap_fit, diagnostics = fit_rank_adaptive_cap_pilot(
             panel.y,
             panel.design,
             caps,
@@ -147,9 +148,14 @@ def _cap_replay(dgp: int, replication: int) -> dict[str, Any]:
             ),
         )
         status = "success"
+        thresholded_rank = tuple(
+            threshold_rank(matrix, threshold, cap)
+            for matrix, cap in zip(cap_fit.theta.matrices(), caps, strict=True)
+        )
     except RankPilotFailure as exc:
         diagnostics = exc.diagnostics
         status = "rank_pilot_failure"
+        thresholded_rank = None
     return {
         "record_type": "rank" if status == "success" else "failure",
         "primary_status": status,
@@ -179,13 +185,28 @@ def _cap_replay(dgp: int, replication: int) -> dict[str, Any]:
         "cap_pilot_final_acceptance_basis": diagnostics.get(
             "final_pilot_acceptance_basis", "failure"
         ),
+        "cap_pilot_thresholded_rank": thresholded_rank,
+        "pilot_multistart_disagreement": diagnostics.get(
+            "pilot_multistart_disagreement", False
+        ),
+        "cap_pilot_multistart_objective_agreement": diagnostics.get(
+            "multistart_objective_agreement", False
+        ),
+        "cap_pilot_basin_confirmation_attempted": diagnostics.get(
+            "basin_confirmation_attempted", False
+        ),
+        "cap_pilot_basin_confirmation_success": diagnostics.get(
+            "basin_confirmation_success", False
+        ),
     }
 
 
-def _cap_tables() -> tuple[pd.DataFrame, pd.DataFrame]:
+def _cap_tables(
+    replays: tuple[tuple[int, int], ...] = CAP_REPLAYS,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     route_rows: list[dict[str, Any]] = []
     summaries: list[dict[str, Any]] = []
-    for dgp, replication in CAP_REPLAYS:
+    for dgp, replication in replays:
         semantic_id = f"dgp{dgp}_N50_T50_r{replication:05d}_truth1-1-1"
         evidence = _cap_replay(dgp, replication)
         originals = _json(evidence.get("cap_pilot_start_attempts"), [])
@@ -242,6 +263,21 @@ def _cap_tables() -> tuple[pd.DataFrame, pd.DataFrame]:
                 "final_pilot_acceptance_basis": acceptance,
                 "pilot_now_passes": evidence["primary_status"] != "rank_pilot_failure",
                 "replay_primary_status": evidence["primary_status"],
+                "thresholded_pilot_rank": json.dumps(
+                    evidence.get("cap_pilot_thresholded_rank")
+                ),
+                "pilot_multistart_disagreement": evidence.get(
+                    "pilot_multistart_disagreement", False
+                ),
+                "multistart_objective_agreement": evidence.get(
+                    "cap_pilot_multistart_objective_agreement", False
+                ),
+                "basin_confirmation_attempted": evidence.get(
+                    "cap_pilot_basin_confirmation_attempted", False
+                ),
+                "basin_confirmation_success": evidence.get(
+                    "cap_pilot_basin_confirmation_success", False
+                ),
             }
         )
     return pd.DataFrame(route_rows), pd.DataFrame(summaries)
@@ -336,8 +372,14 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=OUTPUT)
     parser.add_argument("--report-only", action="store_true")
     parser.add_argument("--fixed-only", action="store_true")
+    parser.add_argument("--policy-only", action="store_true")
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
+    if args.policy_only:
+        routes, summary = _cap_tables(CAP_REPLAYS[:2])
+        routes.to_csv(args.output / "cap_pilot_policy_replay.csv", index=False)
+        summary.to_csv(args.output / "cap_pilot_policy_summary.csv", index=False)
+        return
     if args.fixed_only:
         cap_summary = pd.read_csv(args.output / "cap_pilot_confirmation_summary.csv")
         fixed, fixed_summary = _fixed_table()

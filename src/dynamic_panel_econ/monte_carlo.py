@@ -370,6 +370,25 @@ def _rank_record(
         ),
         "cap_pilot_best_two_objective_gap": cap_pilot["best_two_objective_gap"],
         "cap_pilot_objective_stability_pass": cap_pilot["objective_stability_pass"],
+        "cap_pilot_best_valid_objective": cap_pilot.get("best_valid_objective"),
+        "cap_pilot_second_best_valid_objective": cap_pilot.get(
+            "second_best_valid_objective"
+        ),
+        "cap_pilot_normalized_objective_gap": cap_pilot.get(
+            "normalized_objective_gap"
+        ),
+        "cap_pilot_multistart_objective_agreement": cap_pilot.get(
+            "multistart_objective_agreement", False
+        ),
+        "pilot_multistart_disagreement": cap_pilot.get(
+            "pilot_multistart_disagreement", False
+        ),
+        "cap_pilot_basin_confirmation_attempted": cap_pilot.get(
+            "basin_confirmation_attempted", False
+        ),
+        "cap_pilot_basin_confirmation_success": cap_pilot.get(
+            "basin_confirmation_success", False
+        ),
         "cap_pilot_attempted_route_count": cap_pilot.get("attempted_route_count", 0),
         "cap_pilot_valid_route_count": cap_pilot.get("valid_route_count", 0),
         "cap_pilot_stable_route_count": cap_pilot.get("stable_route_count", 0),
@@ -919,6 +938,18 @@ def run_replication(
                             ),
                             "cap_pilot_objective_stability_pass": pilot.get(
                                 "objective_stability_pass", False
+                            ),
+                            "cap_pilot_multistart_objective_agreement": pilot.get(
+                                "multistart_objective_agreement", False
+                            ),
+                            "pilot_multistart_disagreement": pilot.get(
+                                "pilot_multistart_disagreement", False
+                            ),
+                            "cap_pilot_basin_confirmation_attempted": pilot.get(
+                                "basin_confirmation_attempted", False
+                            ),
+                            "cap_pilot_basin_confirmation_success": pilot.get(
+                                "basin_confirmation_success", False
                             ),
                             "cap_pilot_start_attempts": json.dumps(
                                 pilot.get("outer_start_attempts", []),

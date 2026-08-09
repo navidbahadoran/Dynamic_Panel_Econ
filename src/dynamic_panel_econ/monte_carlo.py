@@ -715,6 +715,17 @@ def _fit_diagnostic_record(
     }
 
 
+def _selected_context_fit_type(fit_type: str, diagnostic_context: str) -> str:
+    """Classify generic selected fits without overwriting structural split labels."""
+    if fit_type != "coefficient_fit":
+        return fit_type
+    if diagnostic_context.startswith("cap_pilot"):
+        return "rank_cap_pilot"
+    if diagnostic_context.startswith("post_refit"):
+        return "candidate_post_refit"
+    return fit_type
+
+
 def _nuclear_fit_diagnostic_record(
     task: Task, config: dict[str, Any], fit: Any, path_index: int
 ) -> dict[str, Any]:
@@ -1619,10 +1630,7 @@ def _worker(payload: tuple[Task, dict[str, Any], dict[str, Any]]) -> list[dict[s
             )
         context = str(exact.get("diagnostic_context") or "")
         if config["run"]["rank_mode"] == "selected":
-            if context.startswith("cap_pilot"):
-                exact["fit_type"] = "rank_cap_pilot"
-            elif context.startswith("post_refit"):
-                exact["fit_type"] = "candidate_post_refit"
+            exact["fit_type"] = _selected_context_fit_type(exact["fit_type"], context)
         matching = next(
             (
                 row

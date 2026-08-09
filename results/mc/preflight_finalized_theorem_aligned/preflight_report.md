@@ -78,11 +78,11 @@ The Parquet replication records are lossless. Their CSV companions omit only the
 | 2 | 50 | fixed_rank | full_panel | 9 | 0.3333 | 0.3333 | 0.3333 | 0.0000 | 0.0000 | 0.0000 |
 | 2 | 50 | fixed_rank | time_half_split | 6 | 0.1667 | 0.1667 | 0.1667 | 0.0000 | 0.0000 | 0.0000 |
 | 2 | 50 | fixed_rank | unit_half_split | 6 | 0.1667 | 0.1667 | 0.1667 | 0.0000 | 0.0000 | 0.0000 |
-| 2 | 50 | selected_rank | candidate_post_refit | 133 | 0.4286 | 0.4286 | 0.3759 | 0.0000 | 0.0000 | 0.0000 |
+| 2 | 50 | selected_rank | candidate_post_refit | 129 | 0.4109 | 0.4109 | 0.3566 | 0.0000 | 0.0000 | 0.0000 |
 | 2 | 50 | selected_rank | cap_pilot | 329 | 0.4255 | 0.4255 | 0.3830 | 0.0000 | 0.0000 | 0.0030 |
 | 2 | 50 | selected_rank | full_panel | 3 | 0.3333 | 0.3333 | 0.3333 | 0.0000 | 0.0000 | 0.0000 |
-| 2 | 50 | selected_rank | time_half_split | 4 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
-| 2 | 50 | selected_rank | unit_half_split | 4 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+| 2 | 50 | selected_rank | time_half_split | 6 | 0.3333 | 0.3333 | 0.3333 | 0.0000 | 0.0000 | 0.0000 |
+| 2 | 50 | selected_rank | unit_half_split | 6 | 0.3333 | 0.3333 | 0.3333 | 0.0000 | 0.0000 | 0.0000 |
 | 2 | 100 | fixed_rank | full_panel | 9 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
 | 2 | 100 | fixed_rank | time_half_split | 6 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
 | 2 | 100 | fixed_rank | unit_half_split | 6 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
@@ -94,11 +94,11 @@ The Parquet replication records are lossless. Their CSV companions omit only the
 | 3 | 50 | fixed_rank | full_panel | 9 | 0.3333 | 0.3333 | 0.3333 | 0.0000 | 0.0000 | 0.0000 |
 | 3 | 50 | fixed_rank | time_half_split | 6 | 0.1667 | 0.1667 | 0.1667 | 0.0000 | 0.0000 | 0.0000 |
 | 3 | 50 | fixed_rank | unit_half_split | 6 | 0.3333 | 0.3333 | 0.3333 | 0.0000 | 0.0000 | 0.0000 |
-| 3 | 50 | selected_rank | candidate_post_refit | 137 | 0.4526 | 0.4526 | 0.4453 | 0.0000 | 0.0000 | 0.0219 |
+| 3 | 50 | selected_rank | candidate_post_refit | 133 | 0.4361 | 0.4361 | 0.4286 | 0.0000 | 0.0000 | 0.0226 |
 | 3 | 50 | selected_rank | cap_pilot | 403 | 0.4541 | 0.4541 | 0.4392 | 0.0000 | 0.0000 | 0.0174 |
 | 3 | 50 | selected_rank | full_panel | 3 | 0.3333 | 0.3333 | 0.3333 | 0.0000 | 0.0000 | 0.0000 |
-| 3 | 50 | selected_rank | time_half_split | 4 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
-| 3 | 50 | selected_rank | unit_half_split | 4 | 0.2500 | 0.2500 | 0.2500 | 0.0000 | 0.0000 | 0.0000 |
+| 3 | 50 | selected_rank | time_half_split | 6 | 0.3333 | 0.3333 | 0.3333 | 0.0000 | 0.0000 | 0.0000 |
+| 3 | 50 | selected_rank | unit_half_split | 6 | 0.5000 | 0.5000 | 0.5000 | 0.0000 | 0.0000 | 0.0000 |
 | 3 | 100 | fixed_rank | full_panel | 9 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
 | 3 | 100 | fixed_rank | time_half_split | 6 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
 | 3 | 100 | fixed_rank | unit_half_split | 6 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
@@ -110,11 +110,11 @@ The Parquet replication records are lossless. Their CSV companions omit only the
 | 4 | 50 | fixed_rank | full_panel | 9 | 0.3333 | 0.3333 | 0.3333 | 0.0000 | 0.0000 | 0.0000 |
 | 4 | 50 | fixed_rank | time_half_split | 6 | 0.1667 | 0.1667 | 0.1667 | 0.0000 | 0.0000 | 0.0000 |
 | 4 | 50 | fixed_rank | unit_half_split | 6 | 0.5000 | 0.5000 | 0.5000 | 0.0000 | 0.0000 | 0.0000 |
-| 4 | 50 | selected_rank | candidate_post_refit | 139 | 0.4317 | 0.4317 | 0.4173 | 0.0000 | 0.0000 | 0.0288 |
+| 4 | 50 | selected_rank | candidate_post_refit | 135 | 0.4296 | 0.4296 | 0.4148 | 0.0000 | 0.0000 | 0.0296 |
 | 4 | 50 | selected_rank | cap_pilot | 376 | 0.4840 | 0.4840 | 0.4787 | 0.0000 | 0.0000 | 0.0053 |
 | 4 | 50 | selected_rank | full_panel | 3 | 0.6667 | 0.6667 | 0.6667 | 0.0000 | 0.0000 | 0.0000 |
-| 4 | 50 | selected_rank | time_half_split | 4 | 0.2500 | 0.2500 | 0.2500 | 0.0000 | 0.0000 | 0.0000 |
-| 4 | 50 | selected_rank | unit_half_split | 4 | 0.5000 | 0.5000 | 0.5000 | 0.0000 | 0.0000 | 0.0000 |
+| 4 | 50 | selected_rank | time_half_split | 6 | 0.3333 | 0.3333 | 0.3333 | 0.0000 | 0.0000 | 0.0000 |
+| 4 | 50 | selected_rank | unit_half_split | 6 | 0.5000 | 0.5000 | 0.5000 | 0.0000 | 0.0000 | 0.0000 |
 | 4 | 100 | fixed_rank | full_panel | 9 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
 | 4 | 100 | fixed_rank | time_half_split | 6 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
 | 4 | 100 | fixed_rank | unit_half_split | 6 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
@@ -214,7 +214,7 @@ Lossless fit-role diagnostics are in `optimization_summary.csv`; slow and extrem
 
 ## Implementation finding
 
-The numerical estimator did not require correction. The audit identified a fit-diagnostic labeling defect: additional deterministic fixed-rank full-panel starts were emitted as generic `coefficient_fit`. The combined output relabels those records losslessly, and future instrumentation now labels all pre-split fixed starts `full_fixed_rank`. Explicit aliases `max_abs_coefficient` and `constrained_runtime_seconds` were also added.
+The numerical estimator did not require correction. The audit identified a fit-diagnostic labeling defect: additional deterministic fixed-rank full-panel starts were emitted as generic `coefficient_fit`, and selected-fit diagnostic context could overwrite some split labels. The combined output relabels those records losslessly by execution position. Future instrumentation labels all pre-split fixed starts `full_fixed_rank` and preserves split labels before applying selected-fit context. Explicit aliases `max_abs_coefficient` and `constrained_runtime_seconds` were also added.
 
 ## Medium recommendation
 

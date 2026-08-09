@@ -115,6 +115,14 @@ def _normalize_fit_rows(fits: pd.DataFrame) -> pd.DataFrame:
         result["constrained_runtime_seconds"] = result[
             "constrained_runtime_seconds"
         ].fillna(result["constrained_runtime"])
+    split_labels = ("time_split_0", "time_split_1", "unit_split_0", "unit_split_1")
+    selected = result.loc[result["method"].eq("selected_rank")]
+    for _, group in selected.groupby("semantic_replication_id", sort=False):
+        observed = group.loc[group["start_number"].notna()].sort_values("start_number")
+        final_four = observed.tail(4)
+        if len(final_four) != 4 or final_four["start_number"].nunique() != 4:
+            raise ValueError("selected split-fit diagnostic positions did not reconcile")
+        result.loc[final_four.index, "fit_type"] = split_labels
     return result
 
 
@@ -905,9 +913,11 @@ def _report(
         "",
         "The numerical estimator did not require correction. The audit identified a fit-diagnostic "
         "labeling defect: additional deterministic fixed-rank full-panel starts were emitted as "
-        "generic `coefficient_fit`. The combined output relabels those records losslessly, and future "
-        "instrumentation now labels all pre-split fixed starts `full_fixed_rank`. Explicit aliases "
-        "`max_abs_coefficient` and `constrained_runtime_seconds` were also added.",
+        "generic `coefficient_fit`, and selected-fit diagnostic context could overwrite some split "
+        "labels. The combined output relabels those records losslessly by execution position. Future "
+        "instrumentation labels all pre-split fixed starts `full_fixed_rank` and preserves split "
+        "labels before applying selected-fit context. Explicit aliases `max_abs_coefficient` and "
+        "`constrained_runtime_seconds` were also added.",
         "",
         "## Medium recommendation",
         "",

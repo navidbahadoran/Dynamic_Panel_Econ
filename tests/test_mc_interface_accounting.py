@@ -27,6 +27,7 @@ from dynamic_panel_econ.monte_carlo import (
     _calibration_failure_task_rows,
     _dgp_realization_hash,
     _replication_chunks,
+    _selected_context_fit_type,
     _worker,
     run_replication,
 )
@@ -161,6 +162,21 @@ def test_worker_fit_diagnostics_reconcile_executed_fits(monkeypatch) -> None:
     assert {row["fit_type"] for row in fit_rows} == {"full_fixed_rank"}
     assert all("max_abs_coefficient" in row for row in fit_rows)
     assert all("constrained_runtime_seconds" in row for row in fit_rows)
+
+
+def test_selected_context_classification_preserves_split_fit_labels() -> None:
+    assert (
+        _selected_context_fit_type("coefficient_fit", "cap_pilot_route")
+        == "rank_cap_pilot"
+    )
+    assert (
+        _selected_context_fit_type("coefficient_fit", "post_refit_start")
+        == "candidate_post_refit"
+    )
+    assert (
+        _selected_context_fit_type("time_split_0", "post_refit_start")
+        == "time_split_0"
+    )
 
 
 def _attempts() -> pd.DataFrame:

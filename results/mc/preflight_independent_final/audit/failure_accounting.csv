@@ -1,7 +1,0 @@
-method,primary_status,target_record_count
-fixed_rank,success,134
-fixed_rank,split_fit_failure,64
-fixed_rank,coefficient_bound_hit,18
-selected_rank,success,114
-selected_rank,rank_at_cap,54
-selected_rank,split_fit_failure,48

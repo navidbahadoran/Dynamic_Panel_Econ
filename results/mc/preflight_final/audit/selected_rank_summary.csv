@@ -1,3 +1,0 @@
-method,attempted,pilot_success,candidate_coverage_count,candidate_coverage_share_of_pilot_success,true_rank_absent_count,ic_choice_failure_given_coverage_count,ic_choice_failure_given_coverage_share,exact_recovery_count,underselection_count,overselection_count,selected_zero_vector_count,rank_cap_hit_count,selected_rank_distribution,median_replication_runtime_seconds,total_replication_runtime_seconds
-selected_3e-6,12,9,9,1.0,0,7,0.7777777777777778,2,1,7,0,7,"{""[1, 1, 1]"": 2, ""[1, 1, 2]"": 4, ""[2, 1, 0]"": 1, ""[2, 1, 1]"": 2}",87.49683045000711,1064.3336183000065
-selected_4e-6,12,9,9,1.0,0,3,0.33333333333333337,6,2,1,0,1,"{""[1, 0, 0]"": 1, ""[1, 0, 1]"": 1, ""[1, 1, 1]"": 6, ""[1, 1, 2]"": 1}",88.48340365001059,1063.7976640999696

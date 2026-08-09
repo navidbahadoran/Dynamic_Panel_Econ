@@ -1,1 +1,0 @@
-scripts\run_mc.py --config configs\mc\dgp4_rank_cap3_replay.toml

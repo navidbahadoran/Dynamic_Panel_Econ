@@ -1,9 +1,0 @@
-dgp,N,T,target,exact_rank_recovery,A_underselection,A_overselection,B_underselection,B_overselection,H_underselection,H_overselection,mean_candidate_count,mean_ic_gap,rank_cap_hit_rate
-1,20,20,A_fixed_time_mean,1.0,0.0,0.0,0.0,0.0,0.0,0.0,8.0,0.27152392208734955,1.0
-1,20,20,A_full_mean,1.0,0.0,0.0,0.0,0.0,0.0,0.0,8.0,0.27152392208734955,1.0
-2,20,20,A_fixed_time_mean,1.0,0.0,0.0,0.0,0.0,0.0,0.0,8.0,0.2202059182274516,1.0
-2,20,20,A_full_mean,1.0,0.0,0.0,0.0,0.0,0.0,0.0,8.0,0.2202059182274516,1.0
-3,20,20,A_fixed_time_mean,1.0,0.0,0.0,0.0,0.0,0.0,0.0,8.0,0.2367744549875468,1.0
-3,20,20,A_full_mean,1.0,0.0,0.0,0.0,0.0,0.0,0.0,8.0,0.2367744549875468,1.0
-4,20,20,A_fixed_time_mean,1.0,0.0,0.0,0.0,0.0,0.0,0.0,8.0,0.25437274941839494,1.0
-4,20,20,A_full_mean,1.0,0.0,0.0,0.0,0.0,0.0,0.0,8.0,0.25437274941839494,1.0

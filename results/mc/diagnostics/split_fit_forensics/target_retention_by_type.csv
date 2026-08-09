@@ -1,7 +1,0 @@
-sample_size,method,target_type,attempted,point_retained,point_retained_share,inference_retained,inference_retained_share
-50,fixed_rank,broad_split_corrected,96,88,0.9166666666666666,24,0.25
-50,fixed_rank,local_plugin,120,110,0.9166666666666666,110,0.9166666666666666
-50,selected_rank,broad_split_corrected,96,72,0.75,24,0.25
-50,selected_rank,local_plugin,120,90,0.75,90,0.75
-100,fixed_rank,broad_split_corrected,96,96,1.0,88,0.9166666666666666
-100,fixed_rank,local_plugin,120,120,1.0,120,1.0

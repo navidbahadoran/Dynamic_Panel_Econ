@@ -1,3 +1,0 @@
-sample_size,attempted_replications,full_panel_success,full_panel_coefficient_bound_hits,replications_with_four_split_success,four_split_success_rate,time_split_failure_rate,unit_split_failure_rate,point_retained_share,local_inference_retained_share,broad_inference_retained_share,total_inference_retained_share,gram_failure_rate,riesz_failure_rate,runtime_total_seconds,runtime_mean_seconds
-50,12,11,1,3,0.25,0.2727272727272727,0.4090909090909091,0.9166666666666666,0.9166666666666666,0.25,0.6203703703703703,0.0,0.0,21.37987110001268,1.7816559250010566
-100,12,12,0,11,0.9166666666666666,0.0,0.041666666666666664,1.0,1.0,0.9166666666666666,0.9629629629629629,0.0,0.0,80.95565460002399,6.746304550001999

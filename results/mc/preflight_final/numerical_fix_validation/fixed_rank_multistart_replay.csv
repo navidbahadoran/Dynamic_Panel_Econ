@@ -1,4 +1,0 @@
-semantic_replication_id,diagnostic_replay,coefficient_envelope,convergence,deterministic_seed,final_objective,invalid_reasons,numerical_rank,objective_gap_to_best,route_type,runtime,start_id,stationarity,valid
-dgp4_N50_T50_r00001_truth1-1-1,True,14.439280083326073,True,"baseline:[20260810, 2004296267, 1499620634, 1499620634, 1941079659, 1387497986, 3627223120]:()",1.7963158921550342,['coefficient_bound_active'],"[1, 1, 1]",4.683635381193565e-06,original,0.037534100003540516,original_start_1,5.384305441016942e-05,False
-dgp4_N50_T50_r00001_truth1-1-1,True,14.490825301492356,True,3165491678,1.796311134479404,['coefficient_bound_active'],"[1, 1, 1]",2.035048941511501e-06,original,0.03860169998370111,original_start_2,4.9697863383264366e-05,False
-dgp4_N50_T50_r00001_truth1-1-1,True,14.532951298155336,True,1085613305,1.7963074789057705,['coefficient_bound_active'],"[1, 1, 1]",0.0,original,0.03523999999742955,original_start_3,4.6437383903764955e-05,False

@@ -1,3 +1,0 @@
-method,fit_count,converged_count,stationarity_pass_count,coefficient_bound_hit_count,objective_stability_failure_count
-fixed_rank,80,80,80,18,0
-selected_rank,2183,1976,1919,642,286

@@ -1,1 +1,0 @@
-scripts\run_mc.py --config configs\mc\preflight_final_selected_3e6.toml

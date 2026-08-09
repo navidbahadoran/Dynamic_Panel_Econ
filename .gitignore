@@ -49,6 +49,9 @@ coverage.xml
 *.py.cover
 .hypothesis/
 .pytest_cache/
+# Repository-root caches/temp trees from isolated Codex pytest runs
+/.pytest_cache*/
+/.pytest-tmp-*/
 # Pytest-generated temporary/result directories
 results/pytest-*/
 cover/

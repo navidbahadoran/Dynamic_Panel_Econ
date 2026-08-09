@@ -1,0 +1,50 @@
+[run]
+name = "selected_rank"
+experiment = "baseline"
+rank_mode = "selected"
+master_seed = 20260807
+dgps = [1, 2, 3, 4]
+cells = [[50, 50], [100, 100]]
+replications = 3
+replication_start = 2026080801
+chunk_size = 3
+parallel_level = "replications"
+n_jobs = 3
+blas_threads = 1
+output_root = "results/mc/preflight_finalized_theorem_aligned"
+save_candidate_details = true
+
+[dgp]
+frozen_calibration_path = "configs/mc/frozen_dgp_calibration.toml"
+target_r2 = 0.65
+calibration_draws = 50
+group_gap_pilot_draws = 500
+auto_adjust_group_gap = false
+min_abs_postscale_group_diff_a = 0.05
+prespecified_gap_grid = [0.2, 0.3, 0.4, 0.5, 0.6]
+
+[estimation]
+fixed_ranks = [1, 1, 1]
+rank_caps = [2, 2, 2]
+coefficient_bound = 10.0
+simulation_interior_margin = 1.0
+max_sweeps = 300
+objective_rtol = 1e-5
+stationarity_tol = 1e-4
+start_objective_stability_tol = 1e-5
+ic_multiplier = 4e-6
+threshold_multiplier = 1.0
+compute_rank_sensitivities = false
+compute_dense_grid_sensitivity = false
+compute_larger_cap_sensitivity = false
+
+[inference]
+compute_tangent_gram = true
+targets = [
+  "A_entry", "B_entry", "A_fixed_time_mean", "B_fixed_time_mean",
+  "A_full_mean", "B_full_mean", "A_G1_fixed_time", "A_G2_fixed_time",
+  "A_G2_minus_G1_fixed_time", "A_G1_time_average", "A_G2_time_average",
+  "A_G2_minus_G1_time_average", "B_G1_fixed_time", "B_G2_fixed_time",
+  "B_G2_minus_G1_fixed_time", "B_G1_time_average", "B_G2_time_average",
+  "B_G2_minus_G1_time_average",
+]

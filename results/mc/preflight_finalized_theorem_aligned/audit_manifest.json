@@ -1,0 +1,19 @@
+{
+  "authorized_unique_dgp_realizations": 24,
+  "authorized_method_replication_evaluations": 48,
+  "semantic_id_count": 24,
+  "matched_hashes_pass": true,
+  "target_record_count": 864,
+  "accounting_pass": true,
+  "frozen_calibration_hash": "e8983cadc4fbca990feeba6363420542a99ee056cf445e867532e2a6ea0e7d62",
+  "combined_replication_records_sha256": "c776bec846e0c0a501df6afd9b760e360d01487fe3d16e20a82113521b8ab46c",
+  "medium_recommendation": "NO-GO",
+  "dry_run_commands": [
+    ".\\.venv\\Scripts\\python.exe scripts\\run_mc.py --config configs\\mc\\preflight_finalized_fixed.toml --dry-run --print-resolved-config",
+    ".\\.venv\\Scripts\\python.exe scripts\\run_mc.py --config configs\\mc\\preflight_finalized_selected.toml --dry-run --print-resolved-config"
+  ],
+  "executed_commands": [
+    ".\\.venv\\Scripts\\python.exe scripts\\run_mc.py --config configs\\mc\\preflight_finalized_fixed.toml",
+    ".\\.venv\\Scripts\\python.exe scripts\\run_mc.py --config configs\\mc\\preflight_finalized_selected.toml"
+  ]
+}

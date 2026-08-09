@@ -155,8 +155,12 @@ def test_worker_fit_diagnostics_reconcile_executed_fits(monkeypatch) -> None:
     monkeypatch.setattr("dynamic_panel_econ.monte_carlo.generate_panel", lambda *a, **k: _panel())
     rows = _worker(((1, 4, 4, 0, None), _config("fixed"), {"c_h": 1, "c_xi": 1}))
     expected = next(row["expected_fit_count"] for row in rows if row["record_type"] == "replication")
-    actual = sum(row["record_type"] == "fit_diagnostic" for row in rows)
+    fit_rows = [row for row in rows if row["record_type"] == "fit_diagnostic"]
+    actual = len(fit_rows)
     assert expected == actual == 3
+    assert {row["fit_type"] for row in fit_rows} == {"full_fixed_rank"}
+    assert all("max_abs_coefficient" in row for row in fit_rows)
+    assert all("constrained_runtime_seconds" in row for row in fit_rows)
 
 
 def _attempts() -> pd.DataFrame:

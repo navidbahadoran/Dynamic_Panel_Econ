@@ -663,6 +663,8 @@ def _fit_diagnostic_record(
         ),
         "coefficient_envelope": fit.max_envelope_ratio
         * float(config["estimation"]["coefficient_bound"]),
+        "max_abs_coefficient": fit.max_envelope_ratio
+        * float(config["estimation"]["coefficient_bound"]),
         "coefficient_envelope_ratio": fit.max_envelope_ratio,
         "coefficient_bound_hit": False,
         "unconstrained_max_abs": fit.diagnostics.get("unconstrained_max_abs"),
@@ -674,6 +676,7 @@ def _fit_diagnostic_record(
         "constrained_KKT_residual": fit.diagnostics.get("constrained_KKT_residual"),
         "constrained_iterations": fit.diagnostics.get("constrained_iterations", 0),
         "constrained_runtime": fit.diagnostics.get("constrained_runtime", 0.0),
+        "constrained_runtime_seconds": fit.diagnostics.get("constrained_runtime", 0.0),
         "constrained_solver_status": fit.diagnostics.get("constrained_solver_status"),
         "constrained_objective": fit.diagnostics.get("constrained_objective"),
         "sigma_1": sigma_1,
@@ -1603,7 +1606,7 @@ def _worker(payload: tuple[Task, dict[str, Any], dict[str, Any]]) -> list[dict[s
         split_offset = len(observed_fits) - split_count
         if index >= split_offset and split_count == 4:
             fit_type = split_labels[index - split_offset]
-        elif config["run"]["rank_mode"] == "fixed" and index == 0:
+        elif config["run"]["rank_mode"] == "fixed" and index < split_offset:
             fit_type = "full_fixed_rank"
         else:
             fit_type = "coefficient_fit"
@@ -1614,6 +1617,12 @@ def _worker(payload: tuple[Task, dict[str, Any], dict[str, Any]]) -> list[dict[s
                 fit_type=fit_type,
                 start_number=index + 1,
             )
+        context = str(exact.get("diagnostic_context") or "")
+        if config["run"]["rank_mode"] == "selected":
+            if context.startswith("cap_pilot"):
+                exact["fit_type"] = "rank_cap_pilot"
+            elif context.startswith("post_refit"):
+                exact["fit_type"] = "candidate_post_refit"
         matching = next(
             (
                 row
@@ -1631,6 +1640,11 @@ def _worker(payload: tuple[Task, dict[str, Any], dict[str, Any]]) -> list[dict[s
             None,
         )
         if matching is not None:
+            if exact["fit_type"] == "coefficient_fit" and matching.get("fit_type") in {
+                "rank_cap_pilot",
+                "candidate_post_refit",
+            }:
+                exact["fit_type"] = matching["fit_type"]
             for key in (
                 "initialization_route", "candidate_source", "IC", "IC_valid",
                 "best_start_objective", "second_start_objective",

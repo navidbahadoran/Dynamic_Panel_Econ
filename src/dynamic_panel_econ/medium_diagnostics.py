@@ -199,8 +199,6 @@ def aggregate_rank_sensitivity_medium(replications: pd.DataFrame) -> pd.DataFram
 
 
 def _headline_target(name: str, dgp: int) -> bool:
-    if name == "B_entry":
-        return False
     return not ("G2_minus_G1_fixed_time" in name and dgp < 4)
 
 
@@ -545,7 +543,7 @@ def write_medium_tables(
             ("successful_inference_rate", "Success"),
             ("minimum_true_projection_ratio", r"Min $\|P_0D\|/\|D\|$"),
         ],
-        notes="Only theorem-covered targets enter this table. B-entry and DGP 1--3 fixed-time group contrasts are excluded from headline rates.",
+        notes="Only theorem-covered targets enter this table. DGP 1--3 fixed-time group contrasts are excluded from headline rates.",
     )
     paths += _write_table(
         riesz,

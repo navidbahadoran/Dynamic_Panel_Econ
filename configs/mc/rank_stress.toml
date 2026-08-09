@@ -13,6 +13,9 @@ output_root = "results/mc"
 [dgp]
 frozen_calibration_path = "configs/mc/frozen_dgp_calibration.toml"
 target_r2 = 0.65
+calibration_draws = 50
+kappa_f_b = 0.15
+rho_fx = 0.5
 
 [rank_stress]
 true_rank_vectors = [[1, 1, 1], [2, 1, 1], [1, 0, 2]]
@@ -25,6 +28,10 @@ simulation_interior_margin = 1.0
 larger_rank_caps = [4, 4, 4]
 spatial_dimension = 1
 eta_for_penalty = 4.0
+ic_multiplier = 1.0
+threshold_multiplier = 1.0
+ic_sensitivity_multipliers = [0.5, 2.0]
+threshold_sensitivity_multipliers = [0.5, 2.0]
 
 [inference]
 targets = []

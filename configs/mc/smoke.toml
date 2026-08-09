@@ -15,6 +15,8 @@ frozen_calibration_path = "configs/mc/frozen_dgp_calibration.toml"
 calibration_draws = 2
 group_gap_pilot_draws = 2
 target_r2 = 0.65
+kappa_f_b = 0.15
+rho_fx = 0.5
 auto_adjust_group_gap = false
 min_abs_postscale_group_diff_a = 0.05
 prespecified_gap_grid = [0.2, 0.3, 0.4, 0.5]
@@ -29,12 +31,15 @@ objective_rtol = 1e-5
 stationarity_tol = 0.05
 start_objective_stability_tol = 1e-5
 nuclear_gamma = 0.8
-nuclear_epsilon = 0.64
+nuclear_epsilon = 0.01
 nuclear_max_iter = 40
 nuclear_tol = 1e-5
 dykstra_max_iter = 30
 dykstra_tol = 1e-7
-ic_multiplier = 0.00005
+ic_multiplier = 1.0
+threshold_multiplier = 1.0
+ic_sensitivity_multipliers = [0.5, 2.0]
+threshold_sensitivity_multipliers = [0.5, 2.0]
 compute_rank_sensitivities = false
 
 [inference]

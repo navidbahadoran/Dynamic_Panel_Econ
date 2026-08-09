@@ -83,9 +83,6 @@ def target_direction(
     if "G2_minus_G1_fixed_time" in name and dgp is not None and dgp < 4:
         theorem_validation = False
         applicability = "weak_target_stress_outside_assumption9"
-    elif name == "B_entry":
-        theorem_validation = False
-        applicability = "entry_leverage_requires_author_choice"
     return TargetSpec(name, direction, broad, theorem_validation, applicability)
 
 

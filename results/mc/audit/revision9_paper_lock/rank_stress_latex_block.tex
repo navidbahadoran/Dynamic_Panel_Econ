@@ -1,0 +1,110 @@
+\subsection{Rank-stress data-generating processes}
+\label{app:rank-stress-dgps}
+
+We study the true-rank vectors $(1,1,1)$, $(2,1,1)$, and
+$(1,0,2)$.  All rank-stress coefficient matrices are first generated over
+the complete burn-in and observed horizon of length $L=T+50$, after which
+the final $T$ columns are retained.  The component strengths below are one.
+All added loading and factor draws are mutually independent and independent
+of the baseline DGP primitives.
+
+For the rank-one design, we use the main-DGP matrices
+\begin{align*}
+ A_{it}^{(1),\mathrm{raw}}&=\lambda_{a,i}f_{a,t}, &
+ B_{it}^{(1)}&=\lambda_{b,i}f_{b,t}, &
+ H_{it}^{(1),\mathrm{raw}}&=\lambda_{h,i}g_{h,t},
+\end{align*}
+where $f_{a,t}=0.5+0.1g_{a,t}$,
+$f_{b,t}=0.6+0.15g_{b,t}$, and
+\[
+ g_{m,t}=0.5g_{m,t-1}+\sqrt{0.75}\,v_{m,t},\qquad
+ v_{m,t}\stackrel{\mathrm{iid}}{\sim}U[-\sqrt{3},\sqrt{3}],
+ \qquad g_{m,-50}=0,
+\]
+for $m\in\{a,b,h\}$.  Also
+$\lambda_{h,i}\stackrel{\mathrm{iid}}{\sim}U[-\sqrt{3},\sqrt{3}]$,
+while $\lambda_{a,i}$ and $\lambda_{b,i}$ are the loadings from the
+corresponding main DGP.  No rank-stress rescaling is applied when the
+requested rank is one.  We set
+\[
+ c_a=\min\left\{1,
+ \frac{0.85}{\max_{i,t\leq L}|A_{it}^{(1),\mathrm{raw}}|}\right\},
+ \qquad A^{(1)}=c_aA^{(1),\mathrm{raw}},
+ \qquad H_0=c_\xi c_H H^{(1),\mathrm{raw}}.
+\]
+The resulting true-rank vector is $(1,1,1)$ almost surely.
+
+For the $(2,1,1)$ design, only the autoregressive-coefficient matrix is
+expanded.  Independently draw
+\[
+ \widetilde\lambda_{A,i}\stackrel{\mathrm{iid}}{\sim}
+ U[-\sqrt{3},\sqrt{3}],\qquad
+ \widetilde f_{A,t}\stackrel{\mathrm{iid}}{\sim}
+ U[-\sqrt{3},\sqrt{3}].
+\]
+Thus $\widetilde f_{A,t}$ is iid over time and does not follow an AR
+recursion.  Define
+\[
+ E_{A,\mathrm{raw}}
+ =L_{A,\max}(0.5+3\cdot0.1),\qquad
+ s_A=\frac{E_{A,\mathrm{raw}}}{E_{A,\mathrm{raw}}+3},
+\]
+where $L_{A,\max}=1+0.1\sqrt{3}$ in DGPs 1--3 and
+$L_{A,\max}=1.1+0.08\sqrt{3}$ in DGP 4.  The rank-two raw matrix is
+\[
+ A_{it}^{(2),\mathrm{raw}}
+ =s_A\left(\lambda_{a,i}f_{a,t}
+ +\widetilde\lambda_{A,i}\widetilde f_{A,t}\right).
+\]
+Both terms have coefficient one before the same deterministic common
+rescaling.  The added term has support envelope three.  We then recompute
+\[
+ c_a=\min\left\{1,
+ \frac{0.85}{\max_{i,t\leq L}|A_{it}^{(2),\mathrm{raw}}|}\right\},
+ \qquad A^{(2)}=c_aA^{(2),\mathrm{raw}}.
+\]
+There is no entrywise clipping.  The rank-one $B$ and $H$ constructions
+are unchanged, giving true ranks $(2,1,1)$ almost surely.
+
+For the $(1,0,2)$ design, $A$ is the baseline rank-one matrix (including
+its full-horizon stability scale), and
+\[
+ B_{it}\equiv0.
+\]
+Independently draw
+\[
+ \widetilde\lambda_{H,i}\stackrel{\mathrm{iid}}{\sim}
+ U[-\sqrt{3},\sqrt{3}],\qquad
+ \widetilde g_{H,t}\stackrel{\mathrm{iid}}{\sim}
+ U[-\sqrt{3},\sqrt{3}],
+\]
+where the second factor is iid over time.  With
+\[
+ E_H=3\sqrt{3},\qquad s_H=\frac{3\sqrt{3}}{3\sqrt{3}+3},
+\]
+the raw rank-two interactive effect is
+\[
+ H_{it}^{(2),\mathrm{raw}}
+ =s_H\left(\lambda_{h,i}g_{h,t}
+ +\widetilde\lambda_{H,i}\widetilde g_{H,t}\right).
+\]
+Its population observed-entry variance is
+\[
+ V_{H,2}(T)=s_H^2\left\{
+ \frac1T\sum_{k=51}^{50+T}(1-0.5^{2k})+1\right\},
+\]
+and the population-moment scale is
+\[
+ c_H=\left\{\frac{0.30}{0.70}\frac{1}{V_{H,2}(T)}\right\}^{1/2}.
+\]
+For this zero-slope design we impose the normalization $c_\xi=1$ and set
+\texttt{r2\_scale\_identified=false}.  Accordingly, the pooled
+$R^2$ is the value induced by this normalization rather than a calibrated
+target.  The final interactive effect is
+$H_0=c_HH^{(2),\mathrm{raw}}$, and the true-rank vector is $(1,0,2)$
+almost surely.
+
+The population $c_H$ and common-random-number $c_\xi$ calibrations are
+performed separately for each DGP, $(N,T)$ cell, and true-rank vector.
+The calibration uses master seed 20260807 and 50 independent calibration
+draws, none of which is reused as a reported Monte Carlo replication.

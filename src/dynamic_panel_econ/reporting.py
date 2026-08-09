@@ -548,8 +548,8 @@ def make_tables(root: str | Path) -> list[Path]:
         label="tab:mc-target-regularity",
         notes=(
             "Fixed-time group contrasts in DGPs 1--3 are weak-target stress cases outside "
-            "Assumption 9 and are excluded from headline coverage. B-entry remains diagnostic "
-            "pending the prespecified loading-factor choice."
+            "Assumption 9 and are excluded from headline coverage. B-entry is theorem-covered "
+            "under the locked Revision-9 slope-factor support."
         ),
         first_text_column="target_applicability",
     )

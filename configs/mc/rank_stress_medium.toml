@@ -14,6 +14,8 @@ output_root = "results/mc"
 frozen_calibration_path = "configs/mc/frozen_dgp_calibration.toml"
 target_r2 = 0.65
 calibration_draws = 50
+kappa_f_b = 0.15
+rho_fx = 0.5
 group_gap_pilot_draws = 500
 auto_adjust_group_gap = false
 min_abs_postscale_group_diff_a = 0.05
@@ -37,6 +39,10 @@ objective_rtol = 1e-5
 stationarity_tol = 1e-4
 start_objective_stability_tol = 1e-5
 compute_rank_sensitivities = false
+ic_multiplier = 1.0
+threshold_multiplier = 1.0
+ic_sensitivity_multipliers = [0.5, 2.0]
+threshold_sensitivity_multipliers = [0.5, 2.0]
 
 [inference]
 targets = []

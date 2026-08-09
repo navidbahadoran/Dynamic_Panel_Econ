@@ -1,0 +1,2 @@
+C_Theta_max,current_B,c_B,current_B_minus_c_B,additional_slack_relative_to_required_envelope,distance_to_estimation_boundary,B10_cB1_verified,status
+8.288745227963506,10.0,1.0,9.0,0.7112547720364937,1.7112547720364937,True,ACTIVE_LOCKED_REVISION9

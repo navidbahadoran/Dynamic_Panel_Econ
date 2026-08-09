@@ -19,6 +19,7 @@ BASELINE_CELLS = ((50, 50), (100, 100), (200, 200), (400, 400))
 STRESS_CELLS = ((50, 50), (100, 100), (200, 200))
 STRESS_RANKS = ((1, 1, 1), (2, 1, 1), (1, 0, 2))
 COMPONENT_STRENGTHS = (1.0, 1.0)
+EXPECTED_REVISION9_ENVELOPE = 8.288745227963506
 
 
 def _row(result, *, rank_stress: bool, ranks: tuple[int, int, int]) -> dict[str, object]:
@@ -81,8 +82,10 @@ def _toml_bool(value: bool) -> str:
 def write_toml(frame: pd.DataFrame, destination: Path, draws: int) -> None:
     lines = [
         "schema_version = 1",
-        'status = "candidate_not_activated"',
+        'status = "active_locked_revision9"',
         'method = "population_c_h_and_independent_frozen_cell_c_xi"',
+        'paper_revision = "Revision 9"',
+        "kappa_f_b = 0.15",
         "calibration_seed = 20260807",
         f"calibration_draws = {draws}",
         "",
@@ -118,7 +121,7 @@ def write_toml(frame: pd.DataFrame, destination: Path, draws: int) -> None:
 
 def write_outputs(frame: pd.DataFrame, output: Path) -> None:
     output.mkdir(parents=True, exist_ok=True)
-    frame.to_csv(output / "frozen_calibration_candidates.csv", index=False)
+    frame.to_csv(output / "final_frozen_calibration.csv", index=False)
     frame[
         [
             "design",
@@ -133,7 +136,7 @@ def write_outputs(frame: pd.DataFrame, output: Path) -> None:
             "realized_calibration_h_share",
         ]
     ].to_csv(output / "population_variance_components.csv", index=False)
-    frame[
+    envelopes = frame[
         [
             "design",
             "dgp",
@@ -145,25 +148,24 @@ def write_outputs(frame: pd.DataFrame, output: Path) -> None:
             "C_H",
             "C_Theta",
         ]
-    ].to_csv(output / "theoretical_coefficient_envelopes.csv", index=False)
+    ].copy()
+    envelopes.to_csv(output / "final_coefficient_envelope.csv", index=False)
     maximum = float(frame["C_Theta"].max())
-    retained = maximum <= 8.0
-    proposed_b = 9.0 if retained else float(math.ceil(maximum) + 1)
+    retained = maximum <= 9.0
     pd.DataFrame(
         [
             {
                 "C_Theta_max": maximum,
-                "current_B": 9.0,
+                "current_B": 10.0,
                 "c_B": 1.0,
-                "current_B_minus_c_B": 8.0,
-                "B9_verified": retained,
-                "proposed_common_B": proposed_b,
-                "proposed_c_B": 1.0,
-                "proposed_interior_margin": proposed_b - maximum,
-                "status": "CANDIDATE_NOT_ACTIVATED",
+                "current_B_minus_c_B": 9.0,
+                "additional_slack_relative_to_required_envelope": 9.0 - maximum,
+                "distance_to_estimation_boundary": 10.0 - maximum,
+                "B10_cB1_verified": retained,
+                "status": "ACTIVE_LOCKED_REVISION9",
             }
         ]
-    ).to_csv(output / "proposed_B_summary.csv", index=False)
+    ).to_csv(output / "coefficient_envelope_summary.csv", index=False)
 
 
 def main() -> None:
@@ -177,6 +179,12 @@ def main() -> None:
     )
     args = parser.parse_args()
     frame = build(args.draws)
+    maximum = float(frame["C_Theta"].max())
+    if not math.isclose(maximum, EXPECTED_REVISION9_ENVELOPE, rel_tol=0.0, abs_tol=1e-12):
+        raise RuntimeError(
+            "Revision-9 frozen calibration envelope mismatch: "
+            f"expected {EXPECTED_REVISION9_ENVELOPE:.15f}, obtained {maximum:.15f}"
+        )
     config_output = Path(args.config_output)
     config_output.parent.mkdir(parents=True, exist_ok=True)
     write_toml(frame, config_output, args.draws)

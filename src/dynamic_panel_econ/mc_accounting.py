@@ -19,6 +19,7 @@ PRIMARY_STATUSES = (
     "rank_selection_failure",
     "rank_at_cap",
     "candidate_numerically_unresolved",
+    "boundary_interiority_failure",
     "coefficient_bound_hit",
     "constrained_solver_failure",
     "constrained_feasibility_failure",
@@ -46,6 +47,10 @@ PRIMARY_STATUS_DEFINITIONS = {
     "rank_selection_failure": "selected-mode candidate comparison could not return a rank",
     "rank_at_cap": "selected rank reached an imposed cap",
     "candidate_numerically_unresolved": "no stable candidate post-refit was eligible",
+    "boundary_interiority_failure": (
+        "a required coefficient fit was boundary-active; the point estimate remains valid "
+        "but theorem-based inference is suppressed"
+    ),
     "coefficient_bound_hit": "a legacy fitted coefficient reached the old diagnostic boundary",
     "constrained_solver_failure": "the literal box-constrained numerical solver failed",
     "constrained_feasibility_failure": "a constrained fit violated the entrywise box tolerance",
@@ -69,7 +74,7 @@ STATUS_ALIASES = {
     "nonfinite_input": "calibration_failure",
     "full_fit_not_converged": "full_fit_failure",
     "first_order_residual_high": "full_fit_failure",
-    "coefficient_bound_active": "coefficient_bound_hit",
+    "coefficient_bound_active": "boundary_interiority_failure",
     "split_target_unsupported_selected_rank": "split_target_support_loss",
     "split_tangent_gram_eigensolver_failure": "tangent_gram_eigensolver_failure",
     "split_tangent_gram_nearly_singular": "tangent_gram_nearly_singular",

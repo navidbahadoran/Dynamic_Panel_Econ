@@ -26,6 +26,7 @@ from .calibration import (
 )
 from .config import config_hash, write_resolved_config
 from .dgp import (
+    INITIAL_CONDITIONS,
     DGPParameters,
     coefficient_envelopes,
     generate_panel,
@@ -75,6 +76,7 @@ FAILURE_CODES = (
     "rank_at_cap",
     "rank_pilot_failure",
     "rank_selection_failure",
+    "boundary_interiority_failure",
     "target_unsupported_selected_rank",
     "split_target_unsupported_selected_rank",
     "tangent_gram_eigensolver_failure",
@@ -885,6 +887,8 @@ def classify_inference_status(result: Any, config: dict[str, Any]) -> str:
 
     if getattr(result, "failure_code", None) is not None:
         return str(result.failure_code)
+    if bool(result.diagnostics.get("boundary_active", False)):
+        return "boundary_interiority_failure"
     if not result.riesz.converged:
         return "riesz_not_converged"
     floor = float(config["inference"]["riesz_target_rayleigh_floor"])
@@ -898,6 +902,8 @@ def classify_inference_status(result: Any, config: dict[str, Any]) -> str:
     if not result.corrected:
         return "success"
     split_fits = result.diagnostics["split_fits"]
+    if any(bool(item.get("boundary_active", False)) for item in split_fits):
+        return "boundary_interiority_failure"
     if len(split_fits) != 4 or not all(
         item["converged"]
         and (
@@ -1974,6 +1980,26 @@ def run_monte_carlo(
         ],
         "requested_replications_per_cell": replications,
         "true_rank_designs": _task_designs(resolved),
+        "initial_conditions": INITIAL_CONDITIONS,
+        "mc_conditioning_field": {
+            "common_time_paths": ["g_a", "g_b", "g_h", "f_x"],
+            "time_invariant_unit_design_draws": [
+                "lambda_a",
+                "lambda_b",
+                "lambda_h",
+                "lambda_x",
+                "sigma_i",
+                "sigma_e_i",
+                "dgp4_loading_perturbations",
+            ],
+            "rank_stress_additions": [
+                "added_bounded_rank_two_unit_loadings",
+                "added_bounded_rank_two_time_factor_paths",
+            ],
+            "remaining_random": [
+                "time_varying_idiosyncratic_gaussian_innovations"
+            ],
+        },
         "coefficient_bound_B": coefficient_bound,
         "B": coefficient_bound,
         "c_B": required_margin,

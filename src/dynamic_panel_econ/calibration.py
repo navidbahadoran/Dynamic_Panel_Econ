@@ -74,7 +74,7 @@ def population_h_raw_variance(
         raise ValueError("t must be positive")
     if rank <= 0:
         return 0.0
-    rho = 0.5
+    rho = params.rho_g
     columns = np.arange(params.burn_in + 1, params.burn_in + t + 1, dtype=np.float64)
     base_variance = float(np.mean(1.0 - rho ** (2.0 * columns)))
     added_variance = sum(

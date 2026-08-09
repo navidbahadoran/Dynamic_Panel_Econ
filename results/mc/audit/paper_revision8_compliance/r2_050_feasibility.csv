@@ -1,0 +1,17 @@
+dgp,N,T,pi_H,c_H,attainable_r2_lower_extremum,lower_extremum_type,c_xi_at_lower_extremum,attainable_r2_upper_supremum,target_r2,target_feasible,c_xi_solving_050,C_A_050,C_beta_050,C_H_050,C_Theta_050,common_finite_B_for_050_truths,notes
+1,50,50,0.30,0.654653670707977,0.572863752996886,asymptotic_infimum,c_xi_to_infinity,1.0,0.50,false,NA,NA,NA,NA,NA,false,no_positive_root
+1,100,100,0.30,0.654653670707977,0.579806480457274,asymptotic_infimum,c_xi_to_infinity,1.0,0.50,false,NA,NA,NA,NA,NA,false,no_positive_root
+1,200,200,0.30,0.654653670707977,0.560674775566990,finite_minimum,1253.40419814402,1.0,0.50,false,NA,NA,NA,NA,NA,false,no_positive_root
+1,400,400,0.30,0.654653670707977,0.565594772439727,finite_minimum,1600.60111966366,1.0,0.50,false,NA,NA,NA,NA,NA,false,no_positive_root
+2,50,50,0.30,0.654653670707977,0.557729513494449,finite_minimum,438.971974941776,1.0,0.50,false,NA,NA,NA,NA,NA,false,no_positive_root
+2,100,100,0.30,0.654653670707977,0.574206096648755,asymptotic_infimum,c_xi_to_infinity,1.0,0.50,false,NA,NA,NA,NA,NA,false,no_positive_root
+2,200,200,0.30,0.654653670707977,0.567942821653623,asymptotic_infimum,c_xi_to_infinity,1.0,0.50,false,NA,NA,NA,NA,NA,false,no_positive_root
+2,400,400,0.30,0.654653670707977,0.569229456424706,asymptotic_infimum,c_xi_to_infinity,1.0,0.50,false,NA,NA,NA,NA,NA,false,no_positive_root
+3,50,50,0.30,0.654653670707977,0.574382676447173,asymptotic_infimum,c_xi_to_infinity,1.0,0.50,false,NA,NA,NA,NA,NA,false,no_positive_root
+3,100,100,0.30,0.654653670707977,0.563529832859397,asymptotic_infimum,c_xi_to_infinity,1.0,0.50,false,NA,NA,NA,NA,NA,false,no_positive_root
+3,200,200,0.30,0.654653670707977,0.577314854347504,asymptotic_infimum,c_xi_to_infinity,1.0,0.50,false,NA,NA,NA,NA,NA,false,no_positive_root
+3,400,400,0.30,0.654653670707977,0.568366062454952,asymptotic_infimum,c_xi_to_infinity,1.0,0.50,false,NA,NA,NA,NA,NA,false,no_positive_root
+4,50,50,0.30,0.654653670707977,0.552047550360750,asymptotic_infimum,c_xi_to_infinity,1.0,0.50,false,NA,NA,NA,NA,NA,false,no_positive_root
+4,100,100,0.30,0.654653670707977,0.546990722390798,asymptotic_infimum,c_xi_to_infinity,1.0,0.50,false,NA,NA,NA,NA,NA,false,no_positive_root
+4,200,200,0.30,0.654653670707977,0.556966293645043,asymptotic_infimum,c_xi_to_infinity,1.0,0.50,false,NA,NA,NA,NA,NA,false,no_positive_root
+4,400,400,0.30,0.654653670707977,0.552254574449150,asymptotic_infimum,c_xi_to_infinity,1.0,0.50,false,NA,NA,NA,NA,NA,false,no_positive_root

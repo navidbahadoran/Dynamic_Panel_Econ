@@ -32,7 +32,7 @@ def _csv_strings(value: str) -> list[str]:
 def build_run_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
-            "Run the Revision-8 Monte Carlo. --pooled-r2-target calibrates the simulated DGP "
+            "Run the locked Revision-9 Monte Carlo. --pooled-r2-target calibrates the simulated DGP "
             "through c_xi; it is not an estimation or rank-selection tuning parameter."
         )
     )

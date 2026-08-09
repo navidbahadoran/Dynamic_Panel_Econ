@@ -13,6 +13,8 @@ output_root = "results/mc"
 [dgp]
 target_r2 = 0.65
 calibration_draws = 50
+kappa_f_b = 0.15
+rho_fx = 0.5
 group_gap_pilot_draws = 500
 auto_adjust_group_gap = false
 min_abs_postscale_group_diff_a = 0.05
@@ -20,7 +22,7 @@ prespecified_gap_grid = [0.2, 0.3, 0.4, 0.5, 0.6]
 
 [estimation]
 rank_caps = [3, 3, 3]
-coefficient_bound = 9.0
+coefficient_bound = 10.0
 simulation_interior_margin = 1.0
 nuclear_gamma = 0.8
 nuclear_epsilon = 0.01

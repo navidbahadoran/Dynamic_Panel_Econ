@@ -15,6 +15,8 @@ frozen_calibration_path = "configs/mc/frozen_dgp_calibration.toml"
 # Common inference target selected after the deterministic R2-feasibility exercise.
 target_r2 = 0.65
 calibration_draws = 50
+kappa_f_b = 0.15
+rho_fx = 0.5
 mu_lambda_a_1 = 0.9
 mu_lambda_a_2 = 1.1
 auto_adjust_group_gap = false

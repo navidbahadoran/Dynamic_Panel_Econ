@@ -64,13 +64,13 @@ def test_frozen_calibration_is_selected_without_using_run_seed():
 def test_frozen_envelopes_cover_generated_truths_and_proposed_common_box():
     frozen = load_frozen_calibrations(FROZEN)
     maximum = max(float(result.diagnostics["C_Theta"]) for result in frozen.values())
-    assert maximum == pytest.approx(8.410761115894578, abs=1e-12)
+    assert maximum == pytest.approx(8.288745227963506, abs=1e-12)
     assert maximum < 10.0 - 1.0
     for key, result in frozen.items():
         ranks = key[3] or (1, 1, 1)
         assert float(result.diagnostics["C_A"]) == 0.85
         expected_beta = 0.0 if ranks[1] == 0 else (
-            1.959615242270663 if key[0] == 4 else 2.031384387633061
+            1.71466333698683 if key[0] == 4 else 1.7774613391789282
         )
         assert float(result.diagnostics["C_beta"]) == pytest.approx(
             expected_beta, abs=1e-12

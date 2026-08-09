@@ -114,14 +114,23 @@ python scripts\run_mc.py --dgp-grid 1,2,3,4 --balanced-grid 50,100,200,400 `
   --pooled-r2-target 0.65 --workers 8 --output-root results/mc/production_fixed --resume
 ```
 
-Selected-rank mode runs the complete Revision-8 selection pipeline. An author-approved fixed
-positive IC multiplier must be supplied for production:
+Selected-rank mode runs the locked Revision-9 selection pipeline. The paper fixes the baseline
+IC multiplier at exactly `1.0`:
 
 ```powershell
 python scripts\run_mc.py --dgp-grid 1,2,3,4 --balanced-grid 50,100,200,400 `
-  --replications 1000 --rank-mode selected --rank-caps 2,2,2 `
-  --ic-multiplier APPROVED_CONSTANT --pooled-r2-target 0.65 --workers 8 `
+  --replications 1000 --rank-mode selected --rank-caps 3,3,3 `
+  --kappa-f-b 0.15 --coefficient-bound 10 --ic-multiplier 1.0 `
+  --pooled-r2-target 0.65 --frozen-calibration configs/mc/frozen_dgp_calibration.toml --workers 8 `
   --output-root results/mc/production_selected --resume
+```
+
+The canonical non-executing paper-validation command is:
+
+```powershell
+python scripts\run_mc.py --config configs\mc\production.toml --pooled-r2-target 0.65 `
+  --kappa-f-b 0.15 --coefficient-bound 10 --rank-caps 3,3,3 `
+  --ic-multiplier 1.0 --print-resolved-config --dry-run
 ```
 
 Run `python scripts/run_mc.py --help` for the complete interface. Configuration precedence is
@@ -192,9 +201,9 @@ pre-scaling maximum, `c_a`, and the final maximum.
 
 The simulation and estimator coefficient box is the fixed parameter-space constant `B=10`, with
 `c_B=1`. It is not estimated or changed by replication. The common analytical DGP envelope is
-`C_Theta,max=8.410761115894578`, so its distance to the boundary B is
-`1.589238884105422`, while its additional slack relative to the required envelope `B-c_B=9` is
-`0.589238884105422`. Higher-rank stress blocks are multiplied by one deterministic common factor
+`C_Theta,max=8.288745227963506`, so its distance to the boundary B is
+`1.711254772036494`, while its additional slack relative to the required envelope `B-c_B=9` is
+`0.711254772036494`. Higher-rank stress blocks are multiplied by one deterministic common factor
 per matrix so their support envelope equals the corresponding rank-one envelope; truths are never
 clipped entrywise. Manifests and rows retain theoretical and realized blockwise envelopes.
 
@@ -231,13 +240,9 @@ variance. A separate 50-draw calibration-only experiment brackets `c_xi>0` and c
 `scipy.optimize.brentq`; its constants are frozen by DGP, N, T, and rank design before production.
 Startup validates the requested cells, analytical `c_h`, coefficient envelopes, and table hash.
 
-There is an important reproducible feasibility problem in the supplied statistical specification:
-with `H0=c_xi*c_H*H_raw` and `u=c_xi*u_tilde`, the lagged-outcome and persistent interactive-effect
-terms can keep pooled R-squared above 0.50 even as `c_xi` becomes arbitrarily large. In deterministic
-DGP 1 checks its numerical floor is about 0.58. Therefore the mandated 0.50 root need not exist.
-The old 0.50 feasibility result is retained as the reason for the prespecified active target
-`pooled_r2_target=0.65`. Smoke, pilot, Riesz-diagnostic, and production configurations all use
-0.65; the protected DGP formulas are unchanged.
+Locked Revision 9 prespecifies `pooled_r2_target=0.65`. Smoke, pilot, Riesz-diagnostic, and
+production configurations use this value; calibration draws are independent of reported
+replications and the active frozen table is never recalculated by a production replication.
 
 Calibration output includes targets, achieved moments, coefficient ranges, stability summaries,
 and primitive conditional variance summaries.
@@ -263,8 +268,8 @@ two-way split correction.
 Every target row stores the true ratio `||P0 D||/||D||`; entry rows also store scaled unit and
 time leverage. Fixed-time G2-minus-G1 contrasts in DGPs 1--3 are retained only as
 `weak_target_stress_outside_assumption9` and excluded from headline theorem-coverage tables. The
-same contrasts remain theorem-covered in DGP 4. `B_entry` remains a leverage diagnostic pending
-the author's slope-factor choice.
+same contrasts remain theorem-covered in DGP 4. `B_entry` is theorem-covered under the locked
+factor `f_b=0.6+0.15*g_b`, whose deterministic support is `[0.15,1.05]`.
 
 ## 13. Estimator pipeline
 
@@ -287,7 +292,7 @@ Nuclear estimates are screening and warm starts only. They are never reported es
 
 ## 14. Rank selection and stress design
 
-The dimension is the sum of `r*(N+T-r)` over matrices. Revision 8 uses
+The dimension is the sum of `r*(N+T-r)` over matrices. Locked Revision 9 uses
 `b_NT=(NT)^(1/(8+eta))*log(NT)` and
 `kappa_NT=b_NT^2*log(NT)^(spatial_dimension+3)`. The lattice designs set
 `spatial_dimension=1`, so the logarithmic exponent is four. The penalty fixes
@@ -303,7 +308,7 @@ stability scaling. Calibration is performed separately on each actual true-rank 
 Rank diagnostics are stored once per replication under `rank/`, not repeated on every target row.
 They include candidate coverage of the actual true vector, exact/under/over/zero-rank recovery,
 cap margins, candidate validity, and nuclear-path proposals. Prespecified stability checks cover
-the dense `sqrt(0.8)` nuclear grid, threshold multipliers `0.5,1,2`, IC multipliers `0.5,1,2`,
+the dense `sqrt(0.8)` nuclear grid, threshold sensitivities `0.5,2`, IC sensitivities `0.5,2`,
 larger caps, and best one-coordinate target changes. They are diagnostics, not rank-robust inference.
 Each sensitivity uses the same rank-at-most-cap pilot, stable candidate post-refits, and local
 candidate-completion algorithm, changing only its named tuning input.
@@ -364,13 +369,14 @@ The numerical fixed-rank routine solves the paper's literal problem over the sup
 factorization and the reconstructed entrywise box. It first runs unconstrained ALS. A solution
 strictly inside `B` is the fast-path constrained solution. Otherwise, alternating row and time
 convex quadratic subproblems impose `-B <= loading*factor' <= B` directly. Successful boundary
-activity is retained and reported; it is not a `coefficient_bound_hit` failure. New failures
-distinguish constrained solver, feasibility, optimality/KKT, and nonfinite-solution failures.
+activity is retained as a valid constrained point estimate and remains in bias, RMSE, and
+Monte Carlo-SD summaries. It receives `boundary_interiority_failure` for primary theorem-based
+inference, so it is excluded from coverage and rejection denominators. Other failures distinguish
+constrained solver, feasibility, optimality/KKT, and nonfinite solutions.
 
-The maintained slope factor has `mu_f_b=0.6` and `kappa_f_b=0.20`; its bounded-AR support reaches
-zero and therefore does not give a deterministic lower time-leverage constant for `B_entry`.
-`scripts/diagnose_b_entry_leverage.py` reports the unapproved `kappa_f_b=0.15` alternative, whose
-factor lower bound is 0.15, without changing any active DGP configuration.
+The maintained slope factor has `mu_f_b=0.6` and `kappa_f_b=0.15`. Since the bounded AR support is
+`g_b in [-3,3]`, the factor satisfies `f_b in [0.15,1.05]`; this gives the deterministic positive
+time-leverage floor used for theorem-covered `B_entry` inference.
 
 ## 18. Parallel execution
 
@@ -422,8 +428,8 @@ python scripts\aggregate_mc.py --config configs\mc\pilot.toml
 python scripts\make_mc_tables.py --config configs\mc\pilot.toml
 ```
 
-Substitute `production.toml` only after the author approves the B-entry slope-factor choice and
-after timing the pilot. Builders create `tab_mc_dgp1` through `tab_mc_dgp4`, `tab_mc_main_summary`,
+Substitute `production.toml` only after one fresh locked-Revision-9 preflight passes and the
+worker count is fixed ex ante. Builders create `tab_mc_dgp1` through `tab_mc_dgp4`, `tab_mc_main_summary`,
 `tab_mc_coeff_summary`, `tab_mc_bias_correction`, `tab_mc_dgp4_groups`, `tab_mc_rank`,
 `tab_mc_computation`, `tab_mc_target_regularity`, and `tab_mc_spatial_sensitivity` in matching LaTeX, CSV, and Parquet formats.
 Performance tables use named mathematical target panels rather than an internal target-string column.

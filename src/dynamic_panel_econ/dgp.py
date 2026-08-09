@@ -13,6 +13,14 @@ from .seeds import rng_for
 
 Array = NDArray[np.float64]
 SQRT3 = float(np.sqrt(3.0))
+INITIAL_CONDITIONS = {
+    "y_i_minus_50": 0.0,
+    "x_i_minus_50": 0.0,
+    "g_a_minus_50": 0.0,
+    "g_b_minus_50": 0.0,
+    "g_h_minus_50": 0.0,
+    "f_x_minus_50": 0.0,
+}
 DGP4_TRUTH_NAMES = (
     "A_G1_fixed_time_true",
     "A_G2_fixed_time_true",
@@ -37,12 +45,13 @@ class DGPParameters:
     rho_g: float = 0.5
     rho_s: float = 0.5
     rho_x: float = 0.5
+    rho_fx: float = 0.5
     delta_x: float = 0.5
     eta_x: float = 0.3
     mu_f_a: float = 0.5
     kappa_f_a: float = 0.1
     mu_f_b: float = 0.6
-    kappa_f_b: float = 0.2
+    kappa_f_b: float = 0.15
     mu_lambda_a_1: float = 0.9
     mu_lambda_a_2: float = 1.1
     sigma_lambda_a: float = 0.08
@@ -93,7 +102,7 @@ def _bounded(rng: np.random.Generator, shape: int | tuple[int, ...]) -> Array:
 
 def _ar_uniform(rng: np.random.Generator, length: int, rho: float) -> Array:
     values = np.empty(length, dtype=np.float64)
-    previous = 0.0
+    previous = INITIAL_CONDITIONS["g_a_minus_50"]
     scale = np.sqrt(1.0 - rho * rho)
     for j in range(length):
         previous = rho * previous + scale * float(_bounded(rng, 1)[0])
@@ -125,7 +134,7 @@ def rank_one_raw_envelopes(dgp: int, params: DGPParameters) -> dict[str, float]:
         loading_b = 1.0 + 0.4 * SQRT3
     factor_a = abs(params.mu_f_a) + abs(params.kappa_f_a) * g_bound
     factor_b = abs(params.mu_f_b) + abs(params.kappa_f_b) * g_bound
-    h_bound = SQRT3 * bounded_ar_envelope(0.5)
+    h_bound = SQRT3 * bounded_ar_envelope(params.rho_g)
     return {
         "A_raw": float(loading_a * factor_a),
         "A": float(min(params.stability_bound, loading_a * factor_a)),
@@ -222,7 +231,7 @@ def _draw_raw(
     beta = lambda_b[:, None] * f_b[None, :]
 
     lambda_h = _bounded(rng, n)
-    g_h = _ar_uniform(rng, length, 0.5)
+    g_h = _ar_uniform(rng, length, params.rho_g)
     h_raw = lambda_h[:, None] * g_h[None, :]
 
     # Include the primitive disturbance at t=-50 for predetermined x at t=-49.
@@ -230,9 +239,9 @@ def _draw_raw(
     lambda_x = _bounded(rng, n)
     sigma_e2 = rng.uniform(0.5, 1.5, size=n)
     e = rng.normal(size=(n, length)) * np.sqrt(sigma_e2)[:, None]
-    f_x = _ar_uniform(rng, length, 0.5)
+    f_x = _ar_uniform(rng, length, params.rho_fx)
     x = np.empty((n, length), dtype=np.float64)
-    previous_x = np.zeros(n, dtype=np.float64)
+    previous_x = np.full(n, INITIAL_CONDITIONS["x_i_minus_50"], dtype=np.float64)
     x_innovation_scale = np.sqrt(1.0 - params.rho_x * params.rho_x)
     for j in range(length):
         predetermined = params.eta_x * u_all[:, j] if dgp >= 3 else 0.0
@@ -311,7 +320,7 @@ def _simulate(raw: _RawDraw, c_h: float, c_xi: float) -> tuple[Array, Array, Arr
     h0 = c_xi * c_h * raw.h_raw
     u = c_xi * raw.u_tilde
     y = np.empty((n, length), dtype=np.float64)
-    previous = np.zeros(n, dtype=np.float64)
+    previous = np.full(n, INITIAL_CONDITIONS["y_i_minus_50"], dtype=np.float64)
     for j in range(length):
         current = raw.a[:, j] * previous + raw.beta[:, j] * raw.x[:, j] + h0[:, j] + u[:, j]
         y[:, j] = current

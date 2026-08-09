@@ -17,7 +17,12 @@ import numpy as np
 import pandas as pd
 from threadpoolctl import threadpool_limits
 
-from .calibration import CalibrationResult, calibrate_cell, calibrate_rank_stress_cell
+from .calibration import (
+    CalibrationResult,
+    calibrate_cell,
+    calibrate_rank_stress_cell,
+    load_frozen_calibrations,
+)
 from .config import config_hash, write_resolved_config
 from .dgp import (
     DGPParameters,
@@ -153,6 +158,22 @@ def calibrate_design(
     *,
     failures: dict[tuple[int, int, int, tuple[int, ...] | None], str] | None = None,
 ) -> dict[tuple[int, int, int, tuple[int, ...] | None], CalibrationResult]:
+    frozen_path = config["dgp"].get("frozen_calibration_path")
+    if frozen_path:
+        frozen = load_frozen_calibrations(frozen_path)
+        selected = {}
+        for dgp in config["run"]["dgps"]:
+            for n, t in config["run"]["cells"]:
+                for true_rank in _task_designs(config):
+                    key = (int(dgp), int(n), int(t), true_rank)
+                    if key not in frozen:
+                        message = f"missing frozen calibration cell: {key}"
+                        if failures is None:
+                            raise KeyError(message)
+                        failures[key] = message
+                    else:
+                        selected[key] = frozen[key]
+        return selected
     params = _params(config)
     calibration_seed = config["dgp"].get("calibration_seed")
     calibration_seed = (

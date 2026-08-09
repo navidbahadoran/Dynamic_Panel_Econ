@@ -1,0 +1,1045 @@
+schema_version = 1
+status = "candidate_not_activated"
+method = "population_c_h_and_independent_frozen_cell_c_xi"
+calibration_seed = 20260807
+calibration_draws = 50
+
+[[calibration]]
+rank_stress = false
+design = "baseline"
+dgp = 1
+n = 50
+t = 50
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 1.8451414115382054
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999819946
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 6.2765811111558554
+C_Theta = 6.2765811111558554
+
+[[calibration]]
+rank_stress = false
+design = "baseline"
+dgp = 1
+n = 100
+t = 100
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 1.942703845041696
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999999947
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 6.608457315037656
+C_Theta = 6.608457315037656
+
+[[calibration]]
+rank_stress = false
+design = "baseline"
+dgp = 1
+n = 200
+t = 200
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 1.7750833019902188
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999999614
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 6.0382658230579072
+C_Theta = 6.0382658230579072
+
+[[calibration]]
+rank_stress = false
+design = "baseline"
+dgp = 1
+n = 400
+t = 400
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 1.7846328890382204
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999999991
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 6.0707504647823907
+C_Theta = 6.0707504647823907
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 1
+n = 50
+t = 50
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 1.8403718390741428
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999889169
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 6.2603565506701262
+C_Theta = 6.2603565506701262
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 1
+n = 50
+t = 50
+true_rank_vector = [2, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 0.83543039415127374
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999917757
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 2.8418670779514943
+C_Theta = 2.8418670779514943
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 1
+n = 50
+t = 50
+true_rank_vector = [1, 0, 2]
+c_h = 0.73017129179870022
+c_xi = 1
+intended_r2 = 0.65
+achieved_r2 = 0.53440566543159951
+r2_scale_identified = false
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 0.80384757729336798
+C_A = 0.84999999999999998
+C_beta = 0
+C_H = 3.7940813268706468
+C_Theta = 3.7940813268706468
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 1
+n = 100
+t = 100
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 1.7826091034371454
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999999991
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 6.0638661932586446
+C_Theta = 6.0638661932586446
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 1
+n = 100
+t = 100
+true_rank_vector = [2, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 0.82316336246291877
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999981195
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 2.8001385584442047
+C_Theta = 2.8001385584442047
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 1
+n = 100
+t = 100
+true_rank_vector = [1, 0, 2]
+c_h = 0.73017129179870022
+c_xi = 1
+intended_r2 = 0.65
+achieved_r2 = 0.53930149644280112
+r2_scale_identified = false
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 0.80384757729336798
+C_A = 0.84999999999999998
+C_beta = 0
+C_H = 3.7940813268706468
+C_Theta = 3.7940813268706468
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 1
+n = 200
+t = 200
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 1.9409262896852184
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999999958
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 6.6024106400756546
+C_Theta = 6.6024106400756546
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 1
+n = 200
+t = 200
+true_rank_vector = [2, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 0.82953722599186575
+intended_r2 = 0.65
+achieved_r2 = 0.6499999999995083
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 2.8218204041719659
+C_Theta = 2.8218204041719659
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 1
+n = 200
+t = 200
+true_rank_vector = [1, 0, 2]
+c_h = 0.73017129179870022
+c_xi = 1
+intended_r2 = 0.65
+achieved_r2 = 0.5286137848435728
+r2_scale_identified = false
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 0.80384757729336798
+C_A = 0.84999999999999998
+C_beta = 0
+C_H = 3.7940813268706468
+C_Theta = 3.7940813268706468
+
+[[calibration]]
+rank_stress = false
+design = "baseline"
+dgp = 2
+n = 50
+t = 50
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 1.7637507666211538
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999995994
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 5.9997161612302632
+C_Theta = 5.9997161612302632
+
+[[calibration]]
+rank_stress = false
+design = "baseline"
+dgp = 2
+n = 100
+t = 100
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 1.8615802982054275
+intended_r2 = 0.65
+achieved_r2 = 0.65000000000227431
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 6.3325009473801703
+C_Theta = 6.3325009473801703
+
+[[calibration]]
+rank_stress = false
+design = "baseline"
+dgp = 2
+n = 200
+t = 200
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 1.8379999774164748
+intended_r2 = 0.65
+achieved_r2 = 0.6499999999991628
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 6.2522882356967049
+C_Theta = 6.2522882356967049
+
+[[calibration]]
+rank_stress = false
+design = "baseline"
+dgp = 2
+n = 400
+t = 400
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 1.8384726560310767
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999909208
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 6.2538961372079411
+C_Theta = 6.2538961372079411
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 2
+n = 50
+t = 50
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 1.7738865473681562
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999999469
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 6.0341948464874644
+C_Theta = 6.0341948464874644
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 2
+n = 50
+t = 50
+true_rank_vector = [2, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 0.82508098255697848
+intended_r2 = 0.65
+achieved_r2 = 0.6499999999997722
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 2.8066616888587537
+C_Theta = 2.8066616888587537
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 2
+n = 50
+t = 50
+true_rank_vector = [1, 0, 2]
+c_h = 0.73017129179870022
+c_xi = 1
+intended_r2 = 0.65
+achieved_r2 = 0.53034901910872323
+r2_scale_identified = false
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 0.80384757729336798
+C_A = 0.84999999999999998
+C_beta = 0
+C_H = 3.7940813268706468
+C_Theta = 3.7940813268706468
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 2
+n = 100
+t = 100
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 1.8510853649102119
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999697633
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 6.2968005399904312
+C_Theta = 6.2968005399904312
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 2
+n = 100
+t = 100
+true_rank_vector = [2, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 0.83504394235751889
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999909508
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 2.8405524925143641
+C_Theta = 2.8405524925143641
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 2
+n = 100
+t = 100
+true_rank_vector = [1, 0, 2]
+c_h = 0.73017129179870022
+c_xi = 1
+intended_r2 = 0.65
+achieved_r2 = 0.53144183415780688
+r2_scale_identified = false
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 0.80384757729336798
+C_A = 0.84999999999999998
+C_beta = 0
+C_H = 3.7940813268706468
+C_Theta = 3.7940813268706468
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 2
+n = 200
+t = 200
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 1.8382633321197204
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999911351
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 6.2531840841913455
+C_Theta = 6.2531840841913455
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 2
+n = 200
+t = 200
+true_rank_vector = [2, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 0.83839025143674839
+intended_r2 = 0.65
+achieved_r2 = 0.6499999999986068
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 2.8519355660432768
+C_Theta = 2.8519355660432768
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 2
+n = 200
+t = 200
+true_rank_vector = [1, 0, 2]
+c_h = 0.73017129179870022
+c_xi = 1
+intended_r2 = 0.65
+achieved_r2 = 0.53084649388214455
+r2_scale_identified = false
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 0.80384757729336798
+C_A = 0.84999999999999998
+C_beta = 0
+C_H = 3.7940813268706468
+C_Theta = 3.7940813268706468
+
+[[calibration]]
+rank_stress = false
+design = "baseline"
+dgp = 3
+n = 50
+t = 50
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 2.310923941089198
+intended_r2 = 0.65
+achieved_r2 = 0.65000000000000002
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 7.8610243460236662
+C_Theta = 7.8610243460236662
+
+[[calibration]]
+rank_stress = false
+design = "baseline"
+dgp = 3
+n = 100
+t = 100
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 2.177252381020268
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999999747
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 7.406316439203696
+C_Theta = 7.406316439203696
+
+[[calibration]]
+rank_stress = false
+design = "baseline"
+dgp = 3
+n = 200
+t = 200
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 2.3417189981741848
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999999991
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 7.9657792837254116
+C_Theta = 7.9657792837254116
+
+[[calibration]]
+rank_stress = false
+design = "baseline"
+dgp = 3
+n = 400
+t = 400
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 2.2082572663416933
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999949631
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 7.5117851454747138
+C_Theta = 7.5117851454747138
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 3
+n = 50
+t = 50
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 2.1485354757163129
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999981417
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 7.3086307093867093
+C_Theta = 7.3086307093867093
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 3
+n = 50
+t = 50
+true_rank_vector = [2, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 0.86880844530151569
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999319091
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 2.9554085355691804
+C_Theta = 2.9554085355691804
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 3
+n = 50
+t = 50
+true_rank_vector = [1, 0, 2]
+c_h = 0.73017129179870022
+c_xi = 1
+intended_r2 = 0.65
+achieved_r2 = 0.53392174686850036
+r2_scale_identified = false
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 0.80384757729336798
+C_A = 0.84999999999999998
+C_beta = 0
+C_H = 3.7940813268706468
+C_Theta = 3.7940813268706468
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 3
+n = 100
+t = 100
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 2.2353403980451212
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999993663
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 7.6039132998902437
+C_Theta = 7.6039132998902437
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 3
+n = 100
+t = 100
+true_rank_vector = [2, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 0.88858925866719796
+intended_r2 = 0.65
+achieved_r2 = 0.649999999998918
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 3.0226965378642663
+C_Theta = 3.0226965378642663
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 3
+n = 100
+t = 100
+true_rank_vector = [1, 0, 2]
+c_h = 0.73017129179870022
+c_xi = 1
+intended_r2 = 0.65
+achieved_r2 = 0.53222276064582663
+r2_scale_identified = false
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 0.80384757729336798
+C_A = 0.84999999999999998
+C_beta = 0
+C_H = 3.7940813268706468
+C_Theta = 3.7940813268706468
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 3
+n = 200
+t = 200
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 2.2547798387816633
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999940394
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 7.6700400616524753
+C_Theta = 7.6700400616524753
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 3
+n = 200
+t = 200
+true_rank_vector = [2, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 0.87596343750128569
+intended_r2 = 0.65
+achieved_r2 = 0.649999999991421
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 2.0313843876330608
+C_H = 2.9797475312747208
+C_Theta = 2.9797475312747208
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 3
+n = 200
+t = 200
+true_rank_vector = [1, 0, 2]
+c_h = 0.73017129179870022
+c_xi = 1
+intended_r2 = 0.65
+achieved_r2 = 0.53514228180349888
+r2_scale_identified = false
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 0.80384757729336798
+C_A = 0.84999999999999998
+C_beta = 0
+C_H = 3.7940813268706468
+C_Theta = 3.7940813268706468
+
+[[calibration]]
+rank_stress = false
+design = "baseline"
+dgp = 4
+n = 50
+t = 50
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 1.9996196966822253
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999999991
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 1.9596152422706632
+C_H = 6.8020668438783121
+C_Theta = 6.8020668438783121
+
+[[calibration]]
+rank_stress = false
+design = "baseline"
+dgp = 4
+n = 100
+t = 100
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 1.9307376336648547
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999999991
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 1.9596152422706632
+C_H = 6.5677520900449728
+C_Theta = 6.5677520900449728
+
+[[calibration]]
+rank_stress = false
+design = "baseline"
+dgp = 4
+n = 200
+t = 200
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 2.0028959492980847
+intended_r2 = 0.65
+achieved_r2 = 0.65000000000000002
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 1.9596152422706632
+C_H = 6.8132116077188973
+C_Theta = 6.8132116077188973
+
+[[calibration]]
+rank_stress = false
+design = "baseline"
+dgp = 4
+n = 400
+t = 400
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 1.9831605726918267
+intended_r2 = 0.65
+achieved_r2 = 0.65000000000000002
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 1.9596152422706632
+C_H = 6.7460781667512917
+C_Theta = 6.7460781667512917
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 4
+n = 50
+t = 50
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 2.4725313610476847
+intended_r2 = 0.65
+achieved_r2 = 0.65000000000000013
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 1.9596152422706632
+C_H = 8.4107611158945783
+C_Theta = 8.4107611158945783
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 4
+n = 50
+t = 50
+true_rank_vector = [2, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 0.86400191738096088
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999462332
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 1.9596152422706632
+C_H = 2.9390582644367109
+C_Theta = 2.9390582644367109
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 4
+n = 50
+t = 50
+true_rank_vector = [1, 0, 2]
+c_h = 0.73017129179870022
+c_xi = 1
+intended_r2 = 0.65
+achieved_r2 = 0.53658973289139533
+r2_scale_identified = false
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 0.80384757729336798
+C_A = 0.84999999999999998
+C_beta = 0
+C_H = 3.7940813268706468
+C_Theta = 3.7940813268706468
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 4
+n = 100
+t = 100
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 2.0365236190276481
+intended_r2 = 0.65
+achieved_r2 = 0.65000000000000002
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 1.9596152422706632
+C_H = 6.9276021879296623
+C_Theta = 6.9276021879296623
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 4
+n = 100
+t = 100
+true_rank_vector = [2, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 0.87545294416133823
+intended_r2 = 0.65
+achieved_r2 = 0.64999999999057523
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 1.9596152422706632
+C_H = 2.9780109961588495
+C_Theta = 2.9780109961588495
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 4
+n = 100
+t = 100
+true_rank_vector = [1, 0, 2]
+c_h = 0.73017129179870022
+c_xi = 1
+intended_r2 = 0.65
+achieved_r2 = 0.52658166792872063
+r2_scale_identified = false
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 0.80384757729336798
+C_A = 0.84999999999999998
+C_beta = 0
+C_H = 3.7940813268706468
+C_Theta = 3.7940813268706468
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 4
+n = 200
+t = 200
+true_rank_vector = [1, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 2.0313324733207425
+intended_r2 = 0.65
+achieved_r2 = 0.65000000000000002
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 1.9596152422706632
+C_H = 6.909943570066841
+C_Theta = 6.909943570066841
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 4
+n = 200
+t = 200
+true_rank_vector = [2, 1, 1]
+c_h = 0.6546536707079772
+c_xi = 0.86657656940487982
+intended_r2 = 0.65
+achieved_r2 = 0.6499999999932109
+r2_scale_identified = true
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 1
+C_A = 0.84999999999999998
+C_beta = 1.9596152422706632
+C_H = 2.9478164073953343
+C_Theta = 2.9478164073953343
+
+[[calibration]]
+rank_stress = true
+design = "rank_stress"
+dgp = 4
+n = 200
+t = 200
+true_rank_vector = [1, 0, 2]
+c_h = 0.73017129179870022
+c_xi = 1
+intended_r2 = 0.65
+achieved_r2 = 0.52109065426352419
+r2_scale_identified = false
+pi_h = 0.30000000000000004
+population_var_u_tilde = 1
+population_var_h_raw = 0.80384757729336798
+C_A = 0.84999999999999998
+C_beta = 0
+C_H = 3.7940813268706468
+C_Theta = 3.7940813268706468

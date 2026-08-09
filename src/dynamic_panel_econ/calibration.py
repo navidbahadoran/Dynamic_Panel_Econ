@@ -2,13 +2,23 @@
 
 from __future__ import annotations
 
+import tomllib
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 import numpy as np
 from scipy.optimize import brentq
 
-from .dgp import DGPParameters, _draw_rank_stress_raw, _draw_raw, _RawDraw, coefficient_envelopes
+from .dgp import (
+    DGPParameters,
+    _draw_rank_stress_raw,
+    _draw_raw,
+    _RawDraw,
+    coefficient_envelopes,
+    rank_one_raw_envelopes,
+    stress_rescale_factor,
+)
 from .seeds import rng_for
 
 
@@ -38,6 +48,66 @@ class CalibrationFeasibilityError(RuntimeError):
         )
 
 
+def population_u_tilde_variance(dgp: int, params: DGPParameters) -> float:
+    """Marginal population variance of the primitive idiosyncratic disturbance."""
+
+    if dgp not in {1, 2, 3, 4}:
+        raise ValueError("dgp must be 1, 2, 3, or 4")
+    if abs(params.rho_s) >= 1.0:
+        raise ValueError("spatial AR requires abs(rho_s) < 1")
+    # E[sigma_i^2] = 1 for sigma_i^2 ~ U[0.5, 1.5].  For DGPs 2--4,
+    # z_0 ~ N(0,1) and z_i=rho_s*z_{i-1}+sqrt(1-rho_s^2)*eps_i,
+    # so every z_i has marginal variance one.  DGP 1 uses eps_i directly.
+    return 1.0
+
+
+def population_h_raw_variance(
+    t: int,
+    params: DGPParameters,
+    *,
+    rank: int = 1,
+    component_strengths: tuple[float, ...] = (1.0, 1.0),
+) -> float:
+    """Average observed-entry population variance of the raw H matrix."""
+
+    if t <= 0:
+        raise ValueError("t must be positive")
+    if rank <= 0:
+        return 0.0
+    rho = 0.5
+    columns = np.arange(params.burn_in + 1, params.burn_in + t + 1, dtype=np.float64)
+    base_variance = float(np.mean(1.0 - rho ** (2.0 * columns)))
+    added_variance = sum(
+        float(component_strengths[min(j - 1, len(component_strengths) - 1)]) ** 2
+        for j in range(1, rank)
+    )
+    raw_envelope = rank_one_raw_envelopes(1, params)["H_raw"]
+    rescale = stress_rescale_factor(raw_envelope, rank, component_strengths)
+    return float(rescale * rescale * (base_variance + added_variance))
+
+
+def deterministic_c_h(
+    dgp: int,
+    t: int,
+    params: DGPParameters,
+    *,
+    pi_h: float,
+    rank: int = 1,
+    component_strengths: tuple[float, ...] = (1.0, 1.0),
+) -> float:
+    """Ex-ante H scale computed only from analytical population moments."""
+
+    if not 0.0 < pi_h < 1.0:
+        raise ValueError("pi_h must lie strictly between zero and one")
+    var_u = population_u_tilde_variance(dgp, params)
+    var_h = population_h_raw_variance(
+        t, params, rank=rank, component_strengths=component_strengths
+    )
+    if var_h <= 0.0:
+        raise ValueError("positive H rank is required for pi_h calibration")
+    return float(np.sqrt((pi_h / (1.0 - pi_h)) * var_u / var_h))
+
+
 def pooled_r2(y: np.ndarray, fitted: np.ndarray) -> float:
     denominator = float(np.sum((y - y.mean()) ** 2))
     if denominator <= 0.0:
@@ -55,6 +125,7 @@ def _calibrate_raws(
     pi_h: float = 0.30,
     target_r2: float = 0.65,
     true_rank_vector: tuple[int, int, int] = (1, 1, 1),
+    component_strengths: tuple[float, ...] = (1.0, 1.0),
     allow_infeasible_diagnostic: bool = False,
     tolerance: float = 1e-10,
 ) -> CalibrationResult:
@@ -67,11 +138,25 @@ def _calibrate_raws(
     var_h = float(np.mean([np.var(raw.h_raw[:, observed]) for raw in raws]))
     if var_u <= 0.0 or var_h <= 0.0:
         raise RuntimeError("nonpositive calibration variance")
-    c_h = float(np.sqrt((pi_h / (1.0 - pi_h)) * var_u / var_h))
+    population_var_u = population_u_tilde_variance(dgp, params)
+    population_var_h = population_h_raw_variance(
+        t,
+        params,
+        rank=true_rank_vector[2],
+        component_strengths=component_strengths,
+    )
+    c_h = deterministic_c_h(
+        dgp,
+        t,
+        params,
+        pi_h=pi_h,
+        rank=true_rank_vector[2],
+        component_strengths=component_strengths,
+    )
 
     # Conditional on each raw draw, y(c_xi)=y_base+c_xi*y_scale.  Compute both
     # recursions once so bracketing does not rerun the dynamic simulation.
-    affine_components: list[tuple[np.ndarray, np.ndarray, np.ndarray]] = []
+    r2_quadratics: list[tuple[float, float, float, float]] = []
     for raw in raws:
         length = raw.x.shape[1]
         y_base = np.empty((n, length), dtype=np.float64)
@@ -85,16 +170,25 @@ def _calibrate_raws(
             y_base[:, column] = current_base
             y_scale[:, column] = current_scale
             previous_base, previous_scale = current_base, current_scale
-        affine_components.append(
-            (y_base[:, observed], y_scale[:, observed], raw.u_tilde[:, observed])
+        observed_base = y_base[:, observed]
+        observed_scale = y_scale[:, observed]
+        centered_base = observed_base - observed_base.mean()
+        centered_scale = observed_scale - observed_scale.mean()
+        primitive_u = raw.u_tilde[:, observed]
+        r2_quadratics.append(
+            (
+                float(np.vdot(centered_base, centered_base)),
+                float(2.0 * np.vdot(centered_base, centered_scale)),
+                float(np.vdot(centered_scale, centered_scale)),
+                float(np.vdot(primitive_u, primitive_u)),
+            )
         )
 
     def average_r2(c_xi: float) -> float:
-        values = []
-        for y_base, y_scale, primitive_u in affine_components:
-            y = y_base + c_xi * y_scale
-            fitted = y - c_xi * primitive_u
-            values.append(pooled_r2(y, fitted))
+        values = [
+            1.0 - c_xi * c_xi * u_ss / (base_ss + c_xi * cross + c_xi * c_xi * scale_ss)
+            for base_ss, cross, scale_ss, u_ss in r2_quadratics
+        ]
         return float(np.mean(values))
 
     r2_scale_identified = true_rank_vector[1] > 0
@@ -133,7 +227,12 @@ def _calibrate_raws(
         target_feasible = None
         requested_r2 = None
     achieved_r2 = average_r2(c_xi)
-    achieved_h_share = (c_h * c_h * var_h) / (c_h * c_h * var_h + var_u)
+    realized_calibration_h_share = (c_h * c_h * var_h) / (
+        c_h * c_h * var_h + var_u
+    )
+    achieved_h_share = (c_h * c_h * population_var_h) / (
+        c_h * c_h * population_var_h + population_var_u
+    )
     coefficient_summary = {
         "mean_a": float(np.mean([raw.a[:, observed].mean() for raw in raws])),
         "sd_a": float(np.std(np.concatenate([raw.a[:, observed].ravel() for raw in raws]), ddof=1)),
@@ -148,6 +247,11 @@ def _calibrate_raws(
         "max_final_abs_a": float(max(np.max(np.abs(raw.a)) for raw in raws)),
         "var_u_tilde": var_u,
         "var_h_raw": var_h,
+        "population_var_u_tilde": population_var_u,
+        "population_var_h_raw": population_var_h,
+        "population_pi_h": achieved_h_share,
+        "realized_calibration_h_share": float(realized_calibration_h_share),
+        "c_h_source": "analytical_population_moments",
         "calibration_draws": draws,
         "minimum_grid_r2": minimum_grid_r2,
         "large_c_xi_r2_floor": large_c_xi_floor,
@@ -281,6 +385,76 @@ def calibrate_rank_stress_cell(
         pi_h=pi_h,
         target_r2=target_r2,
         true_rank_vector=true_rank_vector,
+        component_strengths=component_strengths,
         allow_infeasible_diagnostic=allow_infeasible_diagnostic,
         tolerance=tolerance,
     )
+
+
+def load_frozen_calibrations(
+    path: str | Path,
+) -> dict[tuple[int, int, int, tuple[int, ...] | None], CalibrationResult]:
+    """Load and validate an ex-ante frozen DGP-calibration table."""
+
+    source = Path(path)
+    with source.open("rb") as handle:
+        payload = tomllib.load(handle)
+    if int(payload.get("schema_version", 0)) != 1:
+        raise ValueError("unsupported frozen calibration schema")
+    results: dict[tuple[int, int, int, tuple[int, ...] | None], CalibrationResult] = {}
+    for row in payload.get("calibration", []):
+        is_stress = bool(row["rank_stress"])
+        ranks = tuple(int(value) for value in row["true_rank_vector"])
+        key = (int(row["dgp"]), int(row["n"]), int(row["t"]), ranks if is_stress else None)
+        if key in results:
+            raise ValueError(f"duplicate frozen calibration cell: {key}")
+        numeric = {
+            name: float(row[name])
+            for name in (
+                "c_h",
+                "c_xi",
+                "pi_h",
+                "achieved_r2",
+                "C_A",
+                "C_beta",
+                "C_H",
+                "C_Theta",
+            )
+        }
+        if not all(np.isfinite(value) for value in numeric.values()):
+            raise ValueError(f"nonfinite frozen calibration value: {key}")
+        if ranks[1] == 0 and numeric["c_xi"] != 1.0:
+            raise ValueError(f"zero-slope rank requires c_xi=1: {key}")
+        if not np.isclose(
+            numeric["C_Theta"],
+            max(numeric["C_A"], numeric["C_beta"], numeric["C_H"]),
+            rtol=0.0,
+            atol=1e-12,
+        ):
+            raise ValueError(f"inconsistent coefficient envelope: {key}")
+        diagnostics = dict(row)
+        diagnostics.update(
+            {
+                "theoretical_max_abs_A": numeric["C_A"],
+                "theoretical_max_abs_B": numeric["C_beta"],
+                "theoretical_max_abs_H": numeric["C_H"],
+                "theoretical_coefficient_envelope": numeric["C_Theta"],
+                "calibration_source": "frozen_ex_ante_table",
+                "r2_scale_identified": ranks[1] > 0,
+            }
+        )
+        results[key] = CalibrationResult(
+            dgp=key[0],
+            n=key[1],
+            t=key[2],
+            c_h=numeric["c_h"],
+            c_xi=numeric["c_xi"],
+            target_h_share=numeric["pi_h"],
+            achieved_h_share=numeric["pi_h"],
+            target_r2=(float(row["intended_r2"]) if ranks[1] > 0 else None),
+            achieved_r2=numeric["achieved_r2"],
+            diagnostics=diagnostics,
+        )
+    if not results:
+        raise ValueError("frozen calibration table is empty")
+    return results

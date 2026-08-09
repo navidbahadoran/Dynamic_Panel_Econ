@@ -53,6 +53,7 @@ DEFAULTS: dict[str, Any] = {
         "prespecified_gap_grid": [0.2, 0.3, 0.4, 0.5],
         "calibration_draws": 3,
         "calibration_seed": None,
+        "frozen_calibration_path": None,
         "calibration_tolerance": 1e-10,
         "rho_fx": 0.0,
     },

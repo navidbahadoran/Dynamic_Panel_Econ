@@ -10,6 +10,7 @@ from dynamic_panel_econ.calibration import (
     population_h_raw_variance,
     population_u_tilde_variance,
 )
+from dynamic_panel_econ.config import load_config, validate_config
 from dynamic_panel_econ.dgp import (
     DGPParameters,
     generate_panel,
@@ -62,6 +63,22 @@ def test_frozen_calibration_is_selected_without_using_run_seed():
 
 def test_frozen_envelopes_cover_generated_truths_and_proposed_common_box():
     frozen = load_frozen_calibrations(FROZEN)
+    maximum = max(float(result.diagnostics["C_Theta"]) for result in frozen.values())
+    assert maximum == pytest.approx(8.410761115894578, abs=1e-12)
+    assert maximum < 10.0 - 1.0
+    for key, result in frozen.items():
+        ranks = key[3] or (1, 1, 1)
+        assert float(result.diagnostics["C_A"]) == 0.85
+        expected_beta = 0.0 if ranks[1] == 0 else (
+            1.959615242270663 if key[0] == 4 else 2.031384387633061
+        )
+        assert float(result.diagnostics["C_beta"]) == pytest.approx(
+            expected_beta, abs=1e-12
+        )
+        assert float(result.diagnostics["C_H"]) == pytest.approx(
+            3.0 * np.sqrt(3.0) * result.c_h * result.c_xi,
+            abs=1e-12,
+        )
     selected = {}
     for key, calibration in frozen.items():
         dgp, _n, _t, ranks = key
@@ -106,3 +123,15 @@ def test_zero_slope_frozen_cells_keep_normalization_and_induced_r2():
     assert all(result.target_r2 is None for result in zero_slope)
     assert all(0.0 < result.achieved_r2 < 1.0 for result in zero_slope)
     assert all(result.diagnostics["r2_scale_identified"] is False for result in zero_slope)
+
+
+def test_official_production_config_activates_frozen_table_and_common_bound():
+    config = load_config("configs/mc/production.toml")
+    assert config["dgp"]["frozen_calibration_path"] == str(FROZEN.relative_to(ROOT)).replace(
+        "\\", "/"
+    )
+    assert config["estimation"]["coefficient_bound"] == 10.0
+    assert config["estimation"]["simulation_interior_margin"] == 1.0
+    config["dgp"]["frozen_calibration_path"] = None
+    with pytest.raises(ValueError, match="production run requires frozen_calibration_path"):
+        validate_config(config)

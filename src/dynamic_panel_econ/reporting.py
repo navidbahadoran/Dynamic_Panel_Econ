@@ -143,7 +143,22 @@ def aggregate_run(root: str | Path) -> pd.DataFrame:
         )
 
     rank_rows = []
-    if not rank_raw.empty:
+    rank_required = {
+        "true_rank_in_candidates",
+        "exact_rank_recovery",
+        "A_underselected",
+        "A_overselected",
+        "B_underselected",
+        "B_overselected",
+        "H_underselected",
+        "H_overselected",
+        "zero_rank_recovery",
+        "rank_at_cap",
+        "candidate_count_final",
+        "ic_gap",
+        "rank_runtime_seconds",
+    }
+    if not rank_raw.empty and rank_required.issubset(rank_raw.columns):
         for keys, group in rank_raw.groupby(["dgp", "N", "T", "true_rank_vector"], dropna=False):
             successful = group.loc[group["status"] == "success"]
             denominator = len(group)
@@ -174,6 +189,31 @@ def aggregate_run(root: str | Path) -> pd.DataFrame:
     rank_summary = pd.DataFrame(rank_rows)
     if not rank_summary.empty:
         rank_summary = rank_summary.sort_values(["true_rank_vector", "dgp", "N", "T"])
+    else:
+        rank_summary = pd.DataFrame(
+            columns=[
+                "dgp",
+                "N",
+                "T",
+                "true_rank_vector",
+                "candidate_coverage",
+                "exact_rank_recovery",
+                "A_underselection",
+                "A_overselection",
+                "B_underselection",
+                "B_overselection",
+                "H_underselection",
+                "H_overselection",
+                "zero_rank_recovery",
+                "cap_hit_rate",
+                "mean_candidate_count",
+                "mean_ic_gap",
+                "mean_rank_runtime_seconds",
+                "successful_replications",
+                "requested_replications",
+                "rank_records",
+            ]
+        )
 
     target_rows = raw.loc[raw["record_type"] == "target"].copy() if not raw.empty else pd.DataFrame()
     regularity_rows = []

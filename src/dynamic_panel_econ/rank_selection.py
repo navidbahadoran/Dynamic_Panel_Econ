@@ -145,11 +145,21 @@ def fit_invalid_reasons(
 ) -> list[str]:
     reasons = []
     if not fit.converged:
-        reasons.append("not_converged")
-    if not np.isfinite(fit.stationarity_residual) or fit.stationarity_residual > stationarity_tolerance:
+        reasons.append(str(fit.diagnostics.get("constrained_solver_status", "not_converged")))
+    if fit.diagnostics.get("constrained_fallback_used"):
+        if not bool(fit.diagnostics.get("stationarity_pass", False)):
+            reasons.append("constrained_optimality_failure")
+        if float(fit.diagnostics.get("max_constraint_violation", np.inf)) > float(
+            fit.diagnostics.get("constraint_tolerance", 0.0)
+        ):
+            reasons.append("constrained_feasibility_failure")
+    elif (
+        not np.isfinite(fit.stationarity_residual)
+        or fit.stationarity_residual > stationarity_tolerance
+    ):
         reasons.append("stationarity_high")
-    if not np.isfinite(fit.max_envelope_ratio) or fit.max_envelope_ratio >= 1.0:
-        reasons.append("coefficient_bound_active")
+    if not np.isfinite(fit.max_envelope_ratio) or fit.max_envelope_ratio > 1.0 + 1e-8:
+        reasons.append("constrained_feasibility_failure")
     actual = _numerical_rank_vector(fit.theta)
     if actual != required_ranks:
         reasons.append(f"numerical_rank_support:{actual}")
@@ -320,7 +330,7 @@ def _confirm_best_basin(
 ) -> tuple[list[FitResult], list[dict[str, Any]], bool]:
     """Try to reproduce one best basin from independent deterministic perturbations."""
 
-    coefficient_bound = float(fit_options.get("coefficient_bound", 9.0))
+    coefficient_bound = float(fit_options.get("coefficient_bound", 10.0))
     base, _ = _rescale_cap_start(
         adapt_initial(best_fit.theta, ranks), coefficient_bound, start_envelope_fraction
     )
@@ -439,7 +449,7 @@ def fit_fixed_rank_multistart(
                 [
                     reason
                     for reason in fit_invalid_reasons(fit, ranks, stationarity_tolerance)
-                    if reason != "coefficient_bound_active"
+                    if reason != "constrained_feasibility_failure"
                 ]
             ),
             fit.objective,
@@ -697,7 +707,7 @@ def _fit_candidate(
         for start in prepared_starts:
             rescaled, diagnostics = _rescale_cap_start(
                 start,
-                float(fit_options.get("coefficient_bound", 9.0)),
+                float(fit_options.get("coefficient_bound", 10.0)),
                 start_envelope_fraction,
             )
             prepared.append(rescaled)
@@ -781,7 +791,9 @@ def _fit_candidate(
                 "converged": fit.converged,
                 "stationarity_residual": fit.stationarity_residual,
                 "stationarity_pass": bool(
-                    np.isfinite(fit.stationarity_residual)
+                    fit.diagnostics.get("stationarity_pass", False)
+                    if fit.diagnostics.get("constrained_fallback_used")
+                    else np.isfinite(fit.stationarity_residual)
                     and fit.stationarity_residual <= stationarity_tolerance
                 ),
                 "initial_coefficient_envelope": fit.diagnostics.get(
@@ -791,7 +803,7 @@ def _fit_candidate(
                     "final_coefficient_envelope"
                 ),
                 "coefficient_envelope_ratio": fit.max_envelope_ratio,
-                "coefficient_bound_pass": fit.max_envelope_ratio < 1.0,
+                "coefficient_bound_pass": fit.max_envelope_ratio <= 1.0 + 1e-8,
                 "runtime_seconds": fit.diagnostics.get("runtime_seconds"),
                 "invalid_reasons": fit_invalid_reasons(
                     fit, ranks, stationarity_tolerance
@@ -859,7 +871,7 @@ def fit_rank_adaptive_cap_pilot(
 
     if not preliminary:
         raise RankPilotFailure("rank-cap pilot requires a nonempty nuclear path")
-    coefficient_bound = float(fit_options.get("coefficient_bound", 9.0))
+    coefficient_bound = float(fit_options.get("coefficient_bound", 10.0))
     routes, route_catalog = _cap_pilot_routes(
         preliminary,
         threshold,
@@ -1242,11 +1254,16 @@ def select_ranks(
     caps: RankVector,
     *,
     seed: int | np.random.SeedSequence = 0,
-    coefficient_bound: float = 9.0,
+    coefficient_bound: float = 10.0,
     max_sweeps: int = 200,
     objective_rtol: float = 1e-8,
     stationarity_tol: float = 1e-6,
     lstsq_rcond: float = 1e-10,
+    interior_numerical_tolerance: float = 1e-8,
+    constraint_tolerance: float = 1e-8,
+    constrained_kkt_tolerance: float = 1e-4,
+    constrained_subproblem_tolerance: float = 1e-10,
+    constrained_subproblem_max_iterations: int = 200,
     nuclear_gamma: float = 0.8,
     nuclear_epsilon: float = 0.01,
     nuclear_max_iter: int = 500,
@@ -1292,6 +1309,11 @@ def select_ranks(
         "objective_rtol": objective_rtol,
         "stationarity_tol": stationarity_tol,
         "lstsq_rcond": lstsq_rcond,
+        "interior_numerical_tolerance": interior_numerical_tolerance,
+        "constraint_tolerance": constraint_tolerance,
+        "constrained_kkt_tolerance": constrained_kkt_tolerance,
+        "constrained_subproblem_tolerance": constrained_subproblem_tolerance,
+        "constrained_subproblem_max_iterations": constrained_subproblem_max_iterations,
     }
     baseline_threshold = threshold_multiplier * np.sqrt(n * t) / np.log(n * t)
     cap_fit, cap_pilot_diagnostics = fit_rank_adaptive_cap_pilot(

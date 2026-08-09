@@ -67,6 +67,11 @@ def build_run_parser() -> argparse.ArgumentParser:
     calibration.add_argument("--calibration-draws", type=int)
     calibration.add_argument("--calibration-seed", type=int)
     calibration.add_argument("--calibration-tolerance", type=float)
+    calibration.add_argument(
+        "--frozen-calibration",
+        dest="frozen_calibration_path",
+        help="Ex-ante frozen DGP calibration table; required by the official production config.",
+    )
 
     rank = parser.add_argument_group("rank")
     rank.add_argument("--rank-mode", choices=("fixed", "selected"))
@@ -166,6 +171,8 @@ def resolve_run_args(args: argparse.Namespace) -> dict[str, Any]:
             dgp[name] = values[name]
     if args.pooled_r2_target is not None:
         dgp["target_r2"] = args.pooled_r2_target
+    if args.frozen_calibration_path is not None:
+        dgp["frozen_calibration_path"] = args.frozen_calibration_path
     estimation_map = {
         "fixed_ranks": "fixed_ranks", "rank_caps": "rank_caps",
         "gamma": "nuclear_gamma", "epsilon": "nuclear_epsilon",

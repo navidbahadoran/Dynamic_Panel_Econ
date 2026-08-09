@@ -21,11 +21,13 @@ from .calibration import (
     CalibrationResult,
     calibrate_cell,
     calibrate_rank_stress_cell,
+    deterministic_c_h,
     load_frozen_calibrations,
 )
 from .config import config_hash, write_resolved_config
 from .dgp import (
     DGPParameters,
+    coefficient_envelopes,
     generate_panel,
     generate_rank_stress_panel,
     group_gap_pilot,
@@ -66,6 +68,10 @@ FAILURE_CODES = (
     "full_fit_not_converged",
     "first_order_residual_high",
     "coefficient_bound_active",
+    "constrained_solver_failure",
+    "constrained_feasibility_failure",
+    "constrained_optimality_failure",
+    "nonfinite_constrained_solution",
     "rank_at_cap",
     "rank_pilot_failure",
     "rank_selection_failure",
@@ -161,18 +167,65 @@ def calibrate_design(
     frozen_path = config["dgp"].get("frozen_calibration_path")
     if frozen_path:
         frozen = load_frozen_calibrations(frozen_path)
+        params = _params(config)
         selected = {}
         for dgp in config["run"]["dgps"]:
             for n, t in config["run"]["cells"]:
                 for true_rank in _task_designs(config):
                     key = (int(dgp), int(n), int(t), true_rank)
                     if key not in frozen:
-                        message = f"missing frozen calibration cell: {key}"
-                        if failures is None:
-                            raise KeyError(message)
-                        failures[key] = message
+                        raise KeyError(f"missing frozen calibration cell: {key}")
                     else:
-                        selected[key] = frozen[key]
+                        result = frozen[key]
+                        ranks = tuple(true_rank or (1, 1, 1))
+                        strengths = tuple(
+                            config.get("rank_stress", {}).get(
+                                "component_strengths", (1.0, 1.0)
+                            )
+                        )
+                        expected_c_h = deterministic_c_h(
+                            int(dgp),
+                            int(t),
+                            params,
+                            pi_h=float(config["dgp"].get("pi_h", 0.30)),
+                            rank=ranks[2],
+                            component_strengths=strengths,
+                        )
+                        expected_envelopes = coefficient_envelopes(
+                            int(dgp),
+                            params,
+                            c_h=result.c_h,
+                            c_xi=result.c_xi,
+                            ranks=ranks,
+                        )
+                        malformed = []
+                        if not np.isclose(result.c_h, expected_c_h, rtol=0.0, atol=1e-12):
+                            malformed.append("c_h does not match analytical population formula")
+                        if ranks[1] > 0 and not np.isclose(
+                            float(result.target_r2),
+                            float(config["dgp"].get("target_r2", 0.65)),
+                            rtol=0.0,
+                            atol=1e-12,
+                        ):
+                            malformed.append("intended R2 does not match requested design")
+                        for label, diagnostic in (
+                            ("A", "theoretical_max_abs_A"),
+                            ("B", "theoretical_max_abs_B"),
+                            ("H", "theoretical_max_abs_H"),
+                            ("all", "theoretical_coefficient_envelope"),
+                        ):
+                            if not np.isclose(
+                                float(result.diagnostics[diagnostic]),
+                                expected_envelopes[label],
+                                rtol=0.0,
+                                atol=1e-12,
+                            ):
+                                malformed.append(f"stored {diagnostic} is inconsistent")
+                        if malformed:
+                            message = f"malformed frozen calibration cell {key}: {'; '.join(malformed)}"
+                            raise ValueError(message)
+                        else:
+                            selected[key] = result
         return selected
     params = _params(config)
     calibration_seed = config["dgp"].get("calibration_seed")
@@ -216,6 +269,11 @@ def _selection_options(config: dict[str, Any]) -> dict[str, Any]:
     estimation = config["estimation"]
     keys = (
         "coefficient_bound",
+        "interior_numerical_tolerance",
+        "constraint_tolerance",
+        "constrained_kkt_tolerance",
+        "constrained_subproblem_tolerance",
+        "constrained_subproblem_max_iterations",
         "max_sweeps",
         "objective_rtol",
         "stationarity_tol",
@@ -253,6 +311,11 @@ def _fit_options(config: dict[str, Any]) -> dict[str, Any]:
         key: estimation[key]
         for key in (
             "coefficient_bound",
+            "interior_numerical_tolerance",
+            "constraint_tolerance",
+            "constrained_kkt_tolerance",
+            "constrained_subproblem_tolerance",
+            "constrained_subproblem_max_iterations",
             "max_sweeps",
             "objective_rtol",
             "stationarity_tol",
@@ -592,12 +655,27 @@ def _fit_diagnostic_record(
         "convergence_flag": fit.converged,
         "iteration_cap_hit": fit.iterations >= int(config["estimation"]["max_sweeps"]),
         "stationarity_residual": fit.stationarity_residual,
-        "stationarity_pass": fit.stationarity_residual
-        <= float(config["estimation"]["stationarity_tol"]),
+        "stationarity_pass": (
+            bool(fit.diagnostics.get("stationarity_pass", False))
+            if fit.diagnostics.get("constrained_fallback_used")
+            else fit.stationarity_residual
+            <= float(config["estimation"]["stationarity_tol"])
+        ),
         "coefficient_envelope": fit.max_envelope_ratio
         * float(config["estimation"]["coefficient_bound"]),
         "coefficient_envelope_ratio": fit.max_envelope_ratio,
-        "coefficient_bound_hit": fit.max_envelope_ratio >= 1.0,
+        "coefficient_bound_hit": False,
+        "unconstrained_max_abs": fit.diagnostics.get("unconstrained_max_abs"),
+        "unconstrained_inside_box": fit.diagnostics.get("unconstrained_inside_box"),
+        "unconstrained_outside_box": fit.diagnostics.get("unconstrained_outside_box"),
+        "constrained_fallback_used": fit.diagnostics.get("constrained_fallback_used", False),
+        "boundary_active": fit.diagnostics.get("boundary_active", False),
+        "max_constraint_violation": fit.diagnostics.get("max_constraint_violation", 0.0),
+        "constrained_KKT_residual": fit.diagnostics.get("constrained_KKT_residual"),
+        "constrained_iterations": fit.diagnostics.get("constrained_iterations", 0),
+        "constrained_runtime": fit.diagnostics.get("constrained_runtime", 0.0),
+        "constrained_solver_status": fit.diagnostics.get("constrained_solver_status"),
+        "constrained_objective": fit.diagnostics.get("constrained_objective"),
         "sigma_1": sigma_1,
         "sigma_r": sigma_r,
         "sigma_r_over_sigma_1": sigma_r / max(sigma_1, np.finfo(float).tiny)
@@ -729,9 +807,12 @@ def _selected_fit_diagnostic_records(
                     "coefficient_envelope": None,
                     "coefficient_envelope_ratio": route.get("final_max_envelope_ratio")
                     if step_number == len(path) else None,
-                    "coefficient_bound_hit": (
-                        route.get("final_max_envelope_ratio", 0.0) >= 1.0
-                        if step_number == len(path) else None
+                    "coefficient_bound_hit": False,
+                    "boundary_active": (
+                        route.get("final_max_envelope_ratio", 0.0)
+                        >= 1.0 - 10.0 * float(config["estimation"]["constraint_tolerance"])
+                        if step_number == len(path)
+                        else None
                     ),
                     "sigma_1": None, "sigma_r": None, "sigma_r_over_sigma_1": None,
                     "best_start_objective": None, "second_start_objective": None,
@@ -805,8 +886,13 @@ def classify_inference_status(result: Any, config: dict[str, Any]) -> str:
     split_fits = result.diagnostics["split_fits"]
     if len(split_fits) != 4 or not all(
         item["converged"]
-        and item["stationarity_residual"] <= config["estimation"]["stationarity_tol"]
-        and item["max_envelope_ratio"] < 1.0
+        and (
+            item.get("constrained_solver_status") == "success"
+            if item.get("constrained_fallback_used")
+            else item["stationarity_residual"] <= config["estimation"]["stationarity_tol"]
+        )
+        and item["max_envelope_ratio"]
+        <= 1.0 + float(config["estimation"]["constraint_tolerance"])
         for item in split_fits
     ):
         return "split_fit_not_converged"
@@ -1064,17 +1150,39 @@ def run_replication(
             ]
 
         if not fit.converged:
+            fit_failure_status = (
+                str(fit.diagnostics.get("constrained_solver_status"))
+                if fit.diagnostics.get("constrained_fallback_used")
+                else "full_fit_failure"
+            )
             return [
                 rank_row,
                 _failure_record(
                     task,
                     config,
-                    "full_fit_failure",
+                    fit_failure_status,
                     f"rank={fit.ranks}",
                     {"dgp_realization_hash": panel.diagnostics["dgp_realization_hash"]},
                 ),
             ]
-        if fit.stationarity_residual > float(config["estimation"]["stationarity_tol"]):
+        if (
+            fit.diagnostics.get("constrained_fallback_used")
+            and fit.diagnostics.get("constrained_solver_status") != "success"
+        ):
+            return [
+                rank_row,
+                _failure_record(
+                    task,
+                    config,
+                    str(fit.diagnostics.get("constrained_solver_status")),
+                    str(fit.diagnostics),
+                    {"dgp_realization_hash": panel.diagnostics["dgp_realization_hash"]},
+                ),
+            ]
+        if (
+            not fit.diagnostics.get("constrained_fallback_used")
+            and fit.stationarity_residual > float(config["estimation"]["stationarity_tol"])
+        ):
             return [
                 rank_row,
                 _failure_record(
@@ -1085,13 +1193,13 @@ def run_replication(
                     {"dgp_realization_hash": panel.diagnostics["dgp_realization_hash"]},
                 ),
             ]
-        if fit.max_envelope_ratio >= 1.0:
+        if fit.max_envelope_ratio > 1.0 + float(config["estimation"]["constraint_tolerance"]):
             return [
                 rank_row,
                 _failure_record(
                     task,
                     config,
-                    "coefficient_bound_hit",
+                    "constrained_feasibility_failure",
                     str(fit.max_envelope_ratio),
                     {"dgp_realization_hash": panel.diagnostics["dgp_realization_hash"]},
                 ),
@@ -1390,7 +1498,11 @@ def run_replication(
                     "tangent_gram_eigensolver_status"
                 ),
                 "weighted_residual_identity": result.riesz.weighted_residual_identity,
-                "coefficient_bound_active": fit.max_envelope_ratio >= 1.0,
+                "coefficient_bound_active": bool(fit.diagnostics.get("boundary_active", False)),
+                "boundary_active": bool(fit.diagnostics.get("boundary_active", False)),
+                "constrained_fallback_used": bool(
+                    fit.diagnostics.get("constrained_fallback_used", False)
+                ),
                 "spatial_cutoff": result.diagnostics["spatial_cutoff"],
                 "spatial_c": float(config["inference"]["spatial_c"]),
                 "rank_runtime_seconds": rank_runtime,
@@ -1603,6 +1715,30 @@ def _worker(payload: tuple[Task, dict[str, Any], dict[str, Any]]) -> list[dict[s
                 else None
             ),
             "exception_message": failures[0].get("failure_detail") if failures else None,
+            "unconstrained_outside_box": any(
+                bool(row.get("unconstrained_outside_box", False))
+                for row in rows
+                if row.get("record_type") == "fit_diagnostic"
+            ),
+            "constrained_fallback_used": any(
+                bool(row.get("constrained_fallback_used", False))
+                for row in rows
+                if row.get("record_type") == "fit_diagnostic"
+            ),
+            "boundary_active": any(
+                bool(row.get("boundary_active", False))
+                for row in rows
+                if row.get("record_type") == "fit_diagnostic"
+            ),
+            "constrained_solver_status": next(
+                (
+                    row.get("constrained_solver_status")
+                    for row in rows
+                    if row.get("record_type") == "fit_diagnostic"
+                    and row.get("constrained_fallback_used")
+                ),
+                "not_needed_interior_fast_path",
+            ),
         }
     )
     return rows
@@ -1735,6 +1871,11 @@ def run_monte_carlo(
             f"required margin={required_margin:.6f}"
         )
     pd.DataFrame(calibration_rows).to_parquet(root / "calibration.parquet", index=False)
+    frozen_calibration_file = resolved["dgp"].get("frozen_calibration_path")
+    frozen_calibration_hash = None
+    if frozen_calibration_file:
+        frozen_path = Path(frozen_calibration_file)
+        frozen_calibration_hash = hashlib.sha256(frozen_path.read_bytes()).hexdigest()
 
     replications = int(resolved["run"]["replications"])
     # A command-line worker override is an execution detail, not part of the
@@ -1812,13 +1953,48 @@ def run_monte_carlo(
         "requested_replications_per_cell": replications,
         "true_rank_designs": _task_designs(resolved),
         "coefficient_bound_B": coefficient_bound,
+        "B": coefficient_bound,
+        "c_B": required_margin,
         "required_simulation_interior_margin": required_margin,
         "maximum_deterministic_coefficient_envelope": maximum_envelope,
+        "distance_to_parameter_space_boundary": (
+            coefficient_bound - maximum_envelope
+            if maximum_envelope is not None
+            else None
+        ),
         "deterministic_interior_margin": (
             coefficient_bound - maximum_envelope
             if maximum_envelope is not None
             else None
         ),
+        "additional_slack_relative_to_required_interior_envelope": (
+            coefficient_bound - required_margin - maximum_envelope
+            if maximum_envelope is not None
+            else None
+        ),
+        "frozen_calibration_file": frozen_calibration_file,
+        "frozen_calibration_hash": frozen_calibration_hash,
+        "calibration_cells": [
+            {
+                "calibration_cell": {
+                    "dgp": key[0],
+                    "N": key[1],
+                    "T": key[2],
+                    "true_rank_vector": key[3],
+                },
+                "c_h": result.c_h,
+                "c_xi": result.c_xi,
+                "intended_r2": result.target_r2,
+                "calibrated_r2": result.achieved_r2,
+                "C_A": result.diagnostics.get("theoretical_max_abs_A"),
+                "C_beta": result.diagnostics.get("theoretical_max_abs_B"),
+                "C_H": result.diagnostics.get("theoretical_max_abs_H"),
+                "C_Theta": result.diagnostics.get("theoretical_coefficient_envelope"),
+                "B": coefficient_bound,
+                "c_B": required_margin,
+            }
+            for key, result in sorted(calibrations.items(), key=lambda item: str(item[0]))
+        ],
     }
     (root / "run_manifest.json").write_text(
         json.dumps(manifest, indent=2) + "\n", encoding="utf-8"

@@ -1,0 +1,6 @@
+estimator_path,code_path,optimizer,literal_box_handling
+supplied_rank_full_panel,estimation.fit_fixed_rank,shared fast path + box QP,True
+candidate_post_refit,rank_selection.fit_fixed_rank,shared fast path + box QP,True
+rank_at_most_cap_pilot,rank_selection.fit_rank_adaptive_cap_pilot,shared route refits,True
+time_half_split,inference.prepare_split_fits,shared fast path + box QP,True
+unit_half_split,inference.prepare_split_fits,shared fast path + box QP,True

@@ -11,6 +11,7 @@ from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
+from scipy.optimize import LinearConstraint, minimize, nnls
 
 from .core import (
     Coefficients,
@@ -145,7 +146,7 @@ def _stationarity(y: Array, design: Design, theta: Coefficients, ranks: tuple[in
     return frobenius_norm(projected) / denominator
 
 
-def fit_fixed_rank(
+def _fit_fixed_rank_unconstrained(
     y: Array,
     design: Design,
     ranks: tuple[int, ...],
@@ -155,7 +156,7 @@ def fit_fixed_rank(
     max_sweeps: int = 200,
     objective_rtol: float = 1e-8,
     stationarity_tol: float = 1e-6,
-    coefficient_bound: float = 9.0,
+    coefficient_bound: float = 10.0,
     lstsq_rcond: float = 1e-10,
     diagnostic_context: str | None = None,
 ) -> FitResult:
@@ -249,6 +250,407 @@ def fit_fixed_rank(
             "coefficient_envelope_history": envelope_history,
         },
     )
+    return result
+
+
+def _box_subproblem_matrices(
+    blocks: list[FactorBlock],
+    regressors: tuple[Array, ...],
+    index: int,
+    *,
+    update_loading: bool,
+) -> tuple[Array, Array, Array]:
+    ranks = [block.loading.shape[1] for block in blocks]
+    total_rank = sum(ranks)
+    if update_loading:
+        design = np.concatenate(
+            [
+                regressors[j][index, :, None] * block.factor
+                for j, block in enumerate(blocks)
+                if ranks[j]
+            ],
+            axis=1,
+        )
+        current = np.concatenate(
+            [block.loading[index] for block in blocks if block.loading.shape[1]]
+        )
+        constraint_rows = sum(block.factor.shape[0] for block in blocks if block.factor.shape[1])
+    else:
+        design = np.concatenate(
+            [
+                regressors[j][:, index, None] * block.loading
+                for j, block in enumerate(blocks)
+                if ranks[j]
+            ],
+            axis=1,
+        )
+        current = np.concatenate(
+            [block.factor[index] for block in blocks if block.factor.shape[1]]
+        )
+        constraint_rows = sum(
+            block.loading.shape[0] for block in blocks if block.loading.shape[1]
+        )
+    constraints = np.zeros((constraint_rows, total_rank), dtype=np.float64)
+    row_offset = 0
+    rank_offset = 0
+    for block, rank in zip(blocks, ranks, strict=True):
+        if not rank:
+            continue
+        basis = block.factor if update_loading else block.loading
+        width = basis.shape[0]
+        constraints[row_offset : row_offset + width, rank_offset : rank_offset + rank] = basis
+        row_offset += width
+        rank_offset += rank
+    return design, current, constraints
+
+
+def _linear_box_kkt_residual(
+    design: Array,
+    outcome: Array,
+    constraints: Array,
+    solution: Array,
+    bound: float,
+    active_tolerance: float,
+) -> float:
+    scale_factor = max(1, outcome.size)
+    gradient = design.T @ (design @ solution - outcome) / scale_factor
+    values = constraints @ solution
+    upper = values >= bound - active_tolerance
+    lower = values <= -bound + active_tolerance
+    normals = np.concatenate((constraints[upper], -constraints[lower]), axis=0)
+    if normals.size:
+        multipliers, _ = nnls(normals.T, -gradient)
+        lagrangian_gradient = gradient + normals.T @ multipliers
+    else:
+        lagrangian_gradient = gradient
+    denominator = max(
+        1.0,
+        float(np.linalg.norm(design.T @ outcome / scale_factor)),
+    )
+    return float(np.linalg.norm(lagrangian_gradient) / denominator)
+
+
+def _solve_linear_box_subproblem(
+    design: Array,
+    outcome: Array,
+    constraints: Array,
+    initial: Array,
+    bound: float,
+    *,
+    max_iterations: int,
+    tolerance: float,
+    constraint_tolerance: float,
+) -> tuple[Array, bool, str, int]:
+    scale_factor = max(1, outcome.size)
+
+    def objective(value: Array) -> float:
+        residual = design @ value - outcome
+        return float(np.vdot(residual, residual) / (2.0 * scale_factor))
+
+    def gradient(value: Array) -> Array:
+        return design.T @ (design @ value - outcome) / scale_factor
+
+    initial_objective = objective(initial)
+    result = minimize(
+        objective,
+        initial,
+        jac=gradient,
+        constraints=LinearConstraint(constraints, -bound, bound),
+        method="SLSQP",
+        options={"maxiter": max_iterations, "ftol": tolerance, "disp": False},
+    )
+    candidate = np.asarray(result.x, dtype=np.float64)
+    violation = max(0.0, float(np.max(np.abs(constraints @ candidate))) - bound)
+    kkt = _linear_box_kkt_residual(
+        design,
+        outcome,
+        constraints,
+        candidate,
+        bound,
+        max(constraint_tolerance * 10.0, 1e-8),
+    )
+    nonincreasing = objective(candidate) <= initial_objective + tolerance * max(
+        1.0, abs(initial_objective)
+    )
+    accepted = bool(
+        np.all(np.isfinite(candidate))
+        and violation <= constraint_tolerance
+        and nonincreasing
+        and (result.success or kkt <= max(1e-6, np.sqrt(tolerance)))
+    )
+    return candidate, accepted, str(result.message), int(result.nit)
+
+
+def _factor_kkt_residual(
+    blocks: list[FactorBlock],
+    regressors: tuple[Array, ...],
+    y: Array,
+    bound: float,
+    active_tolerance: float,
+) -> float:
+    residuals = []
+    for i in range(y.shape[0]):
+        design, current, constraints = _box_subproblem_matrices(
+            blocks, regressors, i, update_loading=True
+        )
+        residuals.append(
+            _linear_box_kkt_residual(
+                design, y[i], constraints, current, bound, active_tolerance
+            )
+        )
+    for column in range(y.shape[1]):
+        design, current, constraints = _box_subproblem_matrices(
+            blocks, regressors, column, update_loading=False
+        )
+        residuals.append(
+            _linear_box_kkt_residual(
+                design, y[:, column], constraints, current, bound, active_tolerance
+            )
+        )
+    return float(max(residuals, default=0.0))
+
+
+def _fit_fixed_rank_constrained(
+    y: Array,
+    design: Design,
+    ranks: tuple[int, ...],
+    *,
+    initial: Coefficients,
+    seed: int | np.random.SeedSequence,
+    max_sweeps: int,
+    objective_rtol: float,
+    coefficient_bound: float,
+    constraint_tolerance: float,
+    constrained_kkt_tolerance: float,
+    constrained_subproblem_tolerance: float,
+    constrained_subproblem_max_iterations: int,
+    diagnostic_context: str | None,
+) -> FitResult:
+    started = time.perf_counter()
+    n, t = y.shape
+    rng = np.random.default_rng(seed)
+    initial_max = max_abs(initial)
+    if initial_max >= coefficient_bound:
+        start = scale(
+            initial,
+            coefficient_bound * (1.0 - 10.0 * constraint_tolerance) / initial_max,
+        )
+    else:
+        start = initial
+    blocks = _initial_blocks((n, t), ranks, rng, start)
+    regressors = design.regressors()
+
+    def objective() -> float:
+        theta = _to_theta(blocks, len(design.y_lags), len(design.x))
+        residual = y - fitted_values(theta, design)
+        return float(np.vdot(residual, residual) / (2.0 * n * t))
+
+    history = [objective()]
+    messages: list[str] = []
+    subproblem_iterations = 0
+    solver_failed = False
+    kkt = float("inf")
+    for _sweep in range(1, max_sweeps + 1):
+        for i in range(n):
+            sub_design, current, constraints = _box_subproblem_matrices(
+                blocks, regressors, i, update_loading=True
+            )
+            x, accepted, message, iterations = _solve_linear_box_subproblem(
+                sub_design,
+                y[i],
+                constraints,
+                current,
+                coefficient_bound,
+                max_iterations=constrained_subproblem_max_iterations,
+                tolerance=constrained_subproblem_tolerance,
+                constraint_tolerance=constraint_tolerance,
+            )
+            if not accepted:
+                messages.append(f"loading[{i}]: {message}")
+                solver_failed = True
+                break
+            offset = 0
+            for block in blocks:
+                rank = block.loading.shape[1]
+                if rank:
+                    block.loading[i] = x[offset : offset + rank]
+                    offset += rank
+            subproblem_iterations += iterations
+        if solver_failed:
+            break
+        for block in blocks:
+            _renormalize(block)
+        for column in range(t):
+            sub_design, current, constraints = _box_subproblem_matrices(
+                blocks, regressors, column, update_loading=False
+            )
+            x, accepted, message, iterations = _solve_linear_box_subproblem(
+                sub_design,
+                y[:, column],
+                constraints,
+                current,
+                coefficient_bound,
+                max_iterations=constrained_subproblem_max_iterations,
+                tolerance=constrained_subproblem_tolerance,
+                constraint_tolerance=constraint_tolerance,
+            )
+            if not accepted:
+                messages.append(f"factor[{column}]: {message}")
+                solver_failed = True
+                break
+            offset = 0
+            for block in blocks:
+                rank = block.factor.shape[1]
+                if rank:
+                    block.factor[column] = x[offset : offset + rank]
+                    offset += rank
+            subproblem_iterations += iterations
+        value = objective()
+        history.append(value)
+        if solver_failed:
+            break
+        kkt = _factor_kkt_residual(
+            blocks,
+            regressors,
+            y,
+            coefficient_bound,
+            max(10.0 * constraint_tolerance, 1e-8),
+        )
+        relative = abs(history[-2] - value) / max(1.0, abs(history[-2]))
+        if relative <= objective_rtol and kkt <= constrained_kkt_tolerance:
+            break
+    theta = _to_theta(blocks, len(design.y_lags), len(design.x))
+    maximum = max_abs(theta)
+    violation = max(0.0, maximum - coefficient_bound)
+    finite = bool(np.isfinite(history[-1]) and np.all([np.all(np.isfinite(m)) for m in theta.matrices()]))
+    feasibility_pass = finite and violation <= constraint_tolerance
+    kkt_pass = np.isfinite(kkt) and kkt <= constrained_kkt_tolerance
+    converged = bool(not solver_failed and feasibility_pass and kkt_pass)
+    if not finite:
+        status = "nonfinite_constrained_solution"
+    elif not feasibility_pass:
+        status = "constrained_feasibility_failure"
+    elif solver_failed:
+        status = "constrained_solver_failure"
+    elif not kkt_pass:
+        status = "constrained_optimality_failure"
+    else:
+        status = "success"
+    return FitResult(
+        theta=theta,
+        ranks=ranks,
+        objective=history[-1],
+        converged=converged,
+        iterations=len(history) - 1,
+        objective_history=history,
+        stationarity_residual=kkt,
+        max_envelope_ratio=maximum / coefficient_bound,
+        factors=blocks,
+        diagnostics={
+            "stationarity_pass": kkt_pass,
+            "stationarity_type": "factor_space_box_KKT",
+            "bound_active": maximum >= coefficient_bound - 10.0 * constraint_tolerance,
+            "boundary_active": maximum >= coefficient_bound - 10.0 * constraint_tolerance,
+            "singular_values": singular_values(theta),
+            "runtime_seconds": time.perf_counter() - started,
+            "constrained_runtime": time.perf_counter() - started,
+            "diagnostic_context": diagnostic_context,
+            "initial_coefficient_envelope": initial_max,
+            "final_coefficient_envelope": maximum,
+            "coefficient_envelope_history": [
+                max_abs(start),
+                maximum,
+            ],
+            "max_constraint_violation": violation,
+            "constraint_tolerance": constraint_tolerance,
+            "constrained_KKT_residual": kkt,
+            "constrained_iterations": subproblem_iterations,
+            "constrained_solver_status": status,
+            "constrained_objective": history[-1],
+            "constrained_algorithm": "alternating_exact_linear_box_QP",
+            "constrained_messages": messages,
+        },
+    )
+
+
+def fit_fixed_rank(
+    y: Array,
+    design: Design,
+    ranks: tuple[int, ...],
+    *,
+    initial: Coefficients | None = None,
+    seed: int | np.random.SeedSequence = 0,
+    max_sweeps: int = 200,
+    objective_rtol: float = 1e-8,
+    stationarity_tol: float = 1e-6,
+    coefficient_bound: float = 10.0,
+    lstsq_rcond: float = 1e-10,
+    interior_numerical_tolerance: float = 1e-8,
+    constraint_tolerance: float = 1e-8,
+    constrained_kkt_tolerance: float = 1e-5,
+    constrained_subproblem_tolerance: float = 1e-10,
+    constrained_subproblem_max_iterations: int = 200,
+    diagnostic_context: str | None = None,
+) -> FitResult:
+    """Literal fixed-rank box-constrained LS with an interior ALS fast path."""
+
+    unconstrained = _fit_fixed_rank_unconstrained(
+        y,
+        design,
+        ranks,
+        initial=initial,
+        seed=seed,
+        max_sweeps=max_sweeps,
+        objective_rtol=objective_rtol,
+        stationarity_tol=stationarity_tol,
+        coefficient_bound=coefficient_bound,
+        lstsq_rcond=lstsq_rcond,
+        diagnostic_context=diagnostic_context,
+    )
+    unconstrained_max = max_abs(unconstrained.theta)
+    inside = unconstrained_max < coefficient_bound - interior_numerical_tolerance
+    if inside:
+        unconstrained.diagnostics.update(
+            {
+                "unconstrained_max_abs": unconstrained_max,
+                "unconstrained_inside_box": True,
+                "unconstrained_outside_box": False,
+                "constrained_fallback_used": False,
+                "boundary_active": False,
+                "max_constraint_violation": 0.0,
+                "constrained_KKT_residual": None,
+                "constrained_iterations": 0,
+                "constrained_runtime": 0.0,
+                "constrained_solver_status": "not_needed_interior_fast_path",
+                "constrained_objective": None,
+            }
+        )
+        result = unconstrained
+    else:
+        result = _fit_fixed_rank_constrained(
+            y,
+            design,
+            ranks,
+            initial=unconstrained.theta,
+            seed=seed,
+            max_sweeps=max_sweeps,
+            objective_rtol=objective_rtol,
+            coefficient_bound=coefficient_bound,
+            constraint_tolerance=constraint_tolerance,
+            constrained_kkt_tolerance=constrained_kkt_tolerance,
+            constrained_subproblem_tolerance=constrained_subproblem_tolerance,
+            constrained_subproblem_max_iterations=constrained_subproblem_max_iterations,
+            diagnostic_context=diagnostic_context,
+        )
+        result.diagnostics.update(
+            {
+                "unconstrained_objective": unconstrained.objective,
+                "unconstrained_max_abs": unconstrained_max,
+                "unconstrained_inside_box": False,
+                "unconstrained_outside_box": True,
+                "constrained_fallback_used": True,
+            }
+        )
     observer = _FIXED_FIT_OBSERVER.get()
     if observer is not None:
         observer(result)
@@ -313,7 +715,7 @@ def fit_nuclear(
     penalty: float,
     *,
     initial: Coefficients | None = None,
-    coefficient_bound: float = 9.0,
+    coefficient_bound: float = 10.0,
     max_iter: int = 500,
     tolerance: float = 1e-7,
     dykstra_max_iter: int = 100,

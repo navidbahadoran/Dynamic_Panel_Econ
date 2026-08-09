@@ -426,6 +426,11 @@ def infer_target(
     cutoff = spatial_cutoff(*y.shape, c_sp) if spatial else 0
     diagnostics: dict[str, Any] = {
         "spatial_cutoff": cutoff,
+        "boundary_active": bool(fit.diagnostics.get("boundary_active", False)),
+        "constrained_fallback_used": bool(
+            fit.diagnostics.get("constrained_fallback_used", False)
+        ),
+        "normal_equation_used_as_identity": False,
         "target_tangent_norm": target_norm,
         "target_supported": bool(
             np.isfinite(target_norm) and target_norm > target_support_tolerance
@@ -587,6 +592,23 @@ def prepare_split_fits(
                 "converged": sub_fit.converged,
                 "stationarity_residual": sub_fit.stationarity_residual,
                 "max_envelope_ratio": sub_fit.max_envelope_ratio,
+                "unconstrained_max_abs": sub_fit.diagnostics.get("unconstrained_max_abs"),
+                "unconstrained_inside_box": sub_fit.diagnostics.get(
+                    "unconstrained_inside_box"
+                ),
+                "constrained_fallback_used": sub_fit.diagnostics.get(
+                    "constrained_fallback_used", False
+                ),
+                "boundary_active": sub_fit.diagnostics.get("boundary_active", False),
+                "max_constraint_violation": sub_fit.diagnostics.get(
+                    "max_constraint_violation", 0.0
+                ),
+                "constrained_KKT_residual": sub_fit.diagnostics.get(
+                    "constrained_KKT_residual"
+                ),
+                "constrained_solver_status": sub_fit.diagnostics.get(
+                    "constrained_solver_status"
+                ),
                 "numerical_rank_vector": numerical_ranks,
                 "rank_supported": rank_supported,
                 "split_rank_singular_values": rank_diagnostics,

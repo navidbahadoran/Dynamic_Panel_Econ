@@ -197,7 +197,7 @@ def test_invalid_lowest_objective_is_excluded(monkeypatch) -> None:
 
 def test_preflight_controls_preserve_revision8_bound_and_tau_formula() -> None:
     config = load_config("configs/mc/smoke.toml")
-    assert config["estimation"]["coefficient_bound"] == 9.0
+    assert config["estimation"]["coefficient_bound"] == 10.0
     assert config["estimation"]["simulation_interior_margin"] == 1.0
     assert config["estimation"]["rank_adaptive_max_routes"] == 6
     assert config["estimation"]["cap_pilot_start_envelope_fraction"] == 0.8

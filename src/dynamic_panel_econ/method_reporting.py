@@ -104,13 +104,39 @@ def _table_data(
         if fit.empty:
             return fit
         keys = ["dgp", "N", "T", "method", "fit_type"]
-        return fit.groupby(keys, dropna=False).agg(
-            fits=("fit_type", "size"),
-            convergence_rate=("convergence_flag", "mean"),
-            stationarity_pass_rate=("stationarity_pass", "mean"),
-            coefficient_bound_hit_rate=("coefficient_bound_hit", "mean"),
-            median_runtime=("runtime_seconds", "median"),
-        ).reset_index()
+        aggregations = {
+            "fits": ("fit_type", "size"),
+            "convergence_rate": ("convergence_flag", "mean"),
+            "stationarity_pass_rate": ("stationarity_pass", "mean"),
+            "median_runtime": ("runtime_seconds", "median"),
+        }
+        if "boundary_active" in fit:
+            aggregations["boundary_active_rate"] = ("boundary_active", "mean")
+        if "constrained_fallback_used" in fit:
+            aggregations["constrained_fallback_rate"] = (
+                "constrained_fallback_used",
+                "mean",
+            )
+        if "constrained_solver_status" in fit:
+            failures = fit["constrained_solver_status"].isin(
+                {
+                    "constrained_solver_failure",
+                    "constrained_feasibility_failure",
+                    "constrained_optimality_failure",
+                    "nonfinite_constrained_solution",
+                }
+            )
+            fit = fit.assign(_constrained_solver_failure=failures)
+            aggregations["constrained_solver_failure_rate"] = (
+                "_constrained_solver_failure",
+                "mean",
+            )
+        if "coefficient_bound_hit" in fit:
+            aggregations["legacy_coefficient_bound_hit_rate"] = (
+                "coefficient_bound_hit",
+                "mean",
+            )
+        return fit.groupby(keys, dropna=False).agg(**aggregations).reset_index()
     if name == "rank":
         columns = ["dgp", "N", "T", "method", "supplied_rank_vector", "selected_rank_vector", "cap_pilot_rank", "candidate_coverage", "primary_status"]
         return replication[[column for column in columns if column in replication]]

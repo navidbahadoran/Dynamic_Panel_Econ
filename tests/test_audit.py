@@ -350,10 +350,13 @@ def test_serial_two_worker_end_to_end_equality_and_broad_schema(tmp_path):
             "replications": 2,
             "chunk_size": 2,
             "n_jobs": 1,
+            "rank_mode": "fixed",
             "output_root": str(tmp_path),
         }
     )
     config["dgp"]["group_gap_pilot_draws"] = 1
+    config["dgp"]["frozen_calibration_path"] = None
+    config["estimation"]["coefficient_bound"] = 100.0
     config["inference"]["targets"] = ["A_full_mean", "B_full_mean"]
     _, serial_root = run_monte_carlo(config, overwrite=True)
     parallel = deepcopy(config)
@@ -414,6 +417,8 @@ def test_rank_stress_design_normalizes_zero_slope_scale():
 
 def test_rank_stress_end_to_end_runs_feasible_true_vectors(tmp_path):
     config = load_config("configs/mc/rank_stress_smoke.toml")
+    config["estimation"]["coefficient_bound"] = 100.0
+    config["run"]["rank_mode"] = "fixed"
     config["run"]["output_root"] = str(tmp_path)
     _, root = run_monte_carlo(config, overwrite=True)
     ranks = _parquet_tree(root, "rank")

@@ -131,10 +131,11 @@ design without calibration, fitting, inference, or output. Every executed run wr
 and CLI arguments.
 
 `--pooled-r2-target` is solely a DGP calibration parameter. It is not estimator tuning, rank
-selection tuning, or an estimated-model fit target. Calibration chooses `c_xi` so the simulated
-DGP attains the requested pooled coefficient of determination when scale is identified. The
-baseline inference design uses 0.65. In rank-stress cells with `r_B=0`, `c_xi=1` remains the
-normalization, the requested R-squared is not imposed, and the induced R-squared is reported.
+selection tuning, or an estimated-model fit target. The official designs read `c_h` and `c_xi`
+from `configs/mc/frozen_dgp_calibration.toml`; they never recalibrate from a production draw.
+The independently calibrated, frozen identified-cell target is 0.65. In rank-stress cells with
+`r_B=0`, `c_xi=1` remains the normalization, the requested R-squared is not imposed, and the
+induced R-squared is reported.
 
 ### Lossless Monte Carlo accounting and reporting
 
@@ -189,11 +190,13 @@ is multiplied by one common
 `c_a=min(1,0.85/max(abs(A_raw)))`; no entrywise clipping is used. Every replication stores the
 pre-scaling maximum, `c_a`, and the final maximum.
 
-The simulation coefficient box is fixed at `B=9` with deterministic interior margin
-`c_B_sim=1`. The bounded-AR support calculation is applied to every calibrated DGP/cell before
-tasks are dispatched. Higher-rank stress blocks are multiplied by one deterministic common
-factor per matrix so their support envelope equals the corresponding rank-one envelope; they are
-never clipped entrywise. Manifests and rows retain theoretical and realized blockwise envelopes.
+The simulation and estimator coefficient box is the fixed parameter-space constant `B=10`, with
+`c_B=1`. It is not estimated or changed by replication. The common analytical DGP envelope is
+`C_Theta,max=8.410761115894578`, so its distance to the boundary B is
+`1.589238884105422`, while its additional slack relative to the required envelope `B-c_B=9` is
+`0.589238884105422`. Higher-rank stress blocks are multiplied by one deterministic common factor
+per matrix so their support envelope equals the corresponding rank-one envelope; truths are never
+clipped entrywise. Manifests and rows retain theoretical and realized blockwise envelopes.
 
 ## 10. DGP 4 group truths and the gap pilot
 
@@ -212,8 +215,8 @@ The validation command prints the exact post-scaling DGP 4 group means and diffe
 
 ## 11. Calibration and an identified feasibility issue
 
-For each DGP/cell, deterministic calibration draws are separate from production seeds. The code
-uses the prescribed
+The official DGP uses an ex-ante frozen table. Its `c_h` is calculated analytically from population
+moments using
 
 \[
 c_H^2=\frac{\pi_H}{1-\pi_H}
@@ -221,10 +224,12 @@ c_H^2=\frac{\pi_H}{1-\pi_H}
 \qquad \pi_H=0.30,
 \]
 
-then brackets `c_xi>0` and calls `scipy.optimize.brentq` for the requested average pooled R-squared.
-All trial values reuse common random numbers. Conditional on a raw draw, the response is affine in
-`c_xi`, so calibration precomputes its two dynamic-recursion components. Output records the minimum
-grid R-squared, approximate large-`c_xi` floor, feasibility, and successful bracket.
+For all four DGPs, `Var_population(u_tilde)=1`. Rank-one H has population variance one and
+`c_h=0.6546536707079772`; rank-two H stress has population variance `0.803847577293368` and
+`c_h=0.7301712917987002`. Thus population `pi_H=0.30` without using a realized disturbance
+variance. A separate 50-draw calibration-only experiment brackets `c_xi>0` and calls
+`scipy.optimize.brentq`; its constants are frozen by DGP, N, T, and rank design before production.
+Startup validates the requested cells, analytical `c_h`, coefficient envelopes, and table hash.
 
 There is an important reproducible feasibility problem in the supplied statistical specification:
 with `H0=c_xi*c_H*H_raw` and `u=c_xi*u_tilde`, the lagged-outcome and persistent interactive-effect
@@ -355,10 +360,12 @@ DGP 1 uses the diagonal score sum. DGPs 2--4 use Bartlett spatial weights with
 `h_N=ceil(c_sp*log(NT))`. The O(`T*N*h_N`) lag-sum implementation never constructs a dense matrix
 in production. There is no temporal HAC.
 
-The numerical fixed-rank routine solves the interior fixed-rank least-squares problem. A
-coefficient-envelope hit is treated as a failed interiority diagnostic. On the theorem's
-asymptotic interior event this coincides with the constrained estimator. The routine does not
-claim to solve a boundary-constrained problem directly.
+The numerical fixed-rank routine solves the paper's literal problem over the supplied-rank
+factorization and the reconstructed entrywise box. It first runs unconstrained ALS. A solution
+strictly inside `B` is the fast-path constrained solution. Otherwise, alternating row and time
+convex quadratic subproblems impose `-B <= loading*factor' <= B` directly. Successful boundary
+activity is retained and reported; it is not a `coefficient_bound_hit` failure. New failures
+distinguish constrained solver, feasibility, optimality/KKT, and nonfinite-solution failures.
 
 The maintained slope factor has `mu_f_b=0.6` and `kappa_f_b=0.20`; its bounded-AR support reaches
 zero and therefore does not give a deterministic lower time-leverage constant for `B_entry`.
@@ -426,7 +433,7 @@ Performance tables use named mathematical target panels rather than an internal 
 No requested replication disappears. It produces successful target rows or a failure row with a
 standardized status such as calibration failure, invalid cap pilot, no stable pair of start
 objectives, no valid candidate,
-nonconvergence, high stationarity residual, active coefficient bound, cap hit, Riesz failure,
+nonconvergence, constrained solver/feasibility/KKT failure, cap hit, Riesz failure,
 split rank loss, unsupported selected-rank targets, full/split tangent-Gram numerical failures,
 split Riesz target instability, nonpositive variance, or an
 unexpected exception with its type and message. Aggregation reports requested and successful

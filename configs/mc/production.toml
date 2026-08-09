@@ -11,6 +11,7 @@ blas_threads = 1
 output_root = "results/mc"
 
 [dgp]
+frozen_calibration_path = "configs/mc/frozen_dgp_calibration.toml"
 target_r2 = 0.65
 calibration_draws = 50
 group_gap_pilot_draws = 500
@@ -20,7 +21,7 @@ prespecified_gap_grid = [0.2, 0.3, 0.4, 0.5, 0.6]
 
 [estimation]
 rank_caps = [3, 3, 3]
-coefficient_bound = 9.0
+coefficient_bound = 10.0
 simulation_interior_margin = 1.0
 nuclear_gamma = 0.8
 nuclear_epsilon = 0.01

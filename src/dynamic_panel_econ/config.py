@@ -60,8 +60,13 @@ DEFAULTS: dict[str, Any] = {
     "estimation": {
         "fixed_ranks": [1, 1, 1],
         "rank_caps": [3, 3, 3],
-        "coefficient_bound": 9.0,
+        "coefficient_bound": 10.0,
         "simulation_interior_margin": 1.0,
+        "interior_numerical_tolerance": 1e-8,
+        "constraint_tolerance": 1e-8,
+        "constrained_kkt_tolerance": 1e-4,
+        "constrained_subproblem_tolerance": 1e-10,
+        "constrained_subproblem_max_iterations": 200,
         "max_sweeps": 200,
         "objective_rtol": 1e-8,
         "stationarity_tol": 1e-6,
@@ -157,6 +162,18 @@ def validate_config(config: dict[str, Any]) -> None:
         estimation["simulation_interior_margin"]
     ):
         raise ValueError("coefficient_bound must exceed simulation_interior_margin")
+    if run["name"] == "production" and not config["dgp"].get("frozen_calibration_path"):
+        raise ValueError("the official production run requires frozen_calibration_path")
+    for name in (
+        "interior_numerical_tolerance",
+        "constraint_tolerance",
+        "constrained_kkt_tolerance",
+        "constrained_subproblem_tolerance",
+    ):
+        if float(estimation[name]) <= 0.0:
+            raise ValueError(f"{name} must be positive")
+    if int(estimation["constrained_subproblem_max_iterations"]) < 1:
+        raise ValueError("constrained_subproblem_max_iterations must be positive")
     if float(estimation["start_objective_stability_tol"]) <= 0.0:
         raise ValueError("start_objective_stability_tol must be positive")
     if int(estimation["rank_adaptive_max_routes"]) < 2:

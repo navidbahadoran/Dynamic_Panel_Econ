@@ -1,0 +1,4 @@
+case,B,unconstrained_max_abs,unconstrained_inside_box,constrained_fallback_used,constrained_objective,max_abs_coefficient,max_constraint_violation,boundary_active,constrained_KKT_residual,constrained_iterations,constrained_runtime,constrained_solver_status,numerical_rank_vector,valid,inference_computed,normal_equation_used_as_identity,evidence
+interior_fast_path,10.0,0.19999999999999998,True,False,,0.19999999999999998,0.0,False,,0.0,0.0,not_needed_interior_fast_path,"[0, 0, 1]",True,False,False,
+boundary_fallback,10.0,20.0,False,True,49.999999993207034,10.000000000717579,7.175788852009646e-10,True,6.280369834735101e-17,143.0,0.02389109999057837,success,"[0, 0, 1]",True,True,False,
+forced_solver_failure,10.0,,,,,,,,,,,constrained_solver_failure,,False,,,tests/test_constrained_estimator.py::test_constrained_solver_failure_has_explicit_status

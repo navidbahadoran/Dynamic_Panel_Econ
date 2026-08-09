@@ -11,6 +11,7 @@ blas_threads = 1
 output_root = "results/mc"
 
 [dgp]
+frozen_calibration_path = "configs/mc/frozen_dgp_calibration.toml"
 # Common inference target selected after the deterministic R2-feasibility exercise.
 target_r2 = 0.65
 calibration_draws = 50
@@ -20,7 +21,7 @@ auto_adjust_group_gap = false
 
 [estimation]
 rank_caps = [3, 3, 3]
-coefficient_bound = 9.0
+coefficient_bound = 10.0
 simulation_interior_margin = 1.0
 larger_rank_caps = [4, 4, 4]
 eta_for_penalty = 4.0

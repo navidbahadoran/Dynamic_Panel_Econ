@@ -1,0 +1,8 @@
+benchmark_part,requested_n_jobs,effective_n_jobs,number_of_tasks,wall_clock_seconds,aggregate_process_cpu_seconds,mean_total_cpu_utilization_percent,peak_cpu_utilization_percent,peak_cpu_measurement_status,peak_resident_memory_bytes_upper_bound,tasks_completed,tasks_per_second,logical_processors,deterministic_output_pass
+scientific_equivalence,1,1,4,9763.337174299988,9671.28125,4.95285632225101,,not_measured_reliably,0.0,4,0.0004096959808506,20,True
+scientific_equivalence,4,4,4,3710.3665834999993,11027.9375,14.860981053787569,,not_measured_reliably,0.0,4,0.0010780605932006,20,True
+parallel_scaling,1,1,20,128.97874759999104,127.03125,4.9245031589998485,,not_measured_reliably,126611456.0,20,0.15506430611364835,20,True
+parallel_scaling,4,4,20,34.468954399984796,115.25,16.717942566898813,,not_measured_reliably,488177664.0,20,0.5802322799791345,20,True
+parallel_scaling,8,8,20,26.674376800016034,121.921875,22.853743859524155,,not_measured_reliably,969633792.0,20,0.7497832151785446,20,True
+parallel_scaling,12,12,20,25.645823400001973,128.421875,25.03758077816096,,not_measured_reliably,1449762816.0,20,0.7798540794755088,20,True
+parallel_scaling,14,14,20,25.551525000017136,132.046875,25.83933346442364,,not_measured_reliably,1686822912.0,20,0.7827321461238258,20,True

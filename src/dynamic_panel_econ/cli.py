@@ -8,7 +8,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
-from .config import DEFAULTS, load_config, validate_config
+from .config import DEFAULTS, load_config, resolve_execution_workers, validate_config
 
 
 def _csv_ints(value: str) -> list[int]:
@@ -203,6 +203,7 @@ def resolve_run_args(args: argparse.Namespace) -> dict[str, Any]:
             inference[destination] = values[source]
     if dgp.get("calibration_seed") is None:
         dgp["calibration_seed"] = int(run["master_seed"])
+    resolve_execution_workers(config)
     validate_config(config)
     return config
 

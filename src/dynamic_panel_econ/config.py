@@ -127,6 +127,7 @@ def load_config(path: str | Path, *, validate: bool = True) -> dict[str, Any]:
     with Path(path).open("rb") as handle:
         supplied = tomllib.load(handle)
     resolved = _merge(DEFAULTS, supplied)
+    resolve_execution_workers(resolved)
     if validate:
         validate_config(resolved)
     return resolved
@@ -144,6 +145,8 @@ def validate_config(config: dict[str, Any]) -> None:
         raise ValueError("replications and chunk_size must be positive")
     if int(run["replication_start"]) < 0:
         raise ValueError("replication_start must be nonnegative")
+    if int(run["n_jobs"]) < 1:
+        raise ValueError("n_jobs must be a positive integer")
     for n, t in run["cells"]:
         if int(n) < 2 or int(t) < 2:
             raise ValueError("panel dimensions must be at least two")
@@ -191,6 +194,39 @@ def validate_config(config: dict[str, Any]) -> None:
         raise ValueError("riesz_solver must be auto, cg, minres, or lsmr")
     if config["inference"]["variance_type"] not in {"auto", "diagonal", "spatial"}:
         raise ValueError("variance_type must be auto, diagonal, or spatial")
+
+
+def number_of_outer_tasks(config: dict[str, Any]) -> int:
+    """Return the number of independent DGP/cell/semantic-replication tasks."""
+
+    run = config["run"]
+    rank_designs = len(config.get("rank_stress", {}).get("true_rank_vectors", [None]))
+    return (
+        len(run["dgps"])
+        * len(run["cells"])
+        * int(run["replications"])
+        * rank_designs
+    )
+
+
+def resolve_execution_workers(
+    config: dict[str, Any], requested_n_jobs: int | None = None
+) -> dict[str, Any]:
+    """Record explicit requested/effective outer-worker counts in ``config``."""
+
+    run = config["run"]
+    requested = int(run["n_jobs"] if requested_n_jobs is None else requested_n_jobs)
+    if requested < 1:
+        raise ValueError("n_jobs must be a positive integer")
+    available = number_of_outer_tasks(config)
+    effective = min(requested, available)
+    if run.get("parallel_level") == "none":
+        effective = 1
+    run["n_jobs"] = requested
+    run["requested_n_jobs"] = requested
+    run["effective_n_jobs"] = effective
+    run["number_of_outer_tasks"] = available
+    return config
 
 
 def canonical_json(config: dict[str, Any]) -> str:

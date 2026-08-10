@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import multiprocessing
 import os
 import subprocess
+import sys
 import time
-from concurrent.futures import ProcessPoolExecutor
+from collections.abc import Iterator
+from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 from copy import deepcopy
 from dataclasses import asdict
 from pathlib import Path
@@ -15,7 +18,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from threadpoolctl import threadpool_limits
+from threadpoolctl import threadpool_info, threadpool_limits
 
 from .calibration import (
     CalibrationResult,
@@ -24,7 +27,7 @@ from .calibration import (
     deterministic_c_h,
     load_frozen_calibrations,
 )
-from .config import config_hash, write_resolved_config
+from .config import config_hash, resolve_execution_workers, write_resolved_config
 from .dgp import (
     INITIAL_CONDITIONS,
     DGPParameters,
@@ -95,6 +98,160 @@ FAILURE_CODES = (
 )
 
 Task = tuple[int, int, int, int, tuple[int, ...] | None]
+
+_WORKER_CONFIG: dict[str, Any] | None = None
+_WORKER_CALIBRATIONS: dict[tuple[int, int, int, tuple[int, ...] | None], dict[str, Any]] = {}
+_WORKER_THREAD_LIMIT_CONTROLLER: Any = None
+
+
+def _task_calibration_key(task: Task) -> tuple[int, int, int, tuple[int, ...] | None]:
+    return task[0], task[1], task[2], task[4]
+
+
+def _initialize_outer_worker(
+    config: dict[str, Any],
+    calibrations: dict[tuple[int, int, int, tuple[int, ...] | None], dict[str, Any]],
+    native_threads: int,
+) -> None:
+    """Install one pickle-safe configuration and native-thread limit per spawn worker."""
+
+    global _WORKER_CONFIG, _WORKER_CALIBRATIONS, _WORKER_THREAD_LIMIT_CONTROLLER
+    _WORKER_CONFIG = config
+    _WORKER_CALIBRATIONS = calibrations
+    _WORKER_THREAD_LIMIT_CONTROLLER = threadpool_limits(limits=native_threads)
+
+
+def _outer_worker(task: Task) -> list[dict[str, Any]]:
+    if _WORKER_CONFIG is None:
+        raise RuntimeError("outer Monte Carlo worker was not initialized")
+    calibration = _WORKER_CALIBRATIONS[_task_calibration_key(task)]
+    return _worker((task, _WORKER_CONFIG, calibration))
+
+
+def _outer_worker_with_metrics(task: Task) -> dict[str, Any]:
+    """Benchmark wrapper returning task rows plus worker-local resource diagnostics."""
+
+    cpu_started = time.process_time()
+    wall_started = time.perf_counter()
+    before = threadpool_info()
+    rows = _outer_worker(task)
+    after = threadpool_info()
+    current_rss, peak_rss = _process_memory_metrics()
+    return {
+        "task": task,
+        "rows": rows,
+        "worker_pid": os.getpid(),
+        "process_cpu_seconds": time.process_time() - cpu_started,
+        "worker_wall_seconds": time.perf_counter() - wall_started,
+        "threadpool_info_before": before,
+        "threadpool_info_after": after,
+        "current_rss_bytes": current_rss,
+        "peak_rss_bytes": peak_rss,
+    }
+
+
+def _process_memory_metrics() -> tuple[int | None, int | None]:
+    """Return current and peak resident bytes without adding a runtime dependency."""
+
+    if sys.platform == "win32":
+        import ctypes
+        from ctypes import wintypes
+
+        class ProcessMemoryCounters(ctypes.Structure):
+            _fields_ = [
+                ("cb", wintypes.DWORD),
+                ("PageFaultCount", wintypes.DWORD),
+                ("PeakWorkingSetSize", ctypes.c_size_t),
+                ("WorkingSetSize", ctypes.c_size_t),
+                ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
+                ("QuotaPagedPoolUsage", ctypes.c_size_t),
+                ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
+                ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+                ("PagefileUsage", ctypes.c_size_t),
+                ("PeakPagefileUsage", ctypes.c_size_t),
+            ]
+
+        counters = ProcessMemoryCounters()
+        counters.cb = ctypes.sizeof(counters)
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        psapi = ctypes.WinDLL("psapi", use_last_error=True)
+        kernel32.GetCurrentProcess.argtypes = []
+        kernel32.GetCurrentProcess.restype = wintypes.HANDLE
+        psapi.GetProcessMemoryInfo.argtypes = [
+            wintypes.HANDLE,
+            ctypes.POINTER(ProcessMemoryCounters),
+            wintypes.DWORD,
+        ]
+        psapi.GetProcessMemoryInfo.restype = wintypes.BOOL
+        process = kernel32.GetCurrentProcess()
+        ok = psapi.GetProcessMemoryInfo(process, ctypes.byref(counters), counters.cb)
+        if ok:
+            return int(counters.WorkingSetSize), int(counters.PeakWorkingSetSize)
+        return None, None
+    try:
+        import resource
+
+        peak = int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+        if sys.platform != "darwin":
+            peak *= 1024
+        return None, peak
+    except (ImportError, OSError):
+        return None, None
+
+
+def iter_outer_task_results(
+    tasks: list[Task],
+    config: dict[str, Any],
+    calibrations: dict[tuple[int, int, int, tuple[int, ...] | None], dict[str, Any]],
+    *,
+    effective_n_jobs: int,
+    collect_metrics: bool = False,
+) -> Iterator[tuple[Task, list[dict[str, Any]], dict[str, Any] | None]]:
+    """Run independent outer tasks with bounded, spawn-safe process submission."""
+
+    if effective_n_jobs < 1:
+        raise ValueError("effective_n_jobs must be positive")
+    native_threads = int(config["run"]["blas_threads"])
+    if effective_n_jobs == 1:
+        _initialize_outer_worker(config, calibrations, native_threads)
+        for task in tasks:
+            if collect_metrics:
+                result = _outer_worker_with_metrics(task)
+                yield task, result["rows"], result
+            else:
+                yield task, _outer_worker(task), None
+        return
+
+    worker = _outer_worker_with_metrics if collect_metrics else _outer_worker
+    context = multiprocessing.get_context("spawn")
+    with ProcessPoolExecutor(
+        max_workers=effective_n_jobs,
+        mp_context=context,
+        initializer=_initialize_outer_worker,
+        initargs=(config, calibrations, native_threads),
+    ) as executor:
+        task_iterator = iter(tasks)
+        pending: dict[Any, Task] = {}
+        for _ in range(min(len(tasks), 2 * effective_n_jobs)):
+            try:
+                task = next(task_iterator)
+            except StopIteration:
+                break
+            pending[executor.submit(worker, task)] = task
+        while pending:
+            completed, _ = wait(pending, return_when=FIRST_COMPLETED)
+            for future in completed:
+                task = pending.pop(future)
+                result = future.result()
+                if collect_metrics:
+                    yield task, result["rows"], result
+                else:
+                    yield task, result, None
+                try:
+                    next_task = next(task_iterator)
+                except StopIteration:
+                    continue
+                pending[executor.submit(worker, next_task)] = next_task
 
 
 def _replication_chunks(run: dict[str, Any]) -> list[tuple[int, int]]:
@@ -1817,6 +1974,53 @@ def _consolidate_chunks(root: Path, subdirectory: str, stem: str, columns: tuple
     combined.to_csv(root / f"{stem}.csv", index=False)
 
 
+def _deterministic_row_key(row: dict[str, Any]) -> tuple[str, ...]:
+    """Canonical output order independent of worker completion order."""
+
+    return tuple(
+        "" if row.get(key) is None else str(row.get(key))
+        for key in (
+            "semantic_replication_id",
+            "dgp",
+            "N",
+            "T",
+            "replication",
+            "method",
+            "record_type",
+            "target",
+            "fit_type",
+            "requested_rank",
+            "selected_rank_vector",
+            "start_number",
+            "candidate_source",
+        )
+    )
+
+
+def _write_task_chunk(
+    nested: list[list[dict[str, Any]]], destinations: tuple[Path, Path, Path, Path, Path]
+) -> None:
+    flat = sorted(
+        (row for task_rows in nested for row in task_rows),
+        key=_deterministic_row_key,
+    )
+    target_rows = [
+        row for row in flat if row["record_type"] in {"target", "failure"}
+    ]
+    rank_rows = [row for row in flat if row["record_type"] == "rank"]
+    fit_rows = [row for row in flat if row["record_type"] == "fit_diagnostic"]
+    inference_rows = [
+        row for row in flat if row["record_type"] == "inference_diagnostic"
+    ]
+    replication_rows = [row for row in flat if row["record_type"] == "replication"]
+    for rows, destination in zip(
+        (target_rows, rank_rows, fit_rows, inference_rows, replication_rows),
+        destinations,
+        strict=True,
+    ):
+        _atomic_parquet(rows, destination)
+
+
 def _task_designs(config: dict[str, Any]) -> list[tuple[int, ...] | None]:
     if "rank_stress" not in config:
         return [None]
@@ -1840,6 +2044,7 @@ def run_monte_carlo(
         group_gap_failure = f"{type(exc).__name__}: {exc}"
     if resolved["dgp"].get("calibration_seed") is None:
         resolved["dgp"]["calibration_seed"] = int(resolved["run"]["master_seed"])
+    resolve_execution_workers(resolved, requested_n_jobs=n_jobs)
     digest = config_hash(resolved)
     root = Path(resolved["run"]["output_root"]) / resolved["run"]["name"] / digest
     if root.exists() and not resume and not overwrite:
@@ -1906,19 +2111,16 @@ def run_monte_carlo(
         frozen_calibration_hash = hashlib.sha256(frozen_path.read_bytes()).hexdigest()
 
     replications = int(resolved["run"]["replications"])
-    # A command-line worker override is an execution detail, not part of the
-    # resolved statistical design or its content-addressed run identity.
-    jobs = int(resolved["run"]["n_jobs"] if n_jobs is None else n_jobs)
+    effective_jobs = int(resolved["run"]["effective_n_jobs"])
+    calibration_payloads = {
+        key: asdict(result) for key, result in calibrations.items()
+    }
+    plans: list[dict[str, Any]] = []
     for true_rank in _task_designs(resolved):
         rank_suffix = "" if true_rank is None else "_true" + "-".join(map(str, true_rank))
         for dgp in resolved["run"]["dgps"]:
             for n, t in resolved["run"]["cells"]:
                 calibration_key = (int(dgp), int(n), int(t), true_rank)
-                calibration = (
-                    asdict(calibrations[calibration_key])
-                    if calibration_key in calibrations
-                    else None
-                )
                 for begin, end in _replication_chunks(resolved["run"]):
                     stem = f"dgp{dgp}_N{n}_T{t}{rank_suffix}_r{begin:05d}-{end - 1:05d}.parquet"
                     target_destination = root / "raw" / stem
@@ -1939,34 +2141,46 @@ def run_monte_carlo(
                         (int(dgp), int(n), int(t), replication, true_rank)
                         for replication in range(begin, end)
                     ]
-                    payloads = [(task, resolved, calibration) for task in tasks]
-                    if calibration is None:
-                        nested = [
-                            _calibration_failure_task_rows(
-                                task, resolved, calibration_failures[calibration_key]
-                            )
-                            for task in tasks
-                        ]
-                    elif resolved["run"]["parallel_level"] == "replications" and jobs != 1:
-                        with ProcessPoolExecutor(max_workers=None if jobs < 1 else jobs) as executor:
-                            nested = list(executor.map(_worker, payloads))
-                    else:
-                        nested = [_worker(payload) for payload in payloads]
-                    flat = [row for rows in nested for row in rows]
-                    target_rows = [
-                        row
-                        for row in flat
-                        if row["record_type"] in {"target", "failure"}
-                    ]
-                    rank_rows = [row for row in flat if row["record_type"] == "rank"]
-                    fit_rows = [row for row in flat if row["record_type"] == "fit_diagnostic"]
-                    inference_rows = [row for row in flat if row["record_type"] == "inference_diagnostic"]
-                    replication_rows = [row for row in flat if row["record_type"] == "replication"]
-                    _atomic_parquet(target_rows, target_destination)
-                    _atomic_parquet(rank_rows, rank_destination)
-                    _atomic_parquet(fit_rows, fit_destination)
-                    _atomic_parquet(inference_rows, inference_destination)
-                    _atomic_parquet(replication_rows, replication_destination)
+                    plans.append(
+                        {
+                            "tasks": tasks,
+                            "destinations": destinations,
+                            "calibration_key": calibration_key,
+                            "results": [None] * len(tasks),
+                            "remaining": len(tasks),
+                        }
+                    )
+
+    runnable_tasks: list[Task] = []
+    task_locations: dict[Task, tuple[int, int]] = {}
+    for plan_index, plan in enumerate(plans):
+        calibration_key = plan["calibration_key"]
+        if calibration_key not in calibration_payloads:
+            nested = [
+                _calibration_failure_task_rows(
+                    task, resolved, calibration_failures[calibration_key]
+                )
+                for task in plan["tasks"]
+            ]
+            _write_task_chunk(nested, plan["destinations"])
+            plan["remaining"] = 0
+            continue
+        for task_index, task in enumerate(plan["tasks"]):
+            task_locations[task] = (plan_index, task_index)
+            runnable_tasks.append(task)
+
+    for task, rows, _ in iter_outer_task_results(
+        runnable_tasks,
+        resolved,
+        calibration_payloads,
+        effective_n_jobs=min(effective_jobs, max(1, len(runnable_tasks))),
+    ):
+        plan_index, task_index = task_locations[task]
+        plan = plans[plan_index]
+        plan["results"][task_index] = rows
+        plan["remaining"] -= 1
+        if plan["remaining"] == 0:
+            _write_task_chunk(plan["results"], plan["destinations"])
     manifest = {
         "config_hash": digest,
         "git_commit": _git_commit(),
@@ -1979,6 +2193,12 @@ def run_monte_carlo(
             resolved["dgp"]["mu_lambda_a_2"],
         ],
         "requested_replications_per_cell": replications,
+        "requested_n_jobs": int(resolved["run"]["requested_n_jobs"]),
+        "effective_n_jobs": effective_jobs,
+        "number_of_outer_tasks": int(resolved["run"]["number_of_outer_tasks"]),
+        "parallelization_unit": "DGP_x_N_x_T_x_semantic_replication",
+        "inner_process_pools": 0,
+        "native_threads_per_worker": int(resolved["run"]["blas_threads"]),
         "true_rank_designs": _task_designs(resolved),
         "initial_conditions": INITIAL_CONDITIONS,
         "mc_conditioning_field": {

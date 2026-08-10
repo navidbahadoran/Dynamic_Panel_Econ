@@ -381,12 +381,33 @@ time-leverage floor used for theorem-covered `B_entry` inference.
 ## 18. Parallel execution
 
 Set `parallel_level` to `replications` or `none`. The production runner parallelizes replications
-and keeps candidate fitting serial inside workers. `threadpoolctl` caps
-BLAS threads to avoid oversubscription. Do not nest process pools.
+as one global outer pool over `DGP x N x T x semantic replication`; it keeps the nuclear path,
+cap pilot, candidate post-refits, local completion, and split fits serial inside each worker.
+There is no inner process pool. On Windows the pool uses explicit `spawn` semantics and only
+module-level, pickle-safe worker functions.
+
+Use the single `n_jobs` TOML value or the `--n-jobs` CLI option. Precedence is CLI, then TOML,
+then the conservative default of one. The resolved configuration and manifest record both
+`requested_n_jobs` and `effective_n_jobs`; the latter is capped at the number of available outer
+tasks. A request is never silently replaced by a hidden worker count.
 
 ```powershell
 python scripts\run_mc.py --config configs\mc\pilot.toml --n-jobs 4
+python scripts\run_mc.py --config configs\mc\production.toml --n-jobs 12
 ```
+
+The correct value is machine dependent. `n_jobs=1` is the deterministic debugging setting. When
+more than one worker is active, `threadpoolctl` explicitly limits detected BLAS, LAPACK, and
+OpenMP libraries to the configured `blas_threads` value (normally one), preventing multiplication
+such as 12 Python workers times 8 native threads. Configuration and frozen calibrations are
+initialized once per worker. Panel/design arrays are generated and owned by one worker rather
+than cached and copied from the parent.
+
+On Windows, logical processor count is available in Task Manager under **Performance > CPU** or
+with `Get-CimInstance Win32_ComputerSystem | Select-Object NumberOfLogicalProcessors`. Task Manager
+also reports total CPU utilization and process/system memory under **Performance** and **Details**.
+Monitor both during a computational smoke: increasing workers is useful only while wall time falls
+and memory retains safe headroom.
 
 ## 19. Random seeds
 

@@ -367,7 +367,8 @@ def test_serial_two_worker_end_to_end_equality_and_broad_schema(tmp_path):
     serial_raw = _parquet_tree(serial_root, "raw").sort_values(["replication", "target"])
     parallel_raw = _parquet_tree(parallel_root, "raw").sort_values(["replication", "target"])
     stable_columns = [
-        "dgp", "N", "T", "replication", "target", "status", "true_rank_vector",
+        "semantic_replication_id", "dgp_realization_hash", "dgp", "N", "T",
+        "replication", "target", "status", "primary_status", "true_rank_vector",
         "truth", "plugin_estimate", "corrected_estimate", "plugin_variance",
         "corrected_variance", "phi_full", "phi_time_sum", "phi_unit_sum",
         "split_fit_count",

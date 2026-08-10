@@ -1,0 +1,16 @@
+assumption,status,revision10_role
+Dynamic stability (a:stab),UNCHANGED,controls lag propagation and dynamic score moments
+Conditional sequential exogeneity (a:exog),UNCHANGED,centers innovation scores with predetermined regressors
+Spatial sampling geometry (a:geometry),UNCHANGED,supports spatial covariance and operator-score bounds
+Conditional alpha mixing and NED (a:ned),UNCHANGED,supplies dependent concentration
+Conditional moments and weak cross-sectional covariance (a:moments),UNCHANGED,controls block scores and variance
+Separate low-rank signals and incoherence (a:signal),UNCHANGED,strong sqrt(NT) signals and interior box margin separate omitted ranks
+Conditional prediction identification (a:identification),UNCHANGED,turns an omitted coefficient direction into prediction loss
+Loading and factor Gram matrices (a:gram),UNCHANGED,retains fixed-rank local estimation geometry
+Target regularity (a:target),UNCHANGED,not used for selection; retained for downstream inference
+Panel growth (a:growth),UNCHANGED,retains recovery and concentration rates
+Accurate included pilot and tau separation,RANK-SELECTION-SPECIFIC CHANGE,retained only for screening/candidate availability rather than final IC consistency
+kappa penalty rates (eq:rank_penalty_rates),NO LONGER NEEDED,replaced if self-normalized overfit control is proved
+post-refit objective error relative to IC separation,RANK-SELECTION-SPECIFIC CHANGE,must instead be negligible relative to local gain/noise decision margins
+Uniform block self-normalizer validity,NEW,"for all feasible overfitted states and blocks, s_hat_M upper-envelopes optimized noise gains with simultaneous probability tending to one while remaining rate-sharp"
+Hereditary one-step detectability,NEW,"from every coordinatewise underfit reachable state, at least one missing true block increment has standardized population gain diverging beyond the envelope"

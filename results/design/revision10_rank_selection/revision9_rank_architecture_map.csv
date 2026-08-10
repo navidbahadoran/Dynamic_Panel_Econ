@@ -1,0 +1,17 @@
+revision9_object,role,revision10_status,reason
+"r=(r_A,1,...,r_A,P,r_B,1,...,r_B,K,r_H)",separate rank for every coefficient matrix,KEEP,essential estimand and output
+R_max,finite Cartesian cap lattice,KEEP,defines feasibility and finite uniform comparisons
+nuclear screening path,convex preliminary estimates and warm starts,KEEP,screening only
+lambda_max,max block gradient operator norm divided by screening weight,KEEP,reproducible path endpoint only
+rank-cap pilot,one rank-at-most-cap bounded fit,KEEP,candidate coverage and warm starts only
+tau_NT,singular-value threshold for preliminary estimates,KEEP,screening only
+R_base,thresholded cap-pilot rank plus nuclear-path ranks,KEEP,screening proposals
+R_cand,R_base plus valid one-coordinate neighbors,MODIFY,retain as initial cache but upward selector must request missing neighbors
+Theta_hat(r),unpenalized constrained joint fixed-rank post-refit,KEEP,all comparisons use post-refits
+Q_hat_NT(r),post-refit residual mean square,KEEP,defines RSS and fit gains
+d(r),sum of r_M(N+T-r_M),KEEP,defines exact increment dimension
+"log Q_hat_NT(r)+kappa_NT d(r)/(NT)",final IC,REMOVE,provisionally replaced by self-normalized local gain decision
+IC local completion,add omitted one-coordinate neighbors when IC improves,MODIFY,becomes deterministic neighbor generation for every current state
+rank-consistency theorem,selection consistency then inference transfer,MODIFY,replace IC separation with self-tuned under/over separation
+pilot candidate-coverage proposition,Weyl thresholding of an accurate included pilot,KEEP,screening/candidate availability safeguard
+fixed-rank inference,rank-conditioned recovery/Riesz/splits/variance,KEEP,transfers on rank recovery event

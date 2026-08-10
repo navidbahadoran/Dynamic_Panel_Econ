@@ -1,0 +1,13 @@
+revision9_material,provisional_revision10_action,replacement
+kappa_NT,remove from final decision,block self-normalized inclusion boundary
+c_kappa,remove,no fixed IC multiplier
+rank-penalty rate condition,remove,uniform self-normalizer validity plus separation
+IC gap and smallest/second-smallest IC,remove,standardized gain margins and stop certificate
+penalty multiplier sensitivities,remove,self-normalizer diagnostics; no outcome-tuned multiplier
+IC-based local completion,modify,evaluate every admissible one-coordinate addition at each state
+"overfit proof: kappa_NT(N+T)/(NT) dominates zeta_NT",remove,uniform optimized-noise gain lies below its estimated envelope
+underfit IC comparison,modify,hereditary one-coordinate population gain dominates envelope
+objective error relative to IC scale,modify,objective error negligible relative to both passing and failing local-gain margins
+log Q_hat_NT(r),remove as selector,retain Q_hat to form RSS and Delta
+d(r) penalty,remove as additive penalty,retain exact Delta_d normalization
+IC sensitivity tables,remove,replace with state/block gain and self-normalizer audit trail

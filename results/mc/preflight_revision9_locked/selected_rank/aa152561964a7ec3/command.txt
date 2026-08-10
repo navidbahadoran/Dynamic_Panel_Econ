@@ -1,0 +1,1 @@
+scripts\run_mc.py --config configs\mc\preflight_revision9_locked_selected.toml

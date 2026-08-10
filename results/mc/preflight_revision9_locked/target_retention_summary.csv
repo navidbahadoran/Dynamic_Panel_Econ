@@ -1,0 +1,289 @@
+dgp,N,method,target,attempted,point_valid,inference_valid,retention_order_pass,primary_status_counts,headline_theorem_target,target_applicability
+1,50,fixed_rank,A_G1_fixed_time,3,2,2,True,"{""full_fit_failure"": 1, ""success"": 2}",True,theorem_covered
+1,50,fixed_rank,A_G1_time_average,3,2,0,True,"{""boundary_interiority_failure"": 1, ""full_fit_failure"": 1, ""split_fit_failure"": 1}",True,theorem_covered
+1,50,fixed_rank,A_G2_fixed_time,3,2,2,True,"{""full_fit_failure"": 1, ""success"": 2}",True,theorem_covered
+1,50,fixed_rank,A_G2_minus_G1_fixed_time,3,2,2,True,"{""full_fit_failure"": 1, ""success"": 2}",False,weak_target_stress_outside_assumption9
+1,50,fixed_rank,A_G2_minus_G1_time_average,3,2,0,True,"{""boundary_interiority_failure"": 1, ""full_fit_failure"": 1, ""split_fit_failure"": 1}",True,theorem_covered
+1,50,fixed_rank,A_G2_time_average,3,2,0,True,"{""boundary_interiority_failure"": 1, ""full_fit_failure"": 1, ""split_fit_failure"": 1}",True,theorem_covered
+1,50,fixed_rank,A_entry,3,2,2,True,"{""full_fit_failure"": 1, ""success"": 2}",True,theorem_covered
+1,50,fixed_rank,A_fixed_time_mean,3,2,2,True,"{""full_fit_failure"": 1, ""success"": 2}",True,theorem_covered
+1,50,fixed_rank,A_full_mean,3,2,0,True,"{""boundary_interiority_failure"": 1, ""full_fit_failure"": 1, ""split_fit_failure"": 1}",True,theorem_covered
+1,50,fixed_rank,B_G1_fixed_time,3,2,2,True,"{""full_fit_failure"": 1, ""success"": 2}",True,theorem_covered
+1,50,fixed_rank,B_G1_time_average,3,2,0,True,"{""boundary_interiority_failure"": 1, ""full_fit_failure"": 1, ""split_fit_failure"": 1}",True,theorem_covered
+1,50,fixed_rank,B_G2_fixed_time,3,2,2,True,"{""full_fit_failure"": 1, ""success"": 2}",True,theorem_covered
+1,50,fixed_rank,B_G2_minus_G1_fixed_time,3,2,2,True,"{""full_fit_failure"": 1, ""success"": 2}",False,weak_target_stress_outside_assumption9
+1,50,fixed_rank,B_G2_minus_G1_time_average,3,2,0,True,"{""boundary_interiority_failure"": 1, ""full_fit_failure"": 1, ""split_fit_failure"": 1}",True,theorem_covered
+1,50,fixed_rank,B_G2_time_average,3,2,0,True,"{""boundary_interiority_failure"": 1, ""full_fit_failure"": 1, ""split_fit_failure"": 1}",True,theorem_covered
+1,50,fixed_rank,B_entry,3,2,2,True,"{""full_fit_failure"": 1, ""success"": 2}",True,theorem_covered
+1,50,fixed_rank,B_fixed_time_mean,3,2,2,True,"{""full_fit_failure"": 1, ""success"": 2}",True,theorem_covered
+1,50,fixed_rank,B_full_mean,3,2,0,True,"{""boundary_interiority_failure"": 1, ""full_fit_failure"": 1, ""split_fit_failure"": 1}",True,theorem_covered
+1,50,selected_rank,A_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,50,selected_rank,A_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,50,selected_rank,A_G2_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,50,selected_rank,A_G2_minus_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",False,weak_target_stress_outside_assumption9
+1,50,selected_rank,A_G2_minus_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,50,selected_rank,A_G2_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,50,selected_rank,A_entry,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,50,selected_rank,A_fixed_time_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,50,selected_rank,A_full_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,50,selected_rank,B_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,50,selected_rank,B_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,50,selected_rank,B_G2_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,50,selected_rank,B_G2_minus_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",False,weak_target_stress_outside_assumption9
+1,50,selected_rank,B_G2_minus_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,50,selected_rank,B_G2_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,50,selected_rank,B_entry,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,50,selected_rank,B_fixed_time_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,50,selected_rank,B_full_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,100,fixed_rank,A_G1_fixed_time,3,3,3,True,"{""success"": 3}",True,theorem_covered
+1,100,fixed_rank,A_G1_time_average,3,3,3,True,"{""success"": 3}",True,theorem_covered
+1,100,fixed_rank,A_G2_fixed_time,3,3,3,True,"{""success"": 3}",True,theorem_covered
+1,100,fixed_rank,A_G2_minus_G1_fixed_time,3,3,3,True,"{""success"": 3}",False,weak_target_stress_outside_assumption9
+1,100,fixed_rank,A_G2_minus_G1_time_average,3,3,3,True,"{""success"": 3}",True,theorem_covered
+1,100,fixed_rank,A_G2_time_average,3,3,3,True,"{""success"": 3}",True,theorem_covered
+1,100,fixed_rank,A_entry,3,3,3,True,"{""success"": 3}",True,theorem_covered
+1,100,fixed_rank,A_fixed_time_mean,3,3,3,True,"{""success"": 3}",True,theorem_covered
+1,100,fixed_rank,A_full_mean,3,3,3,True,"{""success"": 3}",True,theorem_covered
+1,100,fixed_rank,B_G1_fixed_time,3,3,3,True,"{""success"": 3}",True,theorem_covered
+1,100,fixed_rank,B_G1_time_average,3,3,3,True,"{""success"": 3}",True,theorem_covered
+1,100,fixed_rank,B_G2_fixed_time,3,3,3,True,"{""success"": 3}",True,theorem_covered
+1,100,fixed_rank,B_G2_minus_G1_fixed_time,3,3,3,True,"{""success"": 3}",False,weak_target_stress_outside_assumption9
+1,100,fixed_rank,B_G2_minus_G1_time_average,3,3,3,True,"{""success"": 3}",True,theorem_covered
+1,100,fixed_rank,B_G2_time_average,3,3,3,True,"{""success"": 3}",True,theorem_covered
+1,100,fixed_rank,B_entry,3,3,3,True,"{""success"": 3}",True,theorem_covered
+1,100,fixed_rank,B_fixed_time_mean,3,3,3,True,"{""success"": 3}",True,theorem_covered
+1,100,fixed_rank,B_full_mean,3,3,3,True,"{""success"": 3}",True,theorem_covered
+1,100,selected_rank,A_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,100,selected_rank,A_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,100,selected_rank,A_G2_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,100,selected_rank,A_G2_minus_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",False,weak_target_stress_outside_assumption9
+1,100,selected_rank,A_G2_minus_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,100,selected_rank,A_G2_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,100,selected_rank,A_entry,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,100,selected_rank,A_fixed_time_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,100,selected_rank,A_full_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,100,selected_rank,B_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,100,selected_rank,B_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,100,selected_rank,B_G2_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,100,selected_rank,B_G2_minus_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",False,weak_target_stress_outside_assumption9
+1,100,selected_rank,B_G2_minus_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,100,selected_rank,B_G2_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,100,selected_rank,B_entry,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,100,selected_rank,B_fixed_time_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+1,100,selected_rank,B_full_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,50,fixed_rank,A_G1_fixed_time,3,3,3,True,"{""success"": 3}",True,theorem_covered
+2,50,fixed_rank,A_G1_time_average,3,3,0,True,"{""boundary_interiority_failure"": 1, ""split_fit_failure"": 2}",True,theorem_covered
+2,50,fixed_rank,A_G2_fixed_time,3,3,3,True,"{""success"": 3}",True,theorem_covered
+2,50,fixed_rank,A_G2_minus_G1_fixed_time,3,3,3,True,"{""success"": 3}",False,weak_target_stress_outside_assumption9
+2,50,fixed_rank,A_G2_minus_G1_time_average,3,3,0,True,"{""boundary_interiority_failure"": 1, ""split_fit_failure"": 2}",True,theorem_covered
+2,50,fixed_rank,A_G2_time_average,3,3,0,True,"{""boundary_interiority_failure"": 1, ""split_fit_failure"": 2}",True,theorem_covered
+2,50,fixed_rank,A_entry,3,3,3,True,"{""success"": 3}",True,theorem_covered
+2,50,fixed_rank,A_fixed_time_mean,3,3,3,True,"{""success"": 3}",True,theorem_covered
+2,50,fixed_rank,A_full_mean,3,3,0,True,"{""boundary_interiority_failure"": 1, ""split_fit_failure"": 2}",True,theorem_covered
+2,50,fixed_rank,B_G1_fixed_time,3,3,3,True,"{""success"": 3}",True,theorem_covered
+2,50,fixed_rank,B_G1_time_average,3,3,0,True,"{""boundary_interiority_failure"": 1, ""split_fit_failure"": 2}",True,theorem_covered
+2,50,fixed_rank,B_G2_fixed_time,3,3,3,True,"{""success"": 3}",True,theorem_covered
+2,50,fixed_rank,B_G2_minus_G1_fixed_time,3,3,3,True,"{""success"": 3}",False,weak_target_stress_outside_assumption9
+2,50,fixed_rank,B_G2_minus_G1_time_average,3,3,0,True,"{""boundary_interiority_failure"": 1, ""split_fit_failure"": 2}",True,theorem_covered
+2,50,fixed_rank,B_G2_time_average,3,3,0,True,"{""boundary_interiority_failure"": 1, ""split_fit_failure"": 2}",True,theorem_covered
+2,50,fixed_rank,B_entry,3,3,3,True,"{""success"": 3}",True,theorem_covered
+2,50,fixed_rank,B_fixed_time_mean,3,3,3,True,"{""success"": 3}",True,theorem_covered
+2,50,fixed_rank,B_full_mean,3,3,0,True,"{""boundary_interiority_failure"": 1, ""split_fit_failure"": 2}",True,theorem_covered
+2,50,selected_rank,A_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,50,selected_rank,A_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,50,selected_rank,A_G2_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,50,selected_rank,A_G2_minus_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",False,weak_target_stress_outside_assumption9
+2,50,selected_rank,A_G2_minus_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,50,selected_rank,A_G2_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,50,selected_rank,A_entry,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,50,selected_rank,A_fixed_time_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,50,selected_rank,A_full_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,50,selected_rank,B_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,50,selected_rank,B_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,50,selected_rank,B_G2_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,50,selected_rank,B_G2_minus_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",False,weak_target_stress_outside_assumption9
+2,50,selected_rank,B_G2_minus_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,50,selected_rank,B_G2_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,50,selected_rank,B_entry,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,50,selected_rank,B_fixed_time_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,50,selected_rank,B_full_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,100,fixed_rank,A_G1_fixed_time,3,3,3,True,"{""success"": 3}",True,theorem_covered
+2,100,fixed_rank,A_G1_time_average,3,3,3,True,"{""success"": 3}",True,theorem_covered
+2,100,fixed_rank,A_G2_fixed_time,3,3,3,True,"{""success"": 3}",True,theorem_covered
+2,100,fixed_rank,A_G2_minus_G1_fixed_time,3,3,3,True,"{""success"": 3}",False,weak_target_stress_outside_assumption9
+2,100,fixed_rank,A_G2_minus_G1_time_average,3,3,3,True,"{""success"": 3}",True,theorem_covered
+2,100,fixed_rank,A_G2_time_average,3,3,3,True,"{""success"": 3}",True,theorem_covered
+2,100,fixed_rank,A_entry,3,3,3,True,"{""success"": 3}",True,theorem_covered
+2,100,fixed_rank,A_fixed_time_mean,3,3,3,True,"{""success"": 3}",True,theorem_covered
+2,100,fixed_rank,A_full_mean,3,3,3,True,"{""success"": 3}",True,theorem_covered
+2,100,fixed_rank,B_G1_fixed_time,3,3,3,True,"{""success"": 3}",True,theorem_covered
+2,100,fixed_rank,B_G1_time_average,3,3,3,True,"{""success"": 3}",True,theorem_covered
+2,100,fixed_rank,B_G2_fixed_time,3,3,3,True,"{""success"": 3}",True,theorem_covered
+2,100,fixed_rank,B_G2_minus_G1_fixed_time,3,3,3,True,"{""success"": 3}",False,weak_target_stress_outside_assumption9
+2,100,fixed_rank,B_G2_minus_G1_time_average,3,3,3,True,"{""success"": 3}",True,theorem_covered
+2,100,fixed_rank,B_G2_time_average,3,3,3,True,"{""success"": 3}",True,theorem_covered
+2,100,fixed_rank,B_entry,3,3,3,True,"{""success"": 3}",True,theorem_covered
+2,100,fixed_rank,B_fixed_time_mean,3,3,3,True,"{""success"": 3}",True,theorem_covered
+2,100,fixed_rank,B_full_mean,3,3,3,True,"{""success"": 3}",True,theorem_covered
+2,100,selected_rank,A_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,100,selected_rank,A_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,100,selected_rank,A_G2_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,100,selected_rank,A_G2_minus_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",False,weak_target_stress_outside_assumption9
+2,100,selected_rank,A_G2_minus_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,100,selected_rank,A_G2_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,100,selected_rank,A_entry,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,100,selected_rank,A_fixed_time_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,100,selected_rank,A_full_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,100,selected_rank,B_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,100,selected_rank,B_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,100,selected_rank,B_G2_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,100,selected_rank,B_G2_minus_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",False,weak_target_stress_outside_assumption9
+2,100,selected_rank,B_G2_minus_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,100,selected_rank,B_G2_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,100,selected_rank,B_entry,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,100,selected_rank,B_fixed_time_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+2,100,selected_rank,B_full_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,50,fixed_rank,A_G1_fixed_time,3,1,1,True,"{""full_fit_failure"": 2, ""success"": 1}",True,theorem_covered
+3,50,fixed_rank,A_G1_time_average,3,1,0,True,"{""boundary_interiority_failure"": 1, ""full_fit_failure"": 2}",True,theorem_covered
+3,50,fixed_rank,A_G2_fixed_time,3,1,1,True,"{""full_fit_failure"": 2, ""success"": 1}",True,theorem_covered
+3,50,fixed_rank,A_G2_minus_G1_fixed_time,3,1,1,True,"{""full_fit_failure"": 2, ""success"": 1}",False,weak_target_stress_outside_assumption9
+3,50,fixed_rank,A_G2_minus_G1_time_average,3,1,0,True,"{""boundary_interiority_failure"": 1, ""full_fit_failure"": 2}",True,theorem_covered
+3,50,fixed_rank,A_G2_time_average,3,1,0,True,"{""boundary_interiority_failure"": 1, ""full_fit_failure"": 2}",True,theorem_covered
+3,50,fixed_rank,A_entry,3,1,1,True,"{""full_fit_failure"": 2, ""success"": 1}",True,theorem_covered
+3,50,fixed_rank,A_fixed_time_mean,3,1,1,True,"{""full_fit_failure"": 2, ""success"": 1}",True,theorem_covered
+3,50,fixed_rank,A_full_mean,3,1,0,True,"{""boundary_interiority_failure"": 1, ""full_fit_failure"": 2}",True,theorem_covered
+3,50,fixed_rank,B_G1_fixed_time,3,1,1,True,"{""full_fit_failure"": 2, ""success"": 1}",True,theorem_covered
+3,50,fixed_rank,B_G1_time_average,3,1,0,True,"{""boundary_interiority_failure"": 1, ""full_fit_failure"": 2}",True,theorem_covered
+3,50,fixed_rank,B_G2_fixed_time,3,1,1,True,"{""full_fit_failure"": 2, ""success"": 1}",True,theorem_covered
+3,50,fixed_rank,B_G2_minus_G1_fixed_time,3,1,1,True,"{""full_fit_failure"": 2, ""success"": 1}",False,weak_target_stress_outside_assumption9
+3,50,fixed_rank,B_G2_minus_G1_time_average,3,1,0,True,"{""boundary_interiority_failure"": 1, ""full_fit_failure"": 2}",True,theorem_covered
+3,50,fixed_rank,B_G2_time_average,3,1,0,True,"{""boundary_interiority_failure"": 1, ""full_fit_failure"": 2}",True,theorem_covered
+3,50,fixed_rank,B_entry,3,1,1,True,"{""full_fit_failure"": 2, ""success"": 1}",True,theorem_covered
+3,50,fixed_rank,B_fixed_time_mean,3,1,1,True,"{""full_fit_failure"": 2, ""success"": 1}",True,theorem_covered
+3,50,fixed_rank,B_full_mean,3,1,0,True,"{""boundary_interiority_failure"": 1, ""full_fit_failure"": 2}",True,theorem_covered
+3,50,selected_rank,A_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,50,selected_rank,A_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,50,selected_rank,A_G2_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,50,selected_rank,A_G2_minus_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",False,weak_target_stress_outside_assumption9
+3,50,selected_rank,A_G2_minus_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,50,selected_rank,A_G2_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,50,selected_rank,A_entry,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,50,selected_rank,A_fixed_time_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,50,selected_rank,A_full_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,50,selected_rank,B_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,50,selected_rank,B_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,50,selected_rank,B_G2_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,50,selected_rank,B_G2_minus_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",False,weak_target_stress_outside_assumption9
+3,50,selected_rank,B_G2_minus_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,50,selected_rank,B_G2_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,50,selected_rank,B_entry,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,50,selected_rank,B_fixed_time_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,50,selected_rank,B_full_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,100,fixed_rank,A_G1_fixed_time,3,3,3,True,"{""success"": 3}",True,theorem_covered
+3,100,fixed_rank,A_G1_time_average,3,3,3,True,"{""success"": 3}",True,theorem_covered
+3,100,fixed_rank,A_G2_fixed_time,3,3,3,True,"{""success"": 3}",True,theorem_covered
+3,100,fixed_rank,A_G2_minus_G1_fixed_time,3,3,3,True,"{""success"": 3}",False,weak_target_stress_outside_assumption9
+3,100,fixed_rank,A_G2_minus_G1_time_average,3,3,3,True,"{""success"": 3}",True,theorem_covered
+3,100,fixed_rank,A_G2_time_average,3,3,3,True,"{""success"": 3}",True,theorem_covered
+3,100,fixed_rank,A_entry,3,3,3,True,"{""success"": 3}",True,theorem_covered
+3,100,fixed_rank,A_fixed_time_mean,3,3,3,True,"{""success"": 3}",True,theorem_covered
+3,100,fixed_rank,A_full_mean,3,3,3,True,"{""success"": 3}",True,theorem_covered
+3,100,fixed_rank,B_G1_fixed_time,3,3,3,True,"{""success"": 3}",True,theorem_covered
+3,100,fixed_rank,B_G1_time_average,3,3,3,True,"{""success"": 3}",True,theorem_covered
+3,100,fixed_rank,B_G2_fixed_time,3,3,3,True,"{""success"": 3}",True,theorem_covered
+3,100,fixed_rank,B_G2_minus_G1_fixed_time,3,3,3,True,"{""success"": 3}",False,weak_target_stress_outside_assumption9
+3,100,fixed_rank,B_G2_minus_G1_time_average,3,3,3,True,"{""success"": 3}",True,theorem_covered
+3,100,fixed_rank,B_G2_time_average,3,3,3,True,"{""success"": 3}",True,theorem_covered
+3,100,fixed_rank,B_entry,3,3,3,True,"{""success"": 3}",True,theorem_covered
+3,100,fixed_rank,B_fixed_time_mean,3,3,3,True,"{""success"": 3}",True,theorem_covered
+3,100,fixed_rank,B_full_mean,3,3,3,True,"{""success"": 3}",True,theorem_covered
+3,100,selected_rank,A_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,100,selected_rank,A_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,100,selected_rank,A_G2_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,100,selected_rank,A_G2_minus_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",False,weak_target_stress_outside_assumption9
+3,100,selected_rank,A_G2_minus_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,100,selected_rank,A_G2_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,100,selected_rank,A_entry,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,100,selected_rank,A_fixed_time_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,100,selected_rank,A_full_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,100,selected_rank,B_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,100,selected_rank,B_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,100,selected_rank,B_G2_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,100,selected_rank,B_G2_minus_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",False,weak_target_stress_outside_assumption9
+3,100,selected_rank,B_G2_minus_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,100,selected_rank,B_G2_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,100,selected_rank,B_entry,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,100,selected_rank,B_fixed_time_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+3,100,selected_rank,B_full_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,50,fixed_rank,A_G1_fixed_time,3,2,2,True,"{""full_fit_failure"": 1, ""success"": 2}",False,
+4,50,fixed_rank,A_G1_time_average,3,2,0,True,"{""boundary_interiority_failure"": 2, ""full_fit_failure"": 1}",False,
+4,50,fixed_rank,A_G2_fixed_time,3,2,2,True,"{""full_fit_failure"": 1, ""success"": 2}",False,
+4,50,fixed_rank,A_G2_minus_G1_fixed_time,3,2,2,True,"{""full_fit_failure"": 1, ""success"": 2}",False,
+4,50,fixed_rank,A_G2_minus_G1_time_average,3,2,0,True,"{""boundary_interiority_failure"": 2, ""full_fit_failure"": 1}",False,
+4,50,fixed_rank,A_G2_time_average,3,2,0,True,"{""boundary_interiority_failure"": 2, ""full_fit_failure"": 1}",False,
+4,50,fixed_rank,A_entry,3,2,2,True,"{""full_fit_failure"": 1, ""success"": 2}",False,
+4,50,fixed_rank,A_fixed_time_mean,3,2,2,True,"{""full_fit_failure"": 1, ""success"": 2}",False,
+4,50,fixed_rank,A_full_mean,3,2,0,True,"{""boundary_interiority_failure"": 2, ""full_fit_failure"": 1}",False,
+4,50,fixed_rank,B_G1_fixed_time,3,2,2,True,"{""full_fit_failure"": 1, ""success"": 2}",False,
+4,50,fixed_rank,B_G1_time_average,3,2,0,True,"{""boundary_interiority_failure"": 2, ""full_fit_failure"": 1}",False,
+4,50,fixed_rank,B_G2_fixed_time,3,2,2,True,"{""full_fit_failure"": 1, ""success"": 2}",False,
+4,50,fixed_rank,B_G2_minus_G1_fixed_time,3,2,2,True,"{""full_fit_failure"": 1, ""success"": 2}",False,
+4,50,fixed_rank,B_G2_minus_G1_time_average,3,2,0,True,"{""boundary_interiority_failure"": 2, ""full_fit_failure"": 1}",False,
+4,50,fixed_rank,B_G2_time_average,3,2,0,True,"{""boundary_interiority_failure"": 2, ""full_fit_failure"": 1}",False,
+4,50,fixed_rank,B_entry,3,2,2,True,"{""full_fit_failure"": 1, ""success"": 2}",False,
+4,50,fixed_rank,B_fixed_time_mean,3,2,2,True,"{""full_fit_failure"": 1, ""success"": 2}",False,
+4,50,fixed_rank,B_full_mean,3,2,0,True,"{""boundary_interiority_failure"": 2, ""full_fit_failure"": 1}",False,
+4,50,selected_rank,A_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,50,selected_rank,A_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,50,selected_rank,A_G2_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,50,selected_rank,A_G2_minus_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,50,selected_rank,A_G2_minus_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,50,selected_rank,A_G2_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,50,selected_rank,A_entry,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,50,selected_rank,A_fixed_time_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,50,selected_rank,A_full_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,50,selected_rank,B_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,50,selected_rank,B_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,50,selected_rank,B_G2_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,50,selected_rank,B_G2_minus_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,50,selected_rank,B_G2_minus_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,50,selected_rank,B_G2_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,50,selected_rank,B_entry,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,50,selected_rank,B_fixed_time_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,50,selected_rank,B_full_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,100,fixed_rank,A_G1_fixed_time,3,3,3,True,"{""success"": 3}",True,theorem_covered
+4,100,fixed_rank,A_G1_time_average,3,3,3,True,"{""success"": 3}",True,theorem_covered
+4,100,fixed_rank,A_G2_fixed_time,3,3,3,True,"{""success"": 3}",True,theorem_covered
+4,100,fixed_rank,A_G2_minus_G1_fixed_time,3,3,3,True,"{""success"": 3}",True,theorem_covered
+4,100,fixed_rank,A_G2_minus_G1_time_average,3,3,3,True,"{""success"": 3}",True,theorem_covered
+4,100,fixed_rank,A_G2_time_average,3,3,3,True,"{""success"": 3}",True,theorem_covered
+4,100,fixed_rank,A_entry,3,3,3,True,"{""success"": 3}",True,theorem_covered
+4,100,fixed_rank,A_fixed_time_mean,3,3,3,True,"{""success"": 3}",True,theorem_covered
+4,100,fixed_rank,A_full_mean,3,3,3,True,"{""success"": 3}",True,theorem_covered
+4,100,fixed_rank,B_G1_fixed_time,3,3,3,True,"{""success"": 3}",True,theorem_covered
+4,100,fixed_rank,B_G1_time_average,3,3,3,True,"{""success"": 3}",True,theorem_covered
+4,100,fixed_rank,B_G2_fixed_time,3,3,3,True,"{""success"": 3}",True,theorem_covered
+4,100,fixed_rank,B_G2_minus_G1_fixed_time,3,3,3,True,"{""success"": 3}",True,theorem_covered
+4,100,fixed_rank,B_G2_minus_G1_time_average,3,3,3,True,"{""success"": 3}",True,theorem_covered
+4,100,fixed_rank,B_G2_time_average,3,3,3,True,"{""success"": 3}",True,theorem_covered
+4,100,fixed_rank,B_entry,3,3,3,True,"{""success"": 3}",True,theorem_covered
+4,100,fixed_rank,B_fixed_time_mean,3,3,3,True,"{""success"": 3}",True,theorem_covered
+4,100,fixed_rank,B_full_mean,3,3,3,True,"{""success"": 3}",True,theorem_covered
+4,100,selected_rank,A_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,100,selected_rank,A_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,100,selected_rank,A_G2_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,100,selected_rank,A_G2_minus_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,100,selected_rank,A_G2_minus_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,100,selected_rank,A_G2_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,100,selected_rank,A_entry,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,100,selected_rank,A_fixed_time_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,100,selected_rank,A_full_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,100,selected_rank,B_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,100,selected_rank,B_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,100,selected_rank,B_G2_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,100,selected_rank,B_G2_minus_G1_fixed_time,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,100,selected_rank,B_G2_minus_G1_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,100,selected_rank,B_G2_time_average,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,100,selected_rank,B_entry,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,100,selected_rank,B_fixed_time_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered
+4,100,selected_rank,B_full_mean,3,3,0,True,"{""target_unsupported_selected_rank"": 3}",True,theorem_covered

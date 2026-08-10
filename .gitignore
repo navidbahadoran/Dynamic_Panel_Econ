@@ -242,3 +242,7 @@ __marimo__/
 *.tmp
 *.partial
 results/mc/logs/*.log
+
+# Oversized locked-preflight CSVs retained locally; lossless .csv.gz copies are published.
+/results/mc/preflight_revision9_locked/replication_records.csv
+/results/mc/preflight_revision9_locked/selected_rank/aa152561964a7ec3/replication_records.csv

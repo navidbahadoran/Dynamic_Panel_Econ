@@ -1,0 +1,238 @@
+{
+  "config_hash": "aa152561964a7ec3",
+  "git_commit": "ef5b6622d042d1896faf2580bb7c8fd6212a3779",
+  "cli_argv": [
+    "scripts\\run_mc.py",
+    "--config",
+    "configs\\mc\\preflight_revision9_locked_selected.toml"
+  ],
+  "rank_mode": "selected",
+  "method": "selected_rank",
+  "failure_codes": [
+    "success",
+    "calibration_failure",
+    "nonfinite_input",
+    "full_fit_not_converged",
+    "first_order_residual_high",
+    "coefficient_bound_active",
+    "constrained_solver_failure",
+    "constrained_feasibility_failure",
+    "constrained_optimality_failure",
+    "nonfinite_constrained_solution",
+    "rank_at_cap",
+    "rank_pilot_failure",
+    "rank_selection_failure",
+    "boundary_interiority_failure",
+    "target_unsupported_selected_rank",
+    "split_target_unsupported_selected_rank",
+    "tangent_gram_eigensolver_failure",
+    "tangent_gram_nearly_singular",
+    "split_tangent_gram_eigensolver_failure",
+    "split_tangent_gram_nearly_singular",
+    "riesz_not_converged",
+    "riesz_target_instability",
+    "split_fit_not_converged",
+    "split_rank_loss",
+    "split_target_support_loss",
+    "split_riesz_target_instability",
+    "spatial_variance_failure",
+    "nonpositive_variance",
+    "unexpected_exception"
+  ],
+  "frozen_group_means_a": [
+    0.8999999999999999,
+    1.1
+  ],
+  "requested_replications_per_cell": 3,
+  "true_rank_designs": [
+    null
+  ],
+  "initial_conditions": {
+    "y_i_minus_50": 0.0,
+    "x_i_minus_50": 0.0,
+    "g_a_minus_50": 0.0,
+    "g_b_minus_50": 0.0,
+    "g_h_minus_50": 0.0,
+    "f_x_minus_50": 0.0
+  },
+  "mc_conditioning_field": {
+    "common_time_paths": [
+      "g_a",
+      "g_b",
+      "g_h",
+      "f_x"
+    ],
+    "time_invariant_unit_design_draws": [
+      "lambda_a",
+      "lambda_b",
+      "lambda_h",
+      "lambda_x",
+      "sigma_i",
+      "sigma_e_i",
+      "dgp4_loading_perturbations"
+    ],
+    "rank_stress_additions": [
+      "added_bounded_rank_two_unit_loadings",
+      "added_bounded_rank_two_time_factor_paths"
+    ],
+    "remaining_random": [
+      "time_varying_idiosyncratic_gaussian_innovations"
+    ]
+  },
+  "coefficient_bound_B": 10.0,
+  "B": 10.0,
+  "c_B": 1.0,
+  "required_simulation_interior_margin": 1.0,
+  "maximum_deterministic_coefficient_envelope": 7.777300064105353,
+  "distance_to_parameter_space_boundary": 2.2226999358946467,
+  "deterministic_interior_margin": 2.2226999358946467,
+  "additional_slack_relative_to_required_interior_envelope": 1.2226999358946467,
+  "frozen_calibration_file": "configs/mc/frozen_dgp_calibration.toml",
+  "frozen_calibration_hash": "a80900898ff5bfef84380bd1cbd68a27d7f22c8ae3023b8b8c64ec6cec6f471e",
+  "calibration_cells": [
+    {
+      "calibration_cell": {
+        "dgp": 1,
+        "N": 100,
+        "T": 100,
+        "true_rank_vector": null
+      },
+      "c_h": 0.6546536707079772,
+      "c_xi": 1.9136634556673244,
+      "intended_r2": 0.65,
+      "calibrated_r2": 0.65,
+      "C_A": 0.85,
+      "C_beta": 1.7774613391789282,
+      "C_H": 6.509671195844852,
+      "C_Theta": 6.509671195844852,
+      "B": 10.0,
+      "c_B": 1.0
+    },
+    {
+      "calibration_cell": {
+        "dgp": 1,
+        "N": 50,
+        "T": 50,
+        "true_rank_vector": null
+      },
+      "c_h": 0.6546536707079772,
+      "c_xi": 1.8078429491333174,
+      "intended_r2": 0.65,
+      "calibrated_r2": 0.6499999999999975,
+      "C_A": 0.85,
+      "C_beta": 1.7774613391789282,
+      "C_H": 6.1497036679735935,
+      "C_Theta": 6.1497036679735935,
+      "B": 10.0,
+      "c_B": 1.0
+    },
+    {
+      "calibration_cell": {
+        "dgp": 2,
+        "N": 100,
+        "T": 100,
+        "true_rank_vector": null
+      },
+      "c_h": 0.6546536707079772,
+      "c_xi": 1.8309489220350308,
+      "intended_r2": 0.65,
+      "calibrated_r2": 0.6499999999996348,
+      "C_A": 0.85,
+      "C_beta": 1.7774613391789282,
+      "C_H": 6.228302799814047,
+      "C_Theta": 6.228302799814047,
+      "B": 10.0,
+      "c_B": 1.0
+    },
+    {
+      "calibration_cell": {
+        "dgp": 2,
+        "N": 50,
+        "T": 50,
+        "true_rank_vector": null
+      },
+      "c_h": 0.6546536707079772,
+      "c_xi": 1.7317944267764211,
+      "intended_r2": 0.65,
+      "calibrated_r2": 0.6499999999986029,
+      "C_A": 0.85,
+      "C_beta": 1.7774613391789282,
+      "C_H": 5.891010910891801,
+      "C_Theta": 5.891010910891801,
+      "B": 10.0,
+      "c_B": 1.0
+    },
+    {
+      "calibration_cell": {
+        "dgp": 3,
+        "N": 100,
+        "T": 100,
+        "true_rank_vector": null
+      },
+      "c_h": 0.6546536707079772,
+      "c_xi": 2.1479565603939967,
+      "intended_r2": 0.65,
+      "calibrated_r2": 0.6499999999998035,
+      "C_A": 0.85,
+      "C_beta": 1.7774613391789282,
+      "C_H": 7.306661424564264,
+      "C_Theta": 7.306661424564264,
+      "B": 10.0,
+      "c_B": 1.0
+    },
+    {
+      "calibration_cell": {
+        "dgp": 3,
+        "N": 50,
+        "T": 50,
+        "true_rank_vector": null
+      },
+      "c_h": 0.6546536707079772,
+      "c_xi": 2.2863113156832737,
+      "intended_r2": 0.65,
+      "calibrated_r2": 0.6500000000020866,
+      "C_A": 0.85,
+      "C_beta": 1.7774613391789282,
+      "C_H": 7.777300064105353,
+      "C_Theta": 7.777300064105353,
+      "B": 10.0,
+      "c_B": 1.0
+    },
+    {
+      "calibration_cell": {
+        "dgp": 4,
+        "N": 100,
+        "T": 100,
+        "true_rank_vector": null
+      },
+      "c_h": 0.6546536707079772,
+      "c_xi": 1.9069141690537679,
+      "intended_r2": 0.65,
+      "calibrated_r2": 0.65,
+      "C_A": 0.85,
+      "C_beta": 1.71466333698683,
+      "C_H": 6.486712280822122,
+      "C_Theta": 6.486712280822122,
+      "B": 10.0,
+      "c_B": 1.0
+    },
+    {
+      "calibration_cell": {
+        "dgp": 4,
+        "N": 50,
+        "T": 50,
+        "true_rank_vector": null
+      },
+      "c_h": 0.6546536707079772,
+      "c_xi": 1.981125385973407,
+      "intended_r2": 0.65,
+      "calibrated_r2": 0.6500000000000001,
+      "C_A": 0.85,
+      "C_beta": 1.71466333698683,
+      "C_H": 6.7391551122717654,
+      "C_Theta": 6.7391551122717654,
+      "B": 10.0,
+      "c_B": 1.0
+    }
+  ]
+}

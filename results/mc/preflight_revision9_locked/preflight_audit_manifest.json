@@ -1,0 +1,17 @@
+{
+  "authorized_unique_dgp_realizations": 24,
+  "authorized_method_replication_evaluations": 48,
+  "matched_hashes_pass": true,
+  "frozen_calibration_hash": "a80900898ff5bfef84380bd1cbd68a27d7f22c8ae3023b8b8c64ec6cec6f471e",
+  "global_C_Theta_max": 8.288745227963506,
+  "B": 10.0,
+  "c_B": 1.0,
+  "medium_recommendation": "NO-GO",
+  "executed_commands": [
+    ".\\.venv\\Scripts\\python.exe scripts\\run_mc.py --config configs\\mc\\preflight_revision9_locked_fixed.toml --print-resolved-config --dry-run",
+    ".\\.venv\\Scripts\\python.exe scripts\\run_mc.py --config configs\\mc\\preflight_revision9_locked_selected.toml --print-resolved-config --dry-run",
+    ".\\.venv\\Scripts\\python.exe scripts\\run_mc.py --config configs\\mc\\preflight_revision9_locked_fixed.toml",
+    ".\\.venv\\Scripts\\python.exe scripts\\run_mc.py --config configs\\mc\\preflight_revision9_locked_selected.toml",
+    ".\\.venv\\Scripts\\python.exe scripts\\audit_revision9_locked_preflight.py --fixed-root results\\mc\\preflight_revision9_locked\\fixed_rank\\f87b622f889053fe --selected-root results\\mc\\preflight_revision9_locked\\selected_rank\\aa152561964a7ec3 --output-root results\\mc\\preflight_revision9_locked"
+  ]
+}

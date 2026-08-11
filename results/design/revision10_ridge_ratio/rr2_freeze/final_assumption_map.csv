@@ -1,0 +1,23 @@
+assumption_or_condition,revision10_frozen_status,scope_and_role
+Dynamic stability (a:stab),UNCHANGED,Maintained throughout estimation and inference
+Conditional sequential exogeneity (a:exog),UNCHANGED,Maintained score centering and dynamic timing
+Spatial sampling geometry (a:geometry),UNCHANGED,Maintained spatial concentration framework
+Conditional mixing and NED (a:ned),UNCHANGED,Maintained dependence and localization framework
+Moments and weak cross-sectional covariance (a:moments),UNCHANGED,Maintained truncation and concentration rates
+Separate low-rank signal strength (a:signal),UNCHANGED,Positive singular values remain order sqrt(NT)
+Incoherence (a:signal),UNCHANGED,Maintained supplied-rank recovery condition
+Coefficient box and strict interiority (a:signal),UNCHANGED,Same canonical-unit B and c_B
+Loading and factor Gram matrices (a:gram),UNCHANGED,Maintained supplied-rank and inference condition
+Target regularity (a:target),UNCHANGED,No new target restriction from rank selection
+Rectangular panel growth (a:growth),UNCHANGED,Same zeta_NT and exact 1/N+1/T condition
+Prediction identification part (i) on R_max,ORIGINAL DOMAIN FOR SUPPLIED-RANK THEORY,All supplied-rank recovery and inference results retain Revision-9 domain
+Prediction identification part (i) on R_max^+,LOCALIZED RANK-SELECTION EXTENSION,Pilot-only fixed c_+ lower bound on D_max^+
+Prediction identification tangent part (ii),UNCHANGED,Empirical Riesz and local inference domain unchanged
+Fixed reporting rank set R_max,UNCHANGED,Reported ranks remain 0 through bar_r_M
+Pilot rank set R_max^+,NEW PILOT-ONLY DOMAIN,Each fixed pilot cap equals bar_r_M+1
+Cap+1 pilot objective gap,RANK-SELECTION OPTIMIZATION CONDITION,Normalized global gap o_p(zeta_NT)
+Ridge a_NT=1/log(NT),NEW PROCEDURAL RULE NOT DGP ASSUMPTION,No multiplier or sensitivity constant
+Dimensionless spectral normalization,NEW PROCEDURAL RULE NOT DGP ASSUMPTION,Existing block weights divided by w_A1
+Rank-zero anchor lambda_M0=1,NEW PROCEDURAL RULE NOT DGP ASSUMPTION,No zero-rank test or cutoff
+Revision-9 IC penalty-rate assumptions,DELETE,No role in Revision-10 consistency theorem
+New stochastic dependence moment signal or growth assumption,NONE,Only identification domain is locally enlarged for the pilot

@@ -1,0 +1,19 @@
+revision9_object,revision10_disposition,archival_rule
+kappa_NT,REMOVE FROM REVISION-10 THEORY,Preserve Revision-9 code and records for reproducibility
+c_kappa,REMOVE FROM REVISION-10 THEORY,Preserve Revision-9 configuration history only
+IC dimension penalty,REMOVE FROM REVISION-10 SELECTOR,Do not compute for Revision-10 statistical rank choice
+Candidate IC values and tables,REMOVE FROM REVISION-10 SELECTOR,Historical output may remain labeled Revision 9
+Smallest-to-second-smallest IC gap,REPLACE,Use blockwise ridge-ratio margins in Revision 10
+Penalty multiplier sensitivities,REMOVE FROM REVISION-10 SELECTOR,No baseline or sensitivity multiplier remains
+IC local completion,REMOVE FROM REVISION-10 SELECTOR,No local statistical candidate search remains
+One-coordinate IC neighbors,REMOVE FROM REVISION-10 SELECTOR,May remain only in archived Revision-9 reproduction
+R_base,REMOVE FROM REVISION-10 SELECTOR,Preserve historical implementation only
+R_cand and duplicate removal,REMOVE FROM REVISION-10 SELECTOR,Preserve historical implementation only
+Candidate-set enumeration,REMOVE FROM REVISION-10 SELECTOR,No candidate coverage premise remains
+Candidate fixed-rank post-refits,REMOVE FROM REVISION-10 SELECTION,Replaced by one final post-selection post-refit
+IC penalty-dominates-zeta proof,DELETE,Replaced by zeta_NT/a_NT -> 0 spectral separation
+IC-relative candidate objective tolerance,DELETE,Replaced by cap+1 pilot global gap o_p(zeta_NT)
+Singular-value threshold tau_NT,REMOVE FROM REVISION-10 SELECTOR,May remain only for Revision-9 reproducibility
+Nuclear-path candidate coverage,DELETE FROM THEORY,Nuclear path is optional initialization only
+Nuclear-path code and old results,KEEP FOR REPRODUCIBILITY,Must not define Revision-10 ranks
+Revision-9 historical evidence,KEEP FOR REPRODUCIBILITY,Do not delete completed files or rewrite provenance

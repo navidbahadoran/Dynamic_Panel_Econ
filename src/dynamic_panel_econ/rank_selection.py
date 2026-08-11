@@ -1,4 +1,4 @@
-"""Revision-8 rank screening, valid post-refits, IC selection, and stability checks."""
+"""Revision-10 ridge ratios and preserved legacy Revision-9 IC selection."""
 
 from __future__ import annotations
 
@@ -35,6 +35,24 @@ class RankPilotFailure(RankSelectionFailure):
     def __init__(self, message: str, diagnostics: dict[str, Any] | None = None) -> None:
         super().__init__(message)
         self.diagnostics = diagnostics or {}
+
+
+class FinalPostRefitFailure(RankSelectionFailure):
+    """Raised when the selected-rank literal post-refit is numerically unresolved."""
+
+    def __init__(self, message: str, diagnostics: dict[str, Any] | None = None) -> None:
+        super().__init__(message)
+        self.diagnostics = diagnostics or {}
+
+
+@dataclass(slots=True)
+class Revision10RankSelectionResult:
+    """Frozen Revision-10 spectral-pilot selection and final post-refit."""
+
+    selected_ranks: RankVector
+    pilot_fit: FitResult
+    final_fit: FitResult
+    diagnostics: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(slots=True)
@@ -142,6 +160,8 @@ def fit_invalid_reasons(
     fit: FitResult,
     required_ranks: RankVector,
     stationarity_tolerance: float,
+    *,
+    require_exact_numerical_rank: bool = True,
 ) -> list[str]:
     reasons = []
     if not fit.converged:
@@ -161,11 +181,124 @@ def fit_invalid_reasons(
     if not np.isfinite(fit.max_envelope_ratio) or fit.max_envelope_ratio > 1.0 + 1e-8:
         reasons.append("constrained_feasibility_failure")
     actual = _numerical_rank_vector(fit.theta)
-    if actual != required_ranks:
+    if require_exact_numerical_rank and actual != required_ranks:
         reasons.append(f"numerical_rank_support:{actual}")
     if not np.isfinite(fit.objective):
         reasons.append("nonfinite_objective")
     return reasons
+
+
+def revision10_block_names(design: Design) -> tuple[str, ...]:
+    """Ordered coefficient-block names used by Revision-10 Section 4.5."""
+
+    return tuple(
+        [*(f"A{index}" for index in range(1, len(design.y_lags) + 1)),
+         *(f"B{index}" for index in range(1, len(design.x) + 1)), "H"]
+    )
+
+
+def revision10_scale_weights(design: Design) -> tuple[float, ...]:
+    """Return the uncentered full-sample RMS weights in Revision-10 Section 4.5."""
+
+    weights = [
+        *(float(np.sqrt(np.mean(np.square(regressor)))) for regressor in design.y_lags),
+        *(float(np.sqrt(np.mean(np.square(regressor)))) for regressor in design.x),
+        1.0,
+    ]
+    if not design.y_lags:
+        raise ValueError("Revision-10 rank selection requires reference block A1")
+    if not all(np.isfinite(value) and value >= 0.0 for value in weights):
+        raise RankPilotFailure("rank_selection_numerically_unresolved: nonfinite scale weight")
+    reference = weights[0]
+    if not np.isfinite(reference) or reference <= 0.0:
+        raise RankPilotFailure(
+            "rank_selection_numerically_unresolved: unusable reference weight w_A1",
+            {"scale_weights": weights, "reference_weight_w_A1": reference},
+        )
+    return tuple(weights)
+
+
+def revision10_normalized_spectrum(
+    matrix: np.ndarray,
+    *,
+    block_weight: float,
+    reference_weight: float,
+    n: int,
+    t: int,
+    count: int,
+) -> tuple[tuple[float, ...], tuple[float, ...]]:
+    """Compute the frozen normalized squared pilot spectrum through cap+1."""
+
+    if count < 1 or count > min(matrix.shape):
+        raise ValueError("requested spectrum count must be between one and min(N,T)")
+    if matrix.shape != (n, t):
+        raise ValueError("pilot matrix and panel dimensions differ")
+    if not np.isfinite(reference_weight) or reference_weight <= 0.0:
+        raise RankPilotFailure(
+            "rank_selection_numerically_unresolved: unusable reference weight w_A1"
+        )
+    singular = np.linalg.svd(matrix, compute_uv=False)[:count]
+    scale_factor = (block_weight / reference_weight) ** 2 / (n * t)
+    normalized = scale_factor * np.square(singular)
+    if not np.all(np.isfinite(normalized)):
+        raise RankPilotFailure(
+            "rank_selection_numerically_unresolved: nonfinite normalized pilot spectrum"
+        )
+    return tuple(float(value) for value in singular), tuple(
+        float(value) for value in normalized
+    )
+
+
+def revision10_ridge(n: int, t: int) -> float:
+    """Return exactly ``a_NT=1/log(NT)`` from Revision-10 Section 4.5."""
+
+    if n * t <= 1:
+        raise ValueError("Revision-10 ridge requires N*T > 1")
+    return float(1.0 / np.log(n * t))
+
+
+def revision10_ridge_ratios(
+    normalized_spectrum: tuple[float, ...] | list[float] | np.ndarray,
+    *,
+    reporting_cap: int,
+    n: int,
+    t: int,
+) -> tuple[float, ...]:
+    """Form the rank-zero anchor and positive-rank ratios, including cap+1."""
+
+    spectrum = np.asarray(normalized_spectrum, dtype=float)
+    if reporting_cap < 0 or spectrum.size < reporting_cap + 1:
+        raise ValueError("normalized spectrum must include the genuine cap+1 value")
+    if not np.all(np.isfinite(spectrum[: reporting_cap + 1])):
+        raise RankPilotFailure(
+            "rank_selection_numerically_unresolved: nonfinite ridge-ratio input"
+        )
+    ridge = revision10_ridge(n, t)
+    ratios = [(spectrum[0] + ridge) / (1.0 + ridge)]
+    ratios.extend(
+        (spectrum[index] + ridge) / (spectrum[index - 1] + ridge)
+        for index in range(1, reporting_cap + 1)
+    )
+    return tuple(float(value) for value in ratios)
+
+
+def revision10_select_block_rank(ratios: tuple[float, ...] | list[float]) -> int:
+    """Select the first exact argmin, so exact ties go to the smaller rank."""
+
+    values = np.asarray(ratios, dtype=float)
+    if values.ndim != 1 or values.size == 0 or not np.all(np.isfinite(values)):
+        raise RankPilotFailure(
+            "rank_selection_numerically_unresolved: invalid ridge-ratio vector"
+        )
+    return int(np.argmin(values))
+
+
+def revision10_assemble_rank_vector(
+    block_ratios: list[tuple[float, ...]] | tuple[tuple[float, ...], ...],
+) -> RankVector:
+    """Assemble separately selected A, B, and H block ranks."""
+
+    return tuple(revision10_select_block_rank(ratios) for ratios in block_ratios)
 
 
 def build_candidates(
@@ -1248,7 +1381,254 @@ def fit_rank_adaptive_cap_pilot(
     }
 
 
+def fit_revision10_spectral_pilot(
+    y: np.ndarray,
+    design: Design,
+    reporting_caps: RankVector,
+    *,
+    seed: int | np.random.SeedSequence,
+    fit_options: dict[str, Any],
+    stationarity_tolerance: float,
+    start_objective_stability_tol: float,
+) -> tuple[FitResult, dict[str, Any]]:
+    """Fit one joint at-most-cap+1 pilot with maintained numerical diagnostics."""
+
+    pilot_caps = tuple(cap + 1 for cap in reporting_caps)
+    if any(cap < 0 for cap in reporting_caps) or any(
+        cap > min(y.shape) for cap in pilot_caps
+    ):
+        raise ValueError("reporting caps must admit their cap+1 pilot ranks")
+    rng = np.random.default_rng(seed)
+    additional = [int(value) for value in rng.integers(0, 2**32 - 1, size=2)]
+    start_seeds: list[int | np.random.SeedSequence] = [seed, *additional]
+    fits: list[FitResult] = []
+    records: list[dict[str, Any]] = []
+    for index, start_seed in enumerate(start_seeds, start=1):
+        fit = fit_fixed_rank(
+            y,
+            design,
+            pilot_caps,
+            seed=start_seed,
+            diagnostic_context=f"revision10_spectral_pilot:start_{index}",
+            **fit_options,
+        )
+        reasons = fit_invalid_reasons(
+            fit,
+            pilot_caps,
+            stationarity_tolerance,
+            require_exact_numerical_rank=False,
+        )
+        fits.append(fit)
+        records.append(
+            {
+                "start_id": f"deterministic_start_{index}",
+                "seed": (
+                    f"seed_sequence:{start_seed.entropy}:{start_seed.spawn_key}"
+                    if isinstance(start_seed, np.random.SeedSequence)
+                    else str(start_seed)
+                ),
+                "objective": fit.objective,
+                "finite_objective": bool(np.isfinite(fit.objective)),
+                "feasible": "constrained_feasibility_failure" not in reasons,
+                "converged": fit.converged,
+                "stationarity_residual": fit.stationarity_residual,
+                "stationarity_pass": "stationarity_high" not in reasons
+                and "constrained_optimality_failure" not in reasons,
+                "max_envelope_ratio": fit.max_envelope_ratio,
+                "boundary_active": bool(fit.diagnostics.get("boundary_active", False)),
+                "termination_status": fit.diagnostics.get(
+                    "constrained_solver_status", "unknown"
+                ),
+                "numerical_rank_vector": _numerical_rank_vector(fit.theta),
+                "valid": not reasons,
+                "invalid_reasons": reasons,
+            }
+        )
+    valid = sorted(
+        (fit for fit, record in zip(fits, records, strict=True) if record["valid"]),
+        key=lambda fit: fit.objective,
+    )
+    best = valid[0] if valid else min(fits, key=lambda fit: fit.objective)
+    second_objective = valid[1].objective if len(valid) >= 2 else float("nan")
+    objective_gap = (
+        abs(second_objective - best.objective) / max(1.0, abs(best.objective))
+        if len(valid) >= 2
+        else float("nan")
+    )
+    stable = len(valid) >= 2 and objective_gap <= start_objective_stability_tol
+    diagnostics = {
+        "algorithm": "joint_at_most_cap_plus_one_three_deterministic_starts",
+        "reporting_rank_caps": reporting_caps,
+        "pilot_rank_caps": pilot_caps,
+        "start_objective_stability_tolerance": start_objective_stability_tol,
+        "maintained_start_count": 3,
+        "third_start_used": True,
+        "start_records": records,
+        "all_start_objectives": [record["objective"] for record in records],
+        "all_start_stationarity_residuals": [
+            record["stationarity_residual"] for record in records
+        ],
+        "valid_start_count": len(valid),
+        "best_objective": best.objective,
+        "second_best_valid_objective": second_objective,
+        "best_two_objective_gap": objective_gap,
+        "objective_stability_pass": stable,
+        "feasibility": bool(
+            next(
+                record["feasible"]
+                for fit, record in zip(fits, records, strict=True)
+                if fit is best
+            )
+        ),
+        "finite_objective": bool(np.isfinite(best.objective)),
+        "stationarity_residual": best.stationarity_residual,
+        "coefficient_box_activity": bool(
+            best.diagnostics.get("boundary_active", False)
+        ),
+        "max_envelope_ratio": best.max_envelope_ratio,
+        "termination_status": best.diagnostics.get("constrained_solver_status", "unknown"),
+        "numerical_rank_vector": _numerical_rank_vector(best.theta),
+        "starting_values": [record["start_id"] for record in records],
+        "global_objective_gap_certified": False,
+    }
+    if not stable:
+        raise RankPilotFailure(
+            "rank_selection_numerically_unresolved: cap+1 pilot failed maintained acceptance diagnostics",
+            diagnostics,
+        )
+    return best, diagnostics
+
+
 def select_ranks(
+    y: np.ndarray,
+    design: Design,
+    caps: RankVector,
+    *,
+    seed: int | np.random.SeedSequence = 0,
+    coefficient_bound: float = 10.0,
+    max_sweeps: int = 200,
+    objective_rtol: float = 1e-8,
+    stationarity_tol: float = 1e-6,
+    lstsq_rcond: float = 1e-10,
+    interior_numerical_tolerance: float = 1e-8,
+    constraint_tolerance: float = 1e-8,
+    constrained_kkt_tolerance: float = 1e-4,
+    constrained_subproblem_tolerance: float = 1e-10,
+    constrained_subproblem_max_iterations: int = 200,
+    start_objective_stability_tol: float = 1e-6,
+    cap_pilot_start_envelope_fraction: float = 0.8,
+) -> Revision10RankSelectionResult:
+    """Apply the frozen blockwise ridge-ratio selector in Revision-10 Section 4.5."""
+
+    n, t = y.shape
+    if design.shape != y.shape:
+        raise ValueError("response and design shapes differ")
+    if len(caps) != len(design.y_lags) + len(design.x) + 1:
+        raise ValueError("rank caps do not match coefficient blocks")
+    fit_options = {
+        "coefficient_bound": coefficient_bound,
+        "max_sweeps": max_sweeps,
+        "objective_rtol": objective_rtol,
+        "stationarity_tol": stationarity_tol,
+        "lstsq_rcond": lstsq_rcond,
+        "interior_numerical_tolerance": interior_numerical_tolerance,
+        "constraint_tolerance": constraint_tolerance,
+        "constrained_kkt_tolerance": constrained_kkt_tolerance,
+        "constrained_subproblem_tolerance": constrained_subproblem_tolerance,
+        "constrained_subproblem_max_iterations": constrained_subproblem_max_iterations,
+    }
+    pilot, pilot_diagnostics = fit_revision10_spectral_pilot(
+        y,
+        design,
+        caps,
+        seed=seed,
+        fit_options=fit_options,
+        stationarity_tolerance=stationarity_tol,
+        start_objective_stability_tol=start_objective_stability_tol,
+    )
+    names = revision10_block_names(design)
+    weights = revision10_scale_weights(design)
+    reference = weights[0]
+    block_records: dict[str, dict[str, Any]] = {}
+    all_ratios: list[tuple[float, ...]] = []
+    for name, matrix, weight, cap in zip(
+        names, pilot.theta.matrices(), weights, caps, strict=True
+    ):
+        singular, normalized = revision10_normalized_spectrum(
+            matrix,
+            block_weight=weight,
+            reference_weight=reference,
+            n=n,
+            t=t,
+            count=cap + 1,
+        )
+        ratios = revision10_ridge_ratios(
+            normalized, reporting_cap=cap, n=n, t=t
+        )
+        selected_rank = revision10_select_block_rank(ratios)
+        ordered_ratios = sorted(ratios)
+        second = ordered_ratios[1] if len(ordered_ratios) >= 2 else None
+        block_records[name] = {
+            "weight": weight,
+            "pilot_singular_values_through_cap_plus_one": singular,
+            "normalized_lambda_hat_through_cap_plus_one": normalized,
+            "ratios_R_M_0_through_cap": ratios,
+            "minimum_ratio": ordered_ratios[0],
+            "second_smallest_ratio": second,
+            "ratio_gap": second - ordered_ratios[0] if second is not None else None,
+            "selected_rank": selected_rank,
+        }
+        all_ratios.append(ratios)
+    selected_ranks = revision10_assemble_rank_vector(all_ratios)
+    final_fit, final_diagnostics = fit_fixed_rank_multistart(
+        y,
+        design,
+        selected_ranks,
+        seed=seed,
+        fit_options=fit_options,
+        stationarity_tolerance=stationarity_tol,
+        start_objective_stability_tol=start_objective_stability_tol,
+        start_envelope_fraction=cap_pilot_start_envelope_fraction,
+    )
+    final_reasons = fit_invalid_reasons(final_fit, selected_ranks, stationarity_tol)
+    if not final_diagnostics["objective_stability_pass"] or final_reasons:
+        raise FinalPostRefitFailure(
+            "selected_rank_post_refit_numerically_unresolved",
+            {
+                "selected_rank_vector": selected_ranks,
+                "invalid_reasons": final_reasons,
+                "multistart": final_diagnostics,
+            },
+        )
+    pilot_diagnostics["singular_values_through_cap_plus_one"] = {
+        name: block_records[name]["pilot_singular_values_through_cap_plus_one"]
+        for name in names
+    }
+    diagnostics = {
+        "rank_selector_method": "revision10_ridge_ratio",
+        "reporting_rank_caps": caps,
+        "pilot_rank_caps": tuple(cap + 1 for cap in caps),
+        "block_order": names,
+        "scale_weights": dict(zip(names, weights, strict=True)),
+        "reference_weight_w_A1": reference,
+        "a_NT": revision10_ridge(n, t),
+        "blocks": block_records,
+        "selected_rank_by_block": {
+            name: block_records[name]["selected_rank"] for name in names
+        },
+        "selected_rank_vector": selected_ranks,
+        "selected_rank_at_reporting_cap": any(
+            rank == cap for rank, cap in zip(selected_ranks, caps, strict=True)
+        ),
+        "pilot": pilot_diagnostics,
+        "rank_selection_numerically_unresolved": False,
+        "final_selected_rank_post_refit_status": "success",
+        "final_post_refit_multistart": final_diagnostics,
+    }
+    return Revision10RankSelectionResult(selected_ranks, pilot, final_fit, diagnostics)
+
+
+def select_ranks_revision9(
     y: np.ndarray,
     design: Design,
     caps: RankVector,
@@ -1288,7 +1668,7 @@ def select_ranks(
     compute_dense_grid_sensitivity: bool = True,
     compute_larger_cap_sensitivity: bool = True,
 ) -> RankSelectionResult:
-    """Select one full-panel rank vector; invalid fits can never minimize the IC."""
+    """Preserved historical Revision-9 IC selector; never the primary Revision-10 path."""
 
     n, t = y.shape
     if len(caps) != len(design.y_lags) + len(design.x) + 1:

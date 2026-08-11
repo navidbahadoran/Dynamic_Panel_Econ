@@ -58,6 +58,7 @@ DEFAULTS: dict[str, Any] = {
         "rho_fx": 0.5,
     },
     "estimation": {
+        "rank_selector_method": "revision10_ridge_ratio",
         "fixed_ranks": [1, 1, 1],
         "rank_caps": [3, 3, 3],
         "coefficient_bound": 10.0,
@@ -157,10 +158,15 @@ def validate_config(config: dict[str, Any]) -> None:
     if len(config["estimation"]["fixed_ranks"]) != 3:
         raise ValueError("baseline P=K=1 configuration requires three fixed ranks")
     estimation = config["estimation"]
-    if run["rank_mode"] == "selected":
+    selector_method = str(estimation["rank_selector_method"])
+    if selector_method not in {"revision10_ridge_ratio", "revision9_ic"}:
+        raise ValueError(
+            "rank_selector_method must be revision10_ridge_ratio or revision9_ic"
+        )
+    if run["rank_mode"] == "selected" and selector_method == "revision9_ic":
         multiplier = estimation["ic_multiplier"]
         if isinstance(multiplier, str) or float(multiplier) <= 0.0:
-            raise ValueError("selected rank mode requires a fixed positive ic_multiplier")
+            raise ValueError("legacy revision9_ic requires a fixed positive ic_multiplier")
     if float(estimation["coefficient_bound"]) <= float(
         estimation["simulation_interior_margin"]
     ):

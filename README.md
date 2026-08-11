@@ -114,13 +114,15 @@ python scripts\run_mc.py --dgp-grid 1,2,3,4 --balanced-grid 50,100,200,400 `
   --pooled-r2-target 0.65 --workers 8 --output-root results/mc/production_fixed --resume
 ```
 
-Selected-rank mode runs the locked Revision-9 selection pipeline. The paper fixes the baseline
-IC multiplier at exactly `1.0`:
+Selected-rank mode now runs the frozen Revision-10 blockwise ridge-ratio selector. The only
+statistical rank inputs are the reportable block caps; the pilot caps are those caps plus one and
+the ridge is exactly `1/log(NT)`:
 
 ```powershell
 python scripts\run_mc.py --dgp-grid 1,2,3,4 --balanced-grid 50,100,200,400 `
   --replications 1000 --rank-mode selected --rank-caps 3,3,3 `
-  --kappa-f-b 0.15 --coefficient-bound 10 --ic-multiplier 1.0 `
+  --rank-selector-method revision10_ridge_ratio `
+  --kappa-f-b 0.15 --coefficient-bound 10 `
   --pooled-r2-target 0.65 --frozen-calibration configs/mc/frozen_dgp_calibration.toml --workers 8 `
   --output-root results/mc/production_selected --resume
 ```
@@ -130,7 +132,7 @@ The canonical non-executing paper-validation command is:
 ```powershell
 python scripts\run_mc.py --config configs\mc\production.toml --pooled-r2-target 0.65 `
   --kappa-f-b 0.15 --coefficient-bound 10 --rank-caps 3,3,3 `
-  --ic-multiplier 1.0 --print-resolved-config --dry-run
+  --rank-selector-method revision10_ridge_ratio --print-resolved-config --dry-run
 ```
 
 Run `python scripts/run_mc.py --help` for the complete interface. Configuration precedence is
@@ -273,32 +275,32 @@ factor `f_b=0.6+0.15*g_b`, whose deterministic support is `[0.15,1.05]`.
 
 ## 13. Estimator pipeline
 
-1. Solve the convex nuclear-norm path from `lambda_max` downward. The nuclear-plus-box prox uses
-   inner Dykstra iterations; one SVT followed by clipping is not treated as exact.
-2. Fit one joint rank-at-most-cap pilot. Starting from nuclear-path singular spaces, a
-   rank-adaptive outer routine tests one-coordinate normal-gradient increases and numerically
-   redundant decreases, jointly refits after every proposed move, and stops when no admissible
-   move improves the objective beyond tolerance.
-3. Threshold path and cap-pilot singular values at `sqrt(NT)/log(NT)`.
-4. Add valid one-coordinate neighbors only.
-5. Jointly refit every candidate by unpenalized supplied-rank ALS from two deterministic starts;
-   use a third deterministic randomized start only when needed. A candidate is numerically
-   unresolved unless at least two valid starts have normalized objective gap at most
-   `start_objective_stability_tol`; an unresolved candidate cannot minimize the IC.
-6. Minimize the specified IC and locally complete omitted one-coordinate neighbors.
-7. Use the selected unpenalized full-panel fit for target estimation and Riesz inference.
+1. Fit one joint literal box-constrained spectral pilot with each block represented by at most
+   its reportable cap plus one. Factor columns may collapse naturally; no singular-value floor or
+   completed-matrix clipping is used.
+2. Compute uncentered full-sample RMS weights for lag and covariate blocks, set `w_H=1`, and use
+   `w_A1` as the reference scale.
+3. Normalize every pilot squared singular value through cap+1 by
+   `(w_M/w_A1)^2/(NT)`.
+4. Set `a_NT=1/log(NT)` and the rank-zero anchor to one, form every ridge ratio through the
+   reporting cap using the genuine cap+1 numerator, and select the first exact blockwise argmin.
+5. Fit exactly one reported joint literal fixed-rank estimator at the assembled blockwise rank
+   vector. All tangent, Riesz, target, split, correction, variance, and interval objects use this
+   final post-refit rather than the pilot.
 
-Nuclear estimates are screening and warm starts only. They are never reported estimates.
+The cap+1 pilot records feasibility, all maintained start objectives and stationarity residuals,
+objective stability, boundary activity, termination, numerical ranks, and singular values. These
+observable diagnostics do not certify the theoretical unknown global objective-gap condition. An
+unacceptable pilot is recorded as `rank_selection_numerically_unresolved`; there is no fallback
+rank and no primary selected-rank point estimate or inference.
 
 ## 14. Rank selection and stress design
 
-The dimension is the sum of `r*(N+T-r)` over matrices. Locked Revision 9 uses
-`b_NT=(NT)^(1/(8+eta))*log(NT)` and
-`kappa_NT=b_NT^2*log(NT)^(spatial_dimension+3)`. The lattice designs set
-`spatial_dimension=1`, so the logarithmic exponent is four. The penalty fixes
-`eta_for_penalty=4.0` in configuration and never estimates it from a simulated sample. Ties prefer
-smaller dimension and then lexicographic rank order. Raw records retain candidate counts, IC gaps,
-cap hits, candidate sources, convergence, and selected ranks.
+Primary selected-rank configuration uses `rank_selector_method = "revision10_ridge_ratio"`.
+Legacy Revision-9 IC/path/candidate code is retained only for reproducibility through the explicit
+`revision9_ic` method. Its `ic_multiplier`, `threshold_multiplier`, nuclear-path grid, candidate
+neighbors, and sensitivity fields are ignored by the Revision-10 selector and are never
+reinterpreted as ridge inputs.
 
 `configs/mc/rank_stress.toml` prespecifies `(1,1,1)`, `(2,1,1)`, and `(1,0,2)`. The generic stress
 generator adds independent bounded loading-factor components, makes rank-zero blocks exactly zero,
@@ -306,12 +308,10 @@ applies deterministic common-factor envelope rescaling, and then applies the sam
 stability scaling. Calibration is performed separately on each actual true-rank design.
 
 Rank diagnostics are stored once per replication under `rank/`, not repeated on every target row.
-They include candidate coverage of the actual true vector, exact/under/over/zero-rank recovery,
-cap margins, candidate validity, and nuclear-path proposals. Prespecified stability checks cover
-the dense `sqrt(0.8)` nuclear grid, threshold sensitivities `0.5,2`, IC sensitivities `0.5,2`,
-larger caps, and best one-coordinate target changes. They are diagnostics, not rank-robust inference.
-Each sensitivity uses the same rank-at-most-cap pilot, stable candidate post-refits, and local
-candidate-completion algorithm, changing only its named tuning input.
+Revision-10 records include caps, weights, reference scale, ridge, pilot singular values and
+normalized spectra through cap+1, every ratio, blockwise and complete selected ranks, ratio gaps,
+pilot numerical diagnostics, and final-post-refit status. Historical Revision-9 raw fields remain
+available only on explicitly requested legacy runs.
 
 ## 15. Riesz computation
 

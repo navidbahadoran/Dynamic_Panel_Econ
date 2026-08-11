@@ -57,10 +57,12 @@ from .mc_accounting import (
     semantic_replication_id,
 )
 from .rank_selection import (
+    FinalPostRefitFailure,
     RankPilotFailure,
     RankSelectionFailure,
     fit_fixed_rank_multistart,
     select_ranks,
+    select_ranks_revision9,
 )
 from .seeds import seed_sequence
 from .targets import target_direction, target_regularity_diagnostics, target_value
@@ -78,6 +80,8 @@ FAILURE_CODES = (
     "nonfinite_constrained_solution",
     "rank_at_cap",
     "rank_pilot_failure",
+    "rank_selection_numerically_unresolved",
+    "selected_rank_post_refit_numerically_unresolved",
     "rank_selection_failure",
     "boundary_interiority_failure",
     "target_unsupported_selected_rank",
@@ -426,7 +430,7 @@ def calibrate_design(
 
 def _selection_options(config: dict[str, Any]) -> dict[str, Any]:
     estimation = config["estimation"]
-    keys = (
+    revision10_keys = (
         "coefficient_bound",
         "interior_numerical_tolerance",
         "constraint_tolerance",
@@ -437,6 +441,13 @@ def _selection_options(config: dict[str, Any]) -> dict[str, Any]:
         "objective_rtol",
         "stationarity_tol",
         "lstsq_rcond",
+        "start_objective_stability_tol",
+        "cap_pilot_start_envelope_fraction",
+    )
+    if estimation["rank_selector_method"] == "revision10_ridge_ratio":
+        return {key: estimation[key] for key in revision10_keys}
+    legacy_keys = (
+        *revision10_keys,
         "nuclear_gamma",
         "nuclear_epsilon",
         "nuclear_max_iter",
@@ -447,12 +458,10 @@ def _selection_options(config: dict[str, Any]) -> dict[str, Any]:
         "spatial_dimension",
         "ic_multiplier",
         "threshold_multiplier",
-        "start_objective_stability_tol",
         "rank_adaptive_improvement_tol",
         "rank_adaptive_removal_tol",
         "rank_adaptive_max_steps",
         "rank_adaptive_max_routes",
-        "cap_pilot_start_envelope_fraction",
         "dense_nuclear_gamma",
         "threshold_sensitivity_multipliers",
         "ic_sensitivity_multipliers",
@@ -461,7 +470,7 @@ def _selection_options(config: dict[str, Any]) -> dict[str, Any]:
         "compute_dense_grid_sensitivity",
         "compute_larger_cap_sensitivity",
     )
-    return {key: estimation[key] for key in keys}
+    return {key: estimation[key] for key in legacy_keys}
 
 
 def _fit_options(config: dict[str, Any]) -> dict[str, Any]:
@@ -713,6 +722,137 @@ def _rank_record(
     return record
 
 
+def _revision10_rank_record(
+    task: Task,
+    config: dict[str, Any],
+    selection: Any,
+    rank_runtime: float,
+    panel_diagnostics: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Serialize the frozen Revision-10 selector without legacy IC concepts."""
+
+    dgp, n, t, replication, true_rank = _task_parts(task)
+    diagnostics = selection.diagnostics
+    selected = tuple(selection.selected_ranks)
+    pilot = diagnostics["pilot"]
+    final_multistart = diagnostics["final_post_refit_multistart"]
+    record: dict[str, Any] = {
+        "record_type": "rank",
+        "method": "selected_rank",
+        "rank_selector_method": "revision10_ridge_ratio",
+        "run_id": config_hash(config),
+        "primary_status": "success",
+        "semantic_replication_id": semantic_replication_id(
+            dgp, n, t, replication, true_rank
+        ),
+        "dgp": dgp,
+        "N": n,
+        "T": t,
+        "replication": replication,
+        "status": "success",
+        "true_rank_vector": json.dumps(true_rank),
+        "selected_rank_vector": json.dumps(selected),
+        "reporting_rank_caps": json.dumps(diagnostics["reporting_rank_caps"]),
+        "pilot_rank_caps": json.dumps(diagnostics["pilot_rank_caps"]),
+        "rank_selection_diagnostics": (
+            json.dumps(diagnostics, sort_keys=True, default=_json_default)
+            if config["run"].get("save_candidate_details", True)
+            else None
+        ),
+        "scale_weights": json.dumps(diagnostics["scale_weights"], sort_keys=True),
+        "reference_weight_w_A1": diagnostics["reference_weight_w_A1"],
+        "a_NT": diagnostics["a_NT"],
+        "pilot_singular_values": json.dumps(
+            {
+                name: values["pilot_singular_values_through_cap_plus_one"]
+                for name, values in diagnostics["blocks"].items()
+            },
+            sort_keys=True,
+        ),
+        "normalized_lambda_hat": json.dumps(
+            {
+                name: values["normalized_lambda_hat_through_cap_plus_one"]
+                for name, values in diagnostics["blocks"].items()
+            },
+            sort_keys=True,
+        ),
+        "ridge_ratios": json.dumps(
+            {
+                name: values["ratios_R_M_0_through_cap"]
+                for name, values in diagnostics["blocks"].items()
+            },
+            sort_keys=True,
+        ),
+        "selected_rank_by_block": json.dumps(
+            diagnostics["selected_rank_by_block"], sort_keys=True
+        ),
+        "minimum_ratio_by_block": json.dumps(
+            {
+                name: values["minimum_ratio"]
+                for name, values in diagnostics["blocks"].items()
+            },
+            sort_keys=True,
+        ),
+        "second_smallest_ratio_by_block": json.dumps(
+            {
+                name: values["second_smallest_ratio"]
+                for name, values in diagnostics["blocks"].items()
+            },
+            sort_keys=True,
+        ),
+        "ratio_gap_by_block": json.dumps(
+            {
+                name: values["ratio_gap"]
+                for name, values in diagnostics["blocks"].items()
+            },
+            sort_keys=True,
+        ),
+        "rank_at_cap": diagnostics["selected_rank_at_reporting_cap"],
+        "rank_selection_numerically_unresolved": False,
+        "pilot_objective": selection.pilot_fit.objective,
+        "pilot_feasibility": pilot["feasibility"],
+        "pilot_stationarity_residual": pilot["stationarity_residual"],
+        "pilot_boundary_activity": pilot["coefficient_box_activity"],
+        "pilot_start_objectives": json.dumps(
+            pilot["all_start_objectives"], default=_json_default
+        ),
+        "pilot_start_stationarity_residuals": json.dumps(
+            pilot["all_start_stationarity_residuals"], default=_json_default
+        ),
+        "pilot_best_two_objective_gap": pilot["best_two_objective_gap"],
+        "pilot_objective_stability_pass": pilot["objective_stability_pass"],
+        "final_selected_rank_post_refit_status": diagnostics[
+            "final_selected_rank_post_refit_status"
+        ],
+        "final_objective": selection.final_fit.objective,
+        "final_stationarity_residual": selection.final_fit.stationarity_residual,
+        "final_max_envelope_ratio": selection.final_fit.max_envelope_ratio,
+        "final_objective_stability_pass": final_multistart[
+            "objective_stability_pass"
+        ],
+        "exact_rank_recovery": selected == true_rank,
+        "zero_rank_recovery": all(
+            selected[index] == 0 for index, rank in enumerate(true_rank) if rank == 0
+        ),
+        "rank_runtime_seconds": rank_runtime,
+        "config_hash": config_hash(config),
+        "git_commit": _git_commit(),
+    }
+    for index, block in enumerate(("A", "B", "H")):
+        record[f"{block}_underselected"] = selected[index] < true_rank[index]
+        record[f"{block}_overselected"] = selected[index] > true_rank[index]
+        record[f"{block}_true_rank"] = true_rank[index]
+        record[f"{block}_selected_rank"] = selected[index]
+    for name, weight in diagnostics["scale_weights"].items():
+        field = "w_H" if name == "H" else f"w_{name[0]}_{name[1:]}"
+        record[field] = weight
+    if panel_diagnostics:
+        record.update(
+            {key: value for key, value in panel_diagnostics.items() if np.isscalar(value)}
+        )
+    return record
+
+
 def _fixed_rank_record(
     task: Task,
     config: dict[str, Any],
@@ -929,6 +1069,47 @@ def _nuclear_fit_diagnostic_record(
 def _selected_fit_diagnostic_records(
     task: Task, config: dict[str, Any], selection: Any
 ) -> list[dict[str, Any]]:
+    if selection.diagnostics.get("rank_selector_method") == "revision10_ridge_ratio":
+        pilot_row = _fit_diagnostic_record(
+            task,
+            config,
+            selection.pilot_fit,
+            fit_type="revision10_cap_plus_one_spectral_pilot",
+            initialization_route="three_deterministic_starts",
+        )
+        pilot_row["best_start_objective"] = selection.diagnostics["pilot"][
+            "best_objective"
+        ]
+        pilot_row["second_start_objective"] = selection.diagnostics["pilot"][
+            "second_best_valid_objective"
+        ]
+        pilot_row["objective_stability_gap"] = selection.diagnostics["pilot"][
+            "best_two_objective_gap"
+        ]
+        pilot_row["objective_stability_pass"] = selection.diagnostics["pilot"][
+            "objective_stability_pass"
+        ]
+        final_row = _fit_diagnostic_record(
+            task,
+            config,
+            selection.final_fit,
+            fit_type="revision10_final_selected_rank_post_refit",
+            initialization_route="maintained_fixed_rank_multistart",
+        )
+        final_multistart = selection.diagnostics["final_post_refit_multistart"]
+        final_row["best_start_objective"] = final_multistart.get(
+            "original_best_objective"
+        )
+        final_row["second_start_objective"] = final_multistart.get(
+            "original_second_best_objective"
+        )
+        final_row["objective_stability_gap"] = final_multistart.get(
+            "original_stability_gap"
+        )
+        final_row["objective_stability_pass"] = final_multistart[
+            "objective_stability_pass"
+        ]
+        return [pilot_row, final_row]
     rows: list[dict[str, Any]] = []
     for index, nuclear in enumerate(selection.nuclear_fits):
         rows.append(
@@ -1204,8 +1385,14 @@ def run_replication(
                 fixed_rank_verification, sort_keys=True, default=_json_default
             )
         else:
+            selector_method = str(config["estimation"]["rank_selector_method"])
             try:
-                selection = select_ranks(
+                selector = (
+                    select_ranks
+                    if selector_method == "revision10_ridge_ratio"
+                    else select_ranks_revision9
+                )
+                selection = selector(
                     panel.y,
                     panel.design,
                     tuple(int(value) for value in config["estimation"]["rank_caps"]),
@@ -1220,9 +1407,36 @@ def run_replication(
                     _failure_record(
                         task,
                         config,
-                        "rank_pilot_failure",
+                        "rank_selection_numerically_unresolved",
                         str(exc),
                         {
+                            "rank_selector_method": selector_method,
+                            "rank_selection_numerically_unresolved": True,
+                            "reporting_rank_caps": json.dumps(
+                                pilot.get("reporting_rank_caps")
+                            ),
+                            "pilot_rank_caps": json.dumps(pilot.get("pilot_rank_caps")),
+                            "pilot_start_objectives": json.dumps(
+                                pilot.get("all_start_objectives", []),
+                                default=_json_default,
+                            ),
+                            "pilot_start_stationarity_residuals": json.dumps(
+                                pilot.get("all_start_stationarity_residuals", []),
+                                default=_json_default,
+                            ),
+                            "pilot_best_two_objective_gap": pilot.get(
+                                "best_two_objective_gap"
+                            ),
+                            "pilot_objective_stability_pass": pilot.get(
+                                "objective_stability_pass", False
+                            ),
+                            "pilot_feasibility": pilot.get("feasibility", False),
+                            "pilot_stationarity_residual": pilot.get(
+                                "stationarity_residual"
+                            ),
+                            "pilot_boundary_activity": pilot.get(
+                                "coefficient_box_activity"
+                            ),
                             "cap_pilot_attempted_route_count": pilot.get(
                                 "attempted_route_count", 0
                             ),
@@ -1285,6 +1499,24 @@ def run_replication(
                         },
                     )
                 ]
+            except FinalPostRefitFailure as exc:
+                return [
+                    _failure_record(
+                        task,
+                        config,
+                        "selected_rank_post_refit_numerically_unresolved",
+                        str(exc),
+                        {
+                            "rank_selector_method": selector_method,
+                            "final_post_refit_diagnostics": json.dumps(
+                                exc.diagnostics, sort_keys=True, default=_json_default
+                            ),
+                            "dgp_realization_hash": panel.diagnostics[
+                                "dgp_realization_hash"
+                            ],
+                        },
+                    )
+                ]
             except RankSelectionFailure as exc:
                 detail = str(exc)
                 status = (
@@ -1303,16 +1535,27 @@ def run_replication(
                     )
                 ]
             rank_runtime = time.perf_counter() - selection_started
-            rank_status = "rank_at_cap" if selection.diagnostics["selected_rank_at_cap"] else "success"
-            rank_row = _rank_record(
-                task,
-                config,
-                selection,
-                rank_runtime,
-                rank_status,
-                panel.diagnostics,
-            )
-            fit = selection.selected.fit
+            if selector_method == "revision10_ridge_ratio":
+                rank_status = "success"
+                rank_row = _revision10_rank_record(
+                    task, config, selection, rank_runtime, panel.diagnostics
+                )
+                fit = selection.final_fit
+            else:
+                rank_status = (
+                    "rank_at_cap"
+                    if selection.diagnostics["selected_rank_at_cap"]
+                    else "success"
+                )
+                rank_row = _rank_record(
+                    task,
+                    config,
+                    selection,
+                    rank_runtime,
+                    rank_status,
+                    panel.diagnostics,
+                )
+                fit = selection.selected.fit
         rank_row["replication_runtime_seconds"] = time.perf_counter() - started
         if rank_status != "success":
             return [
@@ -1544,13 +1787,22 @@ def run_replication(
             )
             z_true = abs(primary_estimate - truth) / primary_se if valid_interval else np.nan
             z_zero = abs(primary_estimate) / primary_se if valid_interval else np.nan
+            revision10_selection = bool(
+                selection is not None
+                and selection.diagnostics.get("rank_selector_method")
+                == "revision10_ridge_ratio"
+            )
             best_neighbor_rank = (
                 selection.diagnostics.get("best_neighbor_rank")
-                if selection is not None
+                if selection is not None and not revision10_selection
                 else None
             )
             neighbor_change = None
-            if best_neighbor_rank is not None and selection is not None:
+            if (
+                best_neighbor_rank is not None
+                and selection is not None
+                and not revision10_selection
+            ):
                 neighbor = selection.candidates.get(tuple(best_neighbor_rank))
                 if neighbor is not None and neighbor.valid:
                     neighbor_change = target_value(spec.direction, neighbor.fit.theta) - target_value(
@@ -1610,15 +1862,28 @@ def run_replication(
                     json.dumps(fit.ranks) if selection is not None else None
                 ),
                 "selected_rank": json.dumps(fit.ranks),
-                "selected_ic": selection.selected.ic if selection is not None else None,
+                "rank_selector_method": (
+                    selection.diagnostics.get("rank_selector_method", "revision9_ic")
+                    if selection is not None
+                    else None
+                ),
+                "selected_ic": (
+                    selection.selected.ic
+                    if selection is not None and not revision10_selection
+                    else None
+                ),
                 "rank_at_cap": (
-                    selection.diagnostics["selected_rank_at_cap"]
+                    selection.diagnostics[
+                        "selected_rank_at_reporting_cap"
+                        if revision10_selection
+                        else "selected_rank_at_cap"
+                    ]
                     if selection is not None
                     else None
                 ),
                 "candidate_count": (
                     selection.diagnostics["candidate_count_final"]
-                    if selection is not None
+                    if selection is not None and not revision10_selection
                     else None
                 ),
                 "candidate_coverage": (
@@ -1627,12 +1892,12 @@ def run_replication(
                         tuple(rank)
                         for rank in selection.diagnostics["candidate_rank_vectors"]
                     }
-                    if selection is not None
+                    if selection is not None and not revision10_selection
                     else None
                 ),
                 "cap_pilot_rank": (
                     json.dumps(selection.diagnostics["rank_cap_thresholded_vector"])
-                    if selection is not None
+                    if selection is not None and not revision10_selection
                     else None
                 ),
                 "rank_selection_diagnostics": (
@@ -1645,7 +1910,11 @@ def run_replication(
                     and config["run"].get("save_candidate_details", True)
                     else None
                 ),
-                "ic_gap": selection.diagnostics["ic_gap"] if selection is not None else None,
+                "ic_gap": (
+                    selection.diagnostics["ic_gap"]
+                    if selection is not None and not revision10_selection
+                    else None
+                ),
                 "best_neighbor_rank": json.dumps(best_neighbor_rank),
                 "best_neighbor_target_change": neighbor_change,
                 "full_objective": fit.objective,

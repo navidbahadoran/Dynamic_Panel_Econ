@@ -22,7 +22,8 @@ from dynamic_panel_econ.monte_carlo import (
     run_monte_carlo,
     run_replication,
 )
-from dynamic_panel_econ.rank_selection import revision8_kappa, select_ranks
+from dynamic_panel_econ.rank_selection import revision8_kappa
+from dynamic_panel_econ.rank_selection import select_ranks_revision9 as select_ranks
 from dynamic_panel_econ.reporting import aggregate_run, make_tables
 
 
@@ -284,6 +285,7 @@ def test_rank_stress_runner_dispatches_configured_true_rank(monkeypatch):
 
 def test_rank_at_cap_stops_primary_inference(monkeypatch):
     config = load_config("configs/mc/smoke.toml")
+    config["estimation"]["rank_selector_method"] = "revision9_ic"
     config["inference"]["targets"] = []
     start_diagnostics = {
         "start_objectives": [1.0, 1.0],
@@ -325,7 +327,9 @@ def test_rank_at_cap_stops_primary_inference(monkeypatch):
         "sensitivities": {},
     }
     fake = SimpleNamespace(selected=selected, diagnostics=diagnostics)
-    monkeypatch.setattr("dynamic_panel_econ.monte_carlo.select_ranks", lambda *a, **k: fake)
+    monkeypatch.setattr(
+        "dynamic_panel_econ.monte_carlo.select_ranks_revision9", lambda *a, **k: fake
+    )
     rows = run_replication((1, 20, 20, 0, None), config, {"c_h": 1.0, "c_xi": 1.0})
     assert [row["record_type"] for row in rows] == ["rank", "failure"]
     assert rows[1]["status"] == "rank_at_cap"

@@ -16,6 +16,8 @@ PRIMARY_STATUSES = (
     "calibration_failure",
     "full_fit_failure",
     "rank_pilot_failure",
+    "rank_selection_numerically_unresolved",
+    "selected_rank_post_refit_numerically_unresolved",
     "rank_selection_failure",
     "rank_at_cap",
     "candidate_numerically_unresolved",
@@ -44,6 +46,12 @@ PRIMARY_STATUS_DEFINITIONS = {
     "calibration_failure": "DGP calibration or generated-input validity failed",
     "full_fit_failure": "supplied or selected full-panel coefficient fit failed numerical checks",
     "rank_pilot_failure": "selected-mode rank-at-most-cap pilot was unresolved",
+    "rank_selection_numerically_unresolved": (
+        "Revision-10 cap+1 pilot failed maintained numerical acceptance diagnostics"
+    ),
+    "selected_rank_post_refit_numerically_unresolved": (
+        "Revision-10 final literal selected-rank post-refit was unresolved"
+    ),
     "rank_selection_failure": "selected-mode candidate comparison could not return a rank",
     "rank_at_cap": "selected rank reached an imposed cap",
     "candidate_numerically_unresolved": "no stable candidate post-refit was eligible",

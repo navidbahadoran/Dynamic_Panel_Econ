@@ -32,7 +32,7 @@ def _csv_strings(value: str) -> list[str]:
 def build_run_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
-            "Run the locked Revision-9 Monte Carlo. --pooled-r2-target calibrates the simulated DGP "
+            "Run the locked dynamic-panel Monte Carlo. --pooled-r2-target calibrates the simulated DGP "
             "through c_xi; it is not an estimation or rank-selection tuning parameter."
         )
     )
@@ -75,6 +75,11 @@ def build_run_parser() -> argparse.ArgumentParser:
 
     rank = parser.add_argument_group("rank")
     rank.add_argument("--rank-mode", choices=("fixed", "selected"))
+    rank.add_argument(
+        "--rank-selector-method",
+        choices=("revision10_ridge_ratio", "revision9_ic"),
+        help="Primary Revision-10 selector or explicit historical Revision-9 reproduction.",
+    )
     rank.add_argument("--fixed-ranks", type=_csv_ints)
     rank.add_argument("--rank-caps", type=_csv_ints)
     rank.add_argument("--true-ranks", type=_csv_ints)
@@ -174,6 +179,7 @@ def resolve_run_args(args: argparse.Namespace) -> dict[str, Any]:
     if args.frozen_calibration_path is not None:
         dgp["frozen_calibration_path"] = args.frozen_calibration_path
     estimation_map = {
+        "rank_selector_method": "rank_selector_method",
         "fixed_ranks": "fixed_ranks", "rank_caps": "rank_caps",
         "gamma": "nuclear_gamma", "epsilon": "nuclear_epsilon",
         "threshold_multiplier": "threshold_multiplier",

@@ -671,7 +671,13 @@ def aggregate_riesz_diagnostic(
                 ),
                 "rank_selection_failure_rate": float(
                     statuses.isin(
-                        ["rank_at_cap", "rank_pilot_failure", "rank_selection_failure"]
+                        [
+                            "rank_at_cap",
+                            "rank_pilot_failure",
+                            "rank_selection_failure",
+                            "rank_selection_numerically_unresolved",
+                            "selected_rank_post_refit_numerically_unresolved",
+                        ]
                     ).mean()
                 ),
                 "other_failure_rate": float(
@@ -690,6 +696,8 @@ def aggregate_riesz_diagnostic(
                                 "rank_at_cap",
                                 "rank_pilot_failure",
                                 "rank_selection_failure",
+                                "rank_selection_numerically_unresolved",
+                                "selected_rank_post_refit_numerically_unresolved",
                             ]
                         )
                     ).mean()

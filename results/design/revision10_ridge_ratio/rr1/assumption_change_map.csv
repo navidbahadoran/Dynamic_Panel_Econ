@@ -1,0 +1,18 @@
+current_object,status,RR1_role
+Dynamic stability (a:stab),UNCHANGED,used upstream in the existing pilot operator rate
+Conditional sequential exogeneity (a:exog),UNCHANGED,used upstream in score concentration
+Spatial sampling geometry (a:geometry),UNCHANGED,used upstream in conditional concentration
+Conditional alpha mixing and NED (a:ned),UNCHANGED,used upstream in the pilot rate
+Conditional moments and weak cross-sectional covariance (a:moments),UNCHANGED,used upstream in the pilot rate
+Separate low-rank signals and incoherence (a:signal),UNCHANGED,strong singular values give the positive spectral separation
+Coefficient interior bound in a:signal,UNCHANGED,preserves the cap-pilot basic inequality and final post-refit
+Conditional prediction identification (a:identification),UNCHANGED,supplies cap-pilot recovery curvature
+Loading and factor Gram matrices (a:gram),UNCHANGED,retained for final fixed-rank estimation and inference
+Target regularity (a:target),UNCHANGED,not used by rank selection but retained downstream
+Panel growth (a:growth),UNCHANGED,implies zeta_NT/a_NT tends to zero for all admitted rectangles
+True rank vector in R_max,UNCHANGED,reporting caps continue to contain truth
+Spectral pilot cap,RANK-SELECTION-SPECIFIC CHANGE,use fixed bar_r_M+1 for the pilot while reported ranks remain capped at bar_r_M
+Pilot normalized objective gap,RANK-SELECTION-SPECIFIC CHANGE,same o_p(zeta_NT) requirement applied to the enlarged-cap infimum
+IC kappa and penalty-rate condition,NO LONGER NEEDED,ridge ratios replace final IC selection
+IC candidate coverage and local completion,NO LONGER NEEDED,direct block spectra define every reported rank
+New substantive DGP assumptions,NEW,none

@@ -1,0 +1,16 @@
+{
+  "completed_uninterrupted": true,
+  "interruptions": [],
+  "interruption_count": 0,
+  "resume_event_count": 0,
+  "resumed_tasks": 0,
+  "skipped_completed_tasks_on_resume": 0,
+  "corrupt_or_incomplete_bundles": 0,
+  "fingerprint_validation_status": "valid",
+  "terminal_states": {
+    "unresolved": 180,
+    "corrupt": 0
+  },
+  "expected_task_count": 180,
+  "terminal_task_count": 180
+}

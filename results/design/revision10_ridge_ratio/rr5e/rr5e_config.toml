@@ -1,0 +1,70 @@
+[run]
+name = "rr5e"
+experiment = "baseline"
+rank_mode = "selected"
+master_seed = 2026081102
+dgps = [1, 2, 3, 4]
+cells = [[50, 50], [100, 100], [200, 200], [100, 200], [200, 100]]
+replications = 3
+replication_start = 0
+chunk_size = 3
+parallel_level = "replications"
+n_jobs = 8
+blas_threads = 1
+output_root = "results/design/revision10_ridge_ratio"
+save_candidate_details = true
+
+[dgp]
+burn_in = 50
+rho_g = 0.5
+rho_s = 0.5
+rho_x = 0.5
+rho_fx = 0.5
+delta_x = 0.5
+eta_x = 0.3
+mu_f_a = 0.5
+kappa_f_a = 0.1
+mu_f_b = 0.6
+kappa_f_b = 0.15
+pi_h = 0.30
+target_r2 = 0.65
+mu_lambda_a_1 = 0.9
+mu_lambda_a_2 = 1.1
+sigma_lambda_a = 0.08
+mu_lambda_b_1 = 0.8
+mu_lambda_b_2 = 1.2
+sigma_lambda_b = 0.25
+stability_bound = 0.85
+auto_adjust_group_gap = false
+min_abs_postscale_group_diff_a = 0.05
+prespecified_gap_grid = [0.2, 0.3, 0.4, 0.5]
+group_gap_pilot_draws = 20
+calibration_draws = 50
+calibration_seed = 20260807
+calibration_tolerance = 1e-10
+frozen_calibration_path = "configs/mc/frozen_dgp_calibration.toml"
+
+[rank_stress]
+true_rank_vectors = [[1, 1, 1], [2, 1, 1], [1, 0, 2]]
+component_strengths = [1.0, 1.0]
+
+[estimation]
+rank_selector_method = "revision10_ridge_ratio"
+rank_caps = [3, 3, 3]
+coefficient_bound = 10.0
+simulation_interior_margin = 1.0
+interior_numerical_tolerance = 1e-8
+constraint_tolerance = 1e-8
+constrained_kkt_tolerance = 1e-4
+constrained_subproblem_tolerance = 1e-10
+constrained_subproblem_max_iterations = 200
+max_sweeps = 200
+objective_rtol = 1e-8
+stationarity_tol = 1e-6
+lstsq_rcond = 1e-10
+start_objective_stability_tol = 1e-6
+cap_pilot_start_envelope_fraction = 0.8
+
+[inference]
+targets = []
+compute_tangent_gram = false

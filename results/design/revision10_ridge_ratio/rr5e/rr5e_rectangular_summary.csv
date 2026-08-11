@@ -1,0 +1,3 @@
+N,T,attempted,pilot_accepted,unresolved,exact,under_only,over_only,mixed,final_postrefit_valid,median_pilot_runtime_seconds
+100,200,36,0,36,0,0,0,0,0,52.19860274999519
+200,100,36,0,36,0,0,0,0,0,52.64003760000924

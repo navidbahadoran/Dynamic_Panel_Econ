@@ -1,0 +1,34 @@
+{
+  "phase": "RR5e",
+  "created_before_scientific_launch": true,
+  "code_commit": "fec018fb2d995007d192de7060ab0640b133b4a9",
+  "scientific_implementation_commit": "caa8572556a8d892ae07936fc4e6460c73819285",
+  "source_tree_hash": "6026f1a48d92fa4de1dc9ee81f4e6146ce5995a0ab8e6d90b8774cb9c78db555",
+  "resolved_configuration_hash": "9b7c3db446b5383f",
+  "configuration_file_sha256": "2da353b511e487a501d3d31d4c03726d0792c788fb65dba22e80437dfdc93023",
+  "manuscript_commit": "47af37560d6e0752519d6a6267a152871d8a5157",
+  "manuscript_sha256": "d1c7224e0962df6a54fb92a550671f72b66258f30afd64d292f3bf60c7d87be9",
+  "calibration_commit": "24ae1b5817bedc405c8debf12d6b6f9bf8cb9375",
+  "frozen_calibration_sha256": "51b4ea76fdd2295a2cfeb840ef7b2b3f468d32c45ad2c123523363d5b968f17e",
+  "rank_selector_method": "revision10_ridge_ratio",
+  "master_seed": 2026081102,
+  "seed_freshness": {
+    "working_tree_exact_match_count_before_launch": 0,
+    "git_history_pickaxe_match_count_before_launch": 0,
+    "scientific_use_before_launch": false
+  },
+  "design": {
+    "dgps": [1, 2, 3, 4],
+    "true_rank_vectors": [[1, 1, 1], [2, 1, 1], [1, 0, 2]],
+    "panel_cells": [[50, 50], [100, 100], [200, 200], [100, 200], [200, 100]],
+    "replications_per_cell": 3,
+    "semantic_task_count": 180,
+    "rank_only": true
+  },
+  "execution": {
+    "requested_n_jobs": 8,
+    "effective_n_jobs": 8,
+    "blas_threads_per_worker": 1,
+    "parallelization_unit": "DGP_x_N_x_T_x_true_rank_x_replication"
+  }
+}

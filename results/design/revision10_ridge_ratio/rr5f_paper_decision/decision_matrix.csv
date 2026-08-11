@@ -1,0 +1,5 @@
+route,theory_cost,new_assumptions,implementation_risk,monte_carlo_cost,referee_risk,empirical_clarity,post_hoc_tuning_risk,time_to_submission,overall_recommendation
+A supplied-rank main paper,Low; mostly removal,None beyond supplied-rank theory,Low,Moderate supplied-rank inference and sensitivity,Moderate but answerable,High,Low,Shortest,Recommend
+A+ supplied-rank main plus auxiliary theorem,Low new theory but high exposition,Pilot-only D_max+ extension retained,High for auxiliary pilot,Moderate,Medium-high,Medium,Low if no retuning,Medium,Do not recommend
+B modify numerical acceptance rule,Medium numerical justification,Revised numerical premise may be needed,High,High fresh independent validation,High,Low,Very high,Long,Reject
+C replace cap+1 pilot,High estimator-specific rate and selector proof,Potential penalty residual-replacement or spectral assumptions,High,High new design and validation,Medium-high,Low until completed,Medium,Longest,Defer to separate research project

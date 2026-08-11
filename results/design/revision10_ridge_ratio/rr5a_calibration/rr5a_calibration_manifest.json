@@ -1,0 +1,94 @@
+{
+  "task": "RR5a — complete and freeze missing rectangular calibration cells only",
+  "decision": "RR5a-CALIBRATION-FROZEN",
+  "created_at": "2026-08-11T08:54:02.8905790-04:00",
+  "branch": "main",
+  "approved_implementation_commit": "7325c323bd98f6ccf7bf89f4f29e0841c9fec7b9",
+  "canonical_manuscript_commit": "47af37560d6e0752519d6a6267a152871d8a5157",
+  "canonical_manuscript_sha256": "d1c7224e0962df6a54fb92a550671f72b66258f30afd64d292f3bf60c7d87be9",
+  "scope": {
+    "dgps": [1, 2, 3, 4],
+    "cells": [[100, 200], [200, 100]],
+    "true_rank_vectors": [[1, 1, 1], [2, 1, 1], [1, 0, 2]],
+    "new_calibration_entries": 24,
+    "rank_selection_evidence_generated": false,
+    "rr5_launched": false
+  },
+  "protocol": {
+    "calibration_master_seed": 20260807,
+    "calibration_draws_per_cell": 50,
+    "pi_H": 0.30,
+    "identified_target_pooled_R2": 0.65,
+    "component_strengths": [1.0, 1.0],
+    "root_grid": "numpy.geomspace(1e-4, 1e3, 80)",
+    "root_solver": "scipy.optimize.brentq",
+    "root_xtol": 1e-10,
+    "root_rtol": 1e-10,
+    "zero_slope_rule": "c_xi = 1; report induced pooled R2",
+    "common_random_numbers": true,
+    "calibration_function": "dynamic_panel_econ.calibration.calibrate_rank_stress_cell"
+  },
+  "seed_audit": {
+    "mapping": "SeedSequence([master_seed, stable_uint32(stage), stable_uint32(dgp), stable_uint32(N), stable_uint32(T), stable_uint32(true_rank_vector), stable_uint32(calibration_replication)])",
+    "stable_uint32": "first four bytes of SHA-256(str(value)), little-endian",
+    "new_streams": 1200,
+    "new_unique_streams": 1200,
+    "collisions_internal": 0,
+    "collisions_existing_calibration": 0,
+    "collisions_revision9_preflight": 0,
+    "collisions_reserved_rr5": 0,
+    "collisions_explicit_deterministic_tests": 0,
+    "insertion_stable": true
+  },
+  "results": {
+    "identified_cells": 16,
+    "normalized_zero_slope_cells": 8,
+    "maximum_absolute_identified_root_residual": 8.952838470577262e-12,
+    "maximum_new_deterministic_coefficient_envelope": 7.624850556803478,
+    "frozen_B_minus_simulation_margin": 9.0,
+    "all_new_envelopes_pass": true,
+    "all_zero_slope_c_xi_equal_one": true
+  },
+  "config_integrity": {
+    "old_sha256": "a80900898ff5bfef84380bd1cbd68a27d7f22c8ae3023b8b8c64ec6cec6f471e",
+    "new_sha256": "51b4ea76fdd2295a2cfeb840ef7b2b3f468d32c45ad2c123523363d5b968f17e",
+    "existing_entry_count": 52,
+    "final_entry_count": 76,
+    "old_file_is_exact_byte_prefix": true,
+    "all_existing_entries_value_for_value_unchanged": true
+  },
+  "source_integrity": {
+    "src/dynamic_panel_econ/calibration.py": "f3e00e2a1fd088a227c55f2475d074678ab9b543a6fc750cc5aff2df72799e1b",
+    "src/dynamic_panel_econ/dgp.py": "f4efda485d6582198b4922de807c860adb884c65b0086d9bfe7f38216ec92884",
+    "src/dynamic_panel_econ/seeds.py": "ccbf29ee8b22bdddb79bb2032a7e5dbc0aab4aaf647b9c9be7176e45657bce99",
+    "src/dynamic_panel_econ/rank_selection.py": "e68db2efcf5a81f01e4b905039e5f2b3c8ab820a65da998716aae44dbe0bb889",
+    "src/dynamic_panel_econ/monte_carlo.py": "9834c84d9d577f191db281c57f0f3f076519c67a792a526bb3a3c5040db9d6c0",
+    "scripts/build_frozen_dgp_calibration.py": "338ab6af3d29e425c0fdc3b76449319a066c9b8ab1720c7478cf1bfffaa05b38",
+    "tests/test_revision9_alignment.py_after_authorized_fix": "436fbaf0aae0ae55b6443cbe90cbeb5cb3097a4a45e6fd7b7d31adfba4e77344"
+  },
+  "environment": {
+    "python": "3.13.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "numpy": "2.5.1",
+    "scipy": "1.18.0",
+    "pandas": "3.0.5"
+  },
+  "validation": {
+    "pre_run_pytest": "167 passed",
+    "pre_run_ruff": "passed",
+    "pre_run_git_diff_check": "passed",
+    "post_run_pytest": "167 passed",
+    "post_run_ruff": "passed",
+    "post_run_git_diff_check": "passed",
+    "historical_invariance_test": "authorized repair verifies the exact 52-key historical subset, its frozen key/value digest, the exact 24-key Revision-10 rectangular subset, and the 76-key complete union"
+  },
+  "artifacts": [
+    "rr5a_calibration_manifest.json",
+    "rr5a_seed_audit.csv",
+    "rr5a_missing_cells_before.csv",
+    "rr5a_rectangular_calibration.csv",
+    "rr5a_existing_entry_integrity.csv",
+    "rr5a_calibration_report.md",
+    "rr5a_decision.md"
+  ]
+}

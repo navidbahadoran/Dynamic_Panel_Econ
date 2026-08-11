@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import hashlib
+import json
+import tomllib
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -30,6 +33,9 @@ from dynamic_panel_econ.targets import target_direction
 
 ROOT = Path(__file__).resolve().parents[1]
 FROZEN = ROOT / "configs" / "mc" / "frozen_dgp_calibration.toml"
+REVISION9_CALIBRATION_SUBSET_SHA256 = (
+    "212d8c7a24bcd547ea76bb84682c64c9aa9c5d445c2db0df206272539c5f9889"
+)
 MAINTAINED_CONFIGS = (
     "production.toml",
     "medium_preproduction.toml",
@@ -130,7 +136,60 @@ def test_canonical_cli_resolves_locked_values() -> None:
 
 def test_frozen_revision9_identity_and_envelope() -> None:
     frozen = load_frozen_calibrations(FROZEN)
-    assert len(frozen) == 52
+    balanced_baseline_keys = {
+        (dgp, size, size, None)
+        for dgp in range(1, 5)
+        for size in (50, 100, 200, 400)
+    }
+    balanced_rank_stress_keys = {
+        (dgp, size, size, ranks)
+        for dgp in range(1, 5)
+        for size in (50, 100, 200)
+        for ranks in ((1, 1, 1), (2, 1, 1), (1, 0, 2))
+    }
+    historical_keys = balanced_baseline_keys | balanced_rank_stress_keys
+    revision10_rectangular_keys = {
+        (dgp, n, t, ranks)
+        for dgp in range(1, 5)
+        for n, t in ((100, 200), (200, 100))
+        for ranks in ((1, 1, 1), (2, 1, 1), (1, 0, 2))
+    }
+    assert len(historical_keys) == 52
+    assert len(revision10_rectangular_keys) == 24
+    assert set(frozen) == historical_keys | revision10_rectangular_keys
+    assert len(frozen) == 76
+
+    with FROZEN.open("rb") as handle:
+        rows = tomllib.load(handle)["calibration"]
+
+    def row_key(row: dict[str, object]) -> tuple[int, int, int, tuple[int, ...] | None]:
+        ranks = tuple(int(value) for value in row["true_rank_vector"])
+        return (
+            int(row["dgp"]),
+            int(row["n"]),
+            int(row["t"]),
+            ranks if bool(row["rank_stress"]) else None,
+        )
+
+    rows_by_key = {
+        json.dumps(row_key(row), separators=(",", ":")): row for row in rows
+    }
+    historical_rows = {
+        json.dumps(key, separators=(",", ":")): rows_by_key[
+            json.dumps(key, separators=(",", ":"))
+        ]
+        for key in historical_keys
+    }
+    historical_digest = hashlib.sha256(
+        json.dumps(
+            historical_rows,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        ).encode("ascii")
+    ).hexdigest()
+    assert historical_digest == REVISION9_CALIBRATION_SUBSET_SHA256
+
     maximum = max(float(result.diagnostics["C_Theta"]) for result in frozen.values())
     assert maximum == pytest.approx(8.288745227963506, abs=1e-12)
     assert maximum <= 10.0 - 1.0

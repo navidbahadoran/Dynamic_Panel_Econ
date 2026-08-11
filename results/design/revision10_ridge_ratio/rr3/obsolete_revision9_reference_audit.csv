@@ -1,0 +1,13 @@
+term_or_concept,active_occurrences,classification,disposition
+kappa_NT,0,obsolete selector,Inactive archival text only
+rank_penalty,0,obsolete selector,Inactive archival text only
+information criterion,1,intentional exclusion,Active occurrence states explicitly that no fallback information-criterion rank exists
+IC gap,0,obsolete selector,Inactive archival text only
+candidate coverage,0,obsolete selector,Inactive archival text only
+candidate post-refit rank selection,0,obsolete selector,Inactive archival text only
+local completion,1,intentional exclusion,Active appendix diagnostic text explicitly excludes IC local completion
+penalty multiplier,1,intentional exclusion,Active appendix diagnostic text explicitly excludes penalty multipliers
+threshold multiplier,1,intentional exclusion,Active appendix diagnostic text explicitly excludes threshold multipliers
+tau_NT,0,obsolete selector,Inactive archival text only
+candidate count,1,intentional exclusion,Active appendix diagnostic text explicitly excludes candidate counts
+nuclear path rank selection,0,obsolete selector,Nuclear path retained only as optional numerical initialization

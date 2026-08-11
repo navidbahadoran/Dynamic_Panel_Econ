@@ -1,0 +1,9 @@
+revision9_item,revision10_item,status,scope
+thm:rank_consistency,thm:rank_consistency,replaced,Blockwise ridge-ratio joint rank consistency and downstream transfer
+,cor:cap_plus_one_pilot,added,Cap+1 pilot Frobenius and block operator rates under global objective gap
+a:identification,a:identification,preserved,Supplied-rank prediction identification domain unchanged
+,a:pilot_identification,added,Localized pilot-only extension to D_max^+ with fixed c_+>0
+thm:recovery,thm:recovery,preserved,Supplied-rank recovery
+thm:target_expansion,thm:target_expansion,preserved,Target expansion and feasible inference
+thm:twoway,thm:twoway,preserved,Two-way split-panel correction
+Revision-9 candidate-coverage/IC proof,,inactive,Retained only in an inactive archival block and absent from active theory

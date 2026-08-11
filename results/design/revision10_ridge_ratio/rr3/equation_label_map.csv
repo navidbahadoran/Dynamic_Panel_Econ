@@ -1,0 +1,12 @@
+revision9_label,revision10_label,status,revision10_role
+eq:fixed_rank_estimator,eq:fixed_rank_estimator,preserved,Supplied-rank constrained least-squares estimator
+eq:rank_cap_pilot,eq:rank_cap_pilot,redefined,Joint cap+1 spectral pilot
+,eq:rank_normalized_spectrum,added,Fitted-value normalized block spectrum
+,eq:rank_ridge,added,Deterministic ridge a_NT
+,eq:rank_zero_ratio,added,Rank-zero anchor ratio
+,eq:rank_ratio,added,Positive-rank ridge ratios including cap numerator
+eq:rank_selector,eq:rank_selector,redefined,Blockwise smallest-argmin ridge-ratio selector
+,eq:pilot_objective_gap,added,Normalized global pilot objective-gap condition
+eq:rank_ic,,inactive,Revision-9 IC equation retained only in an inactive archival block
+eq:rank_penalty,,inactive,Revision-9 penalty equation retained only in an inactive archival block
+eq:rank_threshold,,inactive,Revision-9 threshold equation retained only in an inactive archival block

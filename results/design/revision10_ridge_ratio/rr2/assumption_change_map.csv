@@ -1,0 +1,26 @@
+assumption_or_condition,revision10_status,role_or_reason
+Dynamic stability (a:stab),UNCHANGED,Upstream dynamic moment and pilot concentration control
+Conditional sequential exogeneity (a:exog),UNCHANGED,Upstream score centering and concentration
+Spatial sampling geometry (a:geometry),UNCHANGED,Upstream conditional spatial concentration
+Conditional mixing and NED (a:ned),UNCHANGED,Upstream uniform pilot rate
+Moments and weak cross-sectional covariance (a:moments),UNCHANGED,Upstream empirical moments and scale-weight bounds
+Separate low-rank signal strength (a:signal),UNCHANGED,Positive singular values remain order sqrt(NT)
+Incoherence (a:signal),UNCHANGED,Retained for supplied-rank recovery and inference
+Coefficient bound and strict interior margin (a:signal),UNCHANGED,Same literal box and downstream inactivity argument
+Conditional prediction identification (a:identification),UNCHANGED,Cap+1 pilot curvature and nondegenerate regressor scales
+Loading and factor Gram matrices (a:gram),UNCHANGED,Retained downstream
+Target regularity (a:target),UNCHANGED,Not used in rank proof and retained for inference
+Rectangular panel growth (a:growth),UNCHANGED,Directly implies zeta_NT/a_NT -> 0 without balance
+True fixed rank vector in R_max,UNCHANGED,Truth lies within fixed reporting caps
+Fixed number of coefficient blocks and fixed reporting caps,UNCHANGED,Finite-union joint recovery; no growing ranks
+IC penalty sequence kappa_NT,DELETE,No IC in Revision-10 statistical selector
+IC penalty multiplier c_kappa,DELETE,No selected penalty constant
+IC penalty dominance and vanishing conditions,DELETE,Replaced by spectral noise/ridge separation
+Candidate coverage and local completion,DELETE,Direct blockwise spectra cover all reported indices
+Cap+1 pilot operator rate,UNRESOLVED COROLLARY,Does not follow because a:identification is stated only on reporting-cap candidates
+Cap+1 normalized global objective gap,INSUFFICIENT ALONE,Correct optimization scale but cannot replace missing enlarged-class prediction curvature
+Prediction identification on cap+1 difference class,WOULD BE NEW SUBSTANTIVE ASSUMPTION,Needed by the proposed basic-inequality corollary and therefore prohibited in RR2
+Fitted-value spectral normalization,NEW RULE,Existing weights divided by existing w_A1 reference; not a DGP assumption
+Ridge a_NT=1/log(NT),NEW RULE,Deterministic selector definition; not a DGP assumption
+Zero anchor lambda_M0=1,NEW RULE,Deterministic dimensionless convention; not a DGP assumption
+New substantive DGP assumptions,NONE ADOPTED,RR2 remains partial rather than silently strengthening identification

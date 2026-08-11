@@ -1,0 +1,19 @@
+revision9_object,proposed_revision10_classification,action_if_rr2_gap_is_resolved
+kappa_NT,DELETE,Remove from Revision-10 statistical definition and theorem
+c_kappa and baseline multiplier,DELETE,No penalty multiplier remains
+IC dimension penalty d(r) kappa_NT/(NT),DELETE,No candidate model comparison remains
+rank_penalty_rates,DELETE,Remove penalty-dominance and vanishing rate display
+IC gap between smallest and second-smallest,REPLACE BY RIDGE-RATIO OBJECT,Report blockwise true-minimum ratio margins instead
+Penalty multipliers 0.5 and 2 sensitivities,DELETE,No finite-sample tuning sensitivity is admissible
+IC local completion,DELETE,No local candidate search remains
+Candidate IC tables,REPLACE BY RIDGE-RATIO OBJECT,Report normalized spectra ratios ranks and margins
+Proof that penalty dominates zeta_NT,REPLACE BY RIDGE-RATIO OBJECT,Use zeta_NT/a_NT -> 0
+IC-relative numerical objective-error condition,REPLACE BY RIDGE-RATIO OBJECT,Use cap+1 pilot global normalized gap o_p(zeta_NT)
+R_base,KEEP FOR REPRODUCIBILITY ONLY,Archived Revision-9 code and outputs only
+R_cand,KEEP FOR REPRODUCIBILITY ONLY,Archived Revision-9 code and outputs only
+One-coordinate candidate neighbors,KEEP FOR REPRODUCIBILITY ONLY,Not part of Revision-10 procedure
+Candidate enumeration and duplicate removal,KEEP FOR REPRODUCIBILITY ONLY,Not part of Revision-10 procedure
+Candidate fixed-rank post-refits,KEEP FOR REPRODUCIBILITY ONLY,Replaced statistically by one final selected-rank post-refit
+Revision-9 IC implementation and tables,HISTORICAL APPENDIX ONLY,May document reproducibility but cannot define Revision-10 selection
+Nuclear path candidate coverage,REPLACE BY RIDGE-RATIO OBJECT,Nuclear path becomes optional initialization only
+Singular-value threshold tau_NT,KEEP FOR REPRODUCIBILITY ONLY,Removed from Revision-10 statistical rank choice

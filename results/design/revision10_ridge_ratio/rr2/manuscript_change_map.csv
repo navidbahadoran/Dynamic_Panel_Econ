@@ -1,0 +1,26 @@
+location,revision9_locator,classification,required_revision10_change_if_rr2_gap_is_resolved
+Abstract and introduction,lines 134 and 153,REPLACE,Describe one cap+1 spectral pilot blockwise ridge ratios and one final post-refit instead of candidate IC selection
+Contribution and scope,lines 159 and 1675,WORDING,Replace consistent-IC language with ridge-ratio consistency while retaining exact fixed-rank scope
+Related literature,lines 175-187,WORDING,Retain post-regularization and computational citations; state nuclear path is optional initialization and ridge-ratio proof is model specific
+Estimation overview,lines 375 and 402,WORDING,Cross-reference the new rank theorem and final selected-rank post-refit
+Rank-selection subsection,subsec:rank_selection lines 630-779,REPLACE,Define cap+1 pilot dimensionless spectra ridge anchor ratios blockwise argmins and final post-refit
+Screening weights,lines 657-669,WORDING,Retain weights and add w_A1 common reference for dimensionless spectra
+Nuclear screening path,eq:nuclear_screening_path lines 671-703,WORDING,Move to optional computational initialization; remove statistical candidate-coverage role
+Rank-cap pilot,eq:rank_cap_pilot lines 705-714,REPLACE,Increase only pilot caps to bar_r_M+1 and state reporting caps unchanged
+Threshold and candidate set,lines 716-743,DELETE,No tau_NT R_base R_cand or neighboring candidates in Revision-10 selector
+Candidate post-refits and IC,lines 745-777,REPLACE,Delete enumeration dimension penalty kappa and IC; retain exactly one final fixed-rank post-refit
+Assumptions discussion,lines 1022-1042,WORDING,Remove threshold and penalty rate references; add deterministic ridge as selector rule
+Rank-consistency theorem,thm:rank_consistency lines 1189-1225,REPLACE,Insert generic blockwise ridge-ratio theorem and downstream transfer statement
+Baseline pilot remark,rem:baseline_rank_pilot lines 1227 onward,REPLACE,State cap+1 objective-gap corollary and normalized spectrum
+Practical algorithm,lines 1260-1290,REPLACE,Use pilot spectra ratios one rank vector one final post-refit; nuclear path optional
+Tuning subsection,lines 1295-1338,REPLACE,Delete tau kappa multipliers and IC sensitivities; state fixed a_NT anchor normalization and ratio margins
+Coefficient-bound discussion,line 1340,WORDING,Retain literal bound and clarify canonical-unit and box-activity diagnostics
+Monte Carlo rank caps,lines 1578-1582,NO CHANGE,Keep prespecified reporting caps 3 3 3; future pilot uses 4 4 4 spectrally
+Monte Carlo rank-selection design,lines 1585-1601 and rank table references,REPLACE,Future design reports spectra ratios margins recovery and pilot failures; no IC or outcome-tuned rule
+Conclusion,lines 1673-1679,WORDING,Replace screening plus IC summary with cap+1 ridge-ratio selection and optional initialization
+Mathematical appendix rank proof,app:rank lines 4002-4105,REPLACE,Replace candidate coverage and IC cases with scale lemma Weyl ratio separation cap+1 corollary and finite union
+Rank-stress DGP formulas,app:rank-stress-dgps lines 4110 onward,NO CHANGE,Theory freeze does not change DGP formulas
+Empirical rank diagnostics,app:empirical lines 4269-4273,REPLACE,Report normalized spectra ridge ratios minimum margins pilot diagnostics and final selected rank; remove IC/path sensitivity as statistical evidence
+Fixed-rank estimator and loss,eq:fixed_rank_estimator and eq rank loss,NO CHANGE,Final estimator reuses the existing literal constrained post-refit
+Riesz target split correction and variance sections,existing estimation and theory sections,NO CHANGE,Only selected-rank theorem cross-references change
+Bibliography,related ridge-ratio references if cited,ADD,Add only sources actually discussed in revised literature text

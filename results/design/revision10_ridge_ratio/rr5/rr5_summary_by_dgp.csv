@@ -1,0 +1,5 @@
+dgp,rate_denominator,attempted_replications,numerically_acceptable_spectral_pilots,pilot_acceptance_rate,exact_recovery,exact_recovery_rate,underselection_only,underselection_only_rate,overselection_only,overselection_only_rate,mixed_rank_errors,mixed_rank_error_rate,unresolved_selections,unresolved_rate,selection_at_reportable_cap,final_postrefit_attempted,final_postrefit_valid,selected_rank_0_0_0,selected_rank_1_1_1,selected_rank_2_1_1,selected_rank_1_0_2,other_selected_rank,modal_selected_rank,downstream_state
+1,attempted_replications,45,0,0.0,0,0.0,0,0.0,0,0.0,0,0.0,45,1.0,0,0,0,0,0,0,0,0,,not_reached_due_to_pilot_failure
+2,attempted_replications,45,0,0.0,0,0.0,0,0.0,0,0.0,0,0.0,45,1.0,0,0,0,0,0,0,0,0,,not_reached_due_to_pilot_failure
+3,attempted_replications,45,0,0.0,0,0.0,0,0.0,0,0.0,0,0.0,45,1.0,0,0,0,0,0,0,0,0,,not_reached_due_to_pilot_failure
+4,attempted_replications,45,0,0.0,0,0.0,0,0.0,0,0.0,0,0.0,45,1.0,0,0,0,0,0,0,0,0,,not_reached_due_to_pilot_failure

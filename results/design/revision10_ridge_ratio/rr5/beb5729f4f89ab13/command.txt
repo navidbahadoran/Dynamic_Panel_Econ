@@ -1,0 +1,1 @@
+scripts\run_mc.py --config results\design\revision10_ridge_ratio\rr5\rr5_config.toml --n-jobs 12 --resume

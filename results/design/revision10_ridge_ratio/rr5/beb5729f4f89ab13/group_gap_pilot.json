@@ -1,0 +1,247 @@
+[
+  {
+    "auto_adjust_enabled": false,
+    "configured_floor": 0.05,
+    "original_means": [
+      0.9,
+      1.1
+    ],
+    "chosen_gap": 0.20000000000000007,
+    "frozen_means": [
+      0.8999999999999999,
+      1.1
+    ],
+    "draws": 20,
+    "candidate_reports": [
+      {
+        "gap": 0.20000000000000007,
+        "mean_G1_fixed_time_true": 0.4324501605695622,
+        "mean_G2_fixed_time_true": 0.5293188653762567,
+        "mean_fixed_time_difference": 0.09686870480669464,
+        "mean_G1_time_average_true": 0.4408494447890732,
+        "mean_G2_time_average_true": 0.539888266519059,
+        "mean_time_average_difference": 0.09903882172998582,
+        "min_abs_mean_difference": 0.09686870480669464,
+        "mean_c_a": 0.9728219952799755
+      }
+    ],
+    "parameter_snapshot": {
+      "burn_in": 50,
+      "rho_g": 0.5,
+      "rho_s": 0.5,
+      "rho_x": 0.5,
+      "rho_fx": 0.5,
+      "delta_x": 0.5,
+      "eta_x": 0.3,
+      "mu_f_a": 0.5,
+      "kappa_f_a": 0.1,
+      "mu_f_b": 0.6,
+      "kappa_f_b": 0.15,
+      "mu_lambda_a_1": 0.8999999999999999,
+      "mu_lambda_a_2": 1.1,
+      "sigma_lambda_a": 0.08,
+      "mu_lambda_b_1": 0.8,
+      "mu_lambda_b_2": 1.2,
+      "sigma_lambda_b": 0.25,
+      "stability_bound": 0.85
+    },
+    "N": 50,
+    "T": 50
+  },
+  {
+    "auto_adjust_enabled": false,
+    "configured_floor": 0.05,
+    "original_means": [
+      0.9,
+      1.1
+    ],
+    "chosen_gap": 0.20000000000000007,
+    "frozen_means": [
+      0.8999999999999999,
+      1.1
+    ],
+    "draws": 20,
+    "candidate_reports": [
+      {
+        "gap": 0.20000000000000007,
+        "mean_G1_fixed_time_true": 0.43864166315656156,
+        "mean_G2_fixed_time_true": 0.5371967586339939,
+        "mean_fixed_time_difference": 0.09855509547743253,
+        "mean_G1_time_average_true": 0.4408638486918113,
+        "mean_G2_time_average_true": 0.5395923486237726,
+        "mean_time_average_difference": 0.09872849993196137,
+        "min_abs_mean_difference": 0.09855509547743253,
+        "mean_c_a": 0.9715797212278426
+      }
+    ],
+    "parameter_snapshot": {
+      "burn_in": 50,
+      "rho_g": 0.5,
+      "rho_s": 0.5,
+      "rho_x": 0.5,
+      "rho_fx": 0.5,
+      "delta_x": 0.5,
+      "eta_x": 0.3,
+      "mu_f_a": 0.5,
+      "kappa_f_a": 0.1,
+      "mu_f_b": 0.6,
+      "kappa_f_b": 0.15,
+      "mu_lambda_a_1": 0.8999999999999999,
+      "mu_lambda_a_2": 1.1,
+      "sigma_lambda_a": 0.08,
+      "mu_lambda_b_1": 0.8,
+      "mu_lambda_b_2": 1.2,
+      "sigma_lambda_b": 0.25,
+      "stability_bound": 0.85
+    },
+    "N": 100,
+    "T": 100
+  },
+  {
+    "auto_adjust_enabled": false,
+    "configured_floor": 0.05,
+    "original_means": [
+      0.9,
+      1.1
+    ],
+    "chosen_gap": 0.20000000000000007,
+    "frozen_means": [
+      0.8999999999999999,
+      1.1
+    ],
+    "draws": 20,
+    "candidate_reports": [
+      {
+        "gap": 0.20000000000000007,
+        "mean_G1_fixed_time_true": 0.44733246347837285,
+        "mean_G2_fixed_time_true": 0.5450397504089677,
+        "mean_fixed_time_difference": 0.09770728693059509,
+        "mean_G1_time_average_true": 0.42556185933752466,
+        "mean_G2_time_average_true": 0.5184182419298317,
+        "mean_time_average_difference": 0.09285638259230698,
+        "min_abs_mean_difference": 0.09285638259230698,
+        "mean_c_a": 0.9522103993635597
+      }
+    ],
+    "parameter_snapshot": {
+      "burn_in": 50,
+      "rho_g": 0.5,
+      "rho_s": 0.5,
+      "rho_x": 0.5,
+      "rho_fx": 0.5,
+      "delta_x": 0.5,
+      "eta_x": 0.3,
+      "mu_f_a": 0.5,
+      "kappa_f_a": 0.1,
+      "mu_f_b": 0.6,
+      "kappa_f_b": 0.15,
+      "mu_lambda_a_1": 0.8999999999999999,
+      "mu_lambda_a_2": 1.1,
+      "sigma_lambda_a": 0.08,
+      "mu_lambda_b_1": 0.8,
+      "mu_lambda_b_2": 1.2,
+      "sigma_lambda_b": 0.25,
+      "stability_bound": 0.85
+    },
+    "N": 200,
+    "T": 200
+  },
+  {
+    "auto_adjust_enabled": false,
+    "configured_floor": 0.05,
+    "original_means": [
+      0.9,
+      1.1
+    ],
+    "chosen_gap": 0.20000000000000007,
+    "frozen_means": [
+      0.8999999999999999,
+      1.1
+    ],
+    "draws": 20,
+    "candidate_reports": [
+      {
+        "gap": 0.20000000000000007,
+        "mean_G1_fixed_time_true": 0.4491202338065741,
+        "mean_G2_fixed_time_true": 0.5512488099129759,
+        "mean_fixed_time_difference": 0.1021285761064018,
+        "mean_G1_time_average_true": 0.42077603129991636,
+        "mean_G2_time_average_true": 0.516287431483622,
+        "mean_time_average_difference": 0.0955114001837056,
+        "min_abs_mean_difference": 0.0955114001837056,
+        "mean_c_a": 0.940588527456986
+      }
+    ],
+    "parameter_snapshot": {
+      "burn_in": 50,
+      "rho_g": 0.5,
+      "rho_s": 0.5,
+      "rho_x": 0.5,
+      "rho_fx": 0.5,
+      "delta_x": 0.5,
+      "eta_x": 0.3,
+      "mu_f_a": 0.5,
+      "kappa_f_a": 0.1,
+      "mu_f_b": 0.6,
+      "kappa_f_b": 0.15,
+      "mu_lambda_a_1": 0.8999999999999999,
+      "mu_lambda_a_2": 1.1,
+      "sigma_lambda_a": 0.08,
+      "mu_lambda_b_1": 0.8,
+      "mu_lambda_b_2": 1.2,
+      "sigma_lambda_b": 0.25,
+      "stability_bound": 0.85
+    },
+    "N": 100,
+    "T": 200
+  },
+  {
+    "auto_adjust_enabled": false,
+    "configured_floor": 0.05,
+    "original_means": [
+      0.9,
+      1.1
+    ],
+    "chosen_gap": 0.20000000000000007,
+    "frozen_means": [
+      0.8999999999999999,
+      1.1
+    ],
+    "draws": 20,
+    "candidate_reports": [
+      {
+        "gap": 0.20000000000000007,
+        "mean_G1_fixed_time_true": 0.4373832189077859,
+        "mean_G2_fixed_time_true": 0.5340920240970306,
+        "mean_fixed_time_difference": 0.09670880518924449,
+        "mean_G1_time_average_true": 0.4279430724574647,
+        "mean_G2_time_average_true": 0.5223700147013518,
+        "mean_time_average_difference": 0.09442694224388705,
+        "min_abs_mean_difference": 0.09442694224388705,
+        "mean_c_a": 0.9495420696145214
+      }
+    ],
+    "parameter_snapshot": {
+      "burn_in": 50,
+      "rho_g": 0.5,
+      "rho_s": 0.5,
+      "rho_x": 0.5,
+      "rho_fx": 0.5,
+      "delta_x": 0.5,
+      "eta_x": 0.3,
+      "mu_f_a": 0.5,
+      "kappa_f_a": 0.1,
+      "mu_f_b": 0.6,
+      "kappa_f_b": 0.15,
+      "mu_lambda_a_1": 0.8999999999999999,
+      "mu_lambda_a_2": 1.1,
+      "sigma_lambda_a": 0.08,
+      "mu_lambda_b_1": 0.8,
+      "mu_lambda_b_2": 1.2,
+      "sigma_lambda_b": 0.25,
+      "stability_bound": 0.85
+    },
+    "N": 200,
+    "T": 100
+  }
+]

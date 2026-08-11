@@ -1,0 +1,20 @@
+RR5 environment
+generated_utc=2026-08-11T12:17:07.769637-04:00
+approved_git_commit=24ae1b5817bedc405c8debf12d6b6f9bf8cb9375
+python=3.13.3 (tags/v3.13.3:6280bb5, Apr  8 2025, 14:47:33) [MSC v.1943 64 bit (AMD64)]
+platform=Windows-11-10.0.26200-SP0
+numpy=2.5.1
+pandas=3.0.5
+scipy=1.18.0
+pyarrow=25.0.0
+threadpoolctl=3.6.0
+requested_n_jobs=12
+effective_n_jobs=12
+native_threads_per_worker=1
+OPENBLAS_NUM_THREADS=1
+OMP_NUM_THREADS=1
+MKL_NUM_THREADS=1
+VECLIB_MAXIMUM_THREADS=1
+NUMEXPR_NUM_THREADS=1
+windows_spawn_safe=true
+nested_process_pools=0

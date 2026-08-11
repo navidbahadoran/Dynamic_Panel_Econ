@@ -1,0 +1,2 @@
+attempted_replications,valid_rank_selections,pilot_accepted,final_postrefit_attempted,final_postrefit_valid,boundary_active,stationarity_failure,rank_loss,other_numerical_failure,conditional_denominator_valid_rank_selections,state
+180,0,0,0,0,0,0,0,0,0,not_reached_due_to_pilot_failure

@@ -128,6 +128,8 @@ FIT_DIAGNOSTIC_COLUMNS = (
     "candidate_source", "IC", "IC_valid", "diagnostic_context",
     "initial_coefficient_envelope", "final_coefficient_envelope",
     "coefficient_envelope_history",
+    "solver_architecture", "objective_history", "stationarity_residual_history",
+    "condition_number_history", "objective_safeguard_count", "gauss_newton_steps",
 )
 
 INFERENCE_DIAGNOSTIC_COLUMNS = (

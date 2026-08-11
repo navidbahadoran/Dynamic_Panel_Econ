@@ -8,6 +8,7 @@ from typing import Any
 
 import numpy as np
 
+from .cap_plus_one import fit_cap_plus_one
 from .core import (
     Coefficients,
     Design,
@@ -1404,7 +1405,7 @@ def fit_revision10_spectral_pilot(
     fits: list[FitResult] = []
     records: list[dict[str, Any]] = []
     for index, start_seed in enumerate(start_seeds, start=1):
-        fit = fit_fixed_rank(
+        fit = fit_cap_plus_one(
             y,
             design,
             pilot_caps,

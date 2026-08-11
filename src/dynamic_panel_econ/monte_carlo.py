@@ -9,7 +9,7 @@ import os
 import subprocess
 import sys
 import time
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 from copy import deepcopy
 from dataclasses import asdict
@@ -63,6 +63,12 @@ from .rank_selection import (
     fit_fixed_rank_multistart,
     select_ranks,
     select_ranks_revision9,
+)
+from .resumability import (
+    TaskCheckpointStore,
+    scientific_fingerprint,
+    semantic_task_specification,
+    sha256_value,
 )
 from .seeds import seed_sequence
 from .targets import target_direction, target_regularity_diagnostics, target_value
@@ -141,6 +147,18 @@ def _outer_worker_with_metrics(task: Task) -> dict[str, Any]:
     rows = _outer_worker(task)
     after = threadpool_info()
     current_rss, peak_rss = _process_memory_metrics()
+    pilot_seconds = sum(
+        float(row.get("runtime_seconds", 0.0) or 0.0)
+        for row in rows
+        if row.get("record_type") == "fit_diagnostic"
+        and row.get("fit_type") == "revision10_cap_plus_one_pilot"
+    )
+    final_fit_seconds = sum(
+        float(row.get("runtime_seconds", 0.0) or 0.0)
+        for row in rows
+        if row.get("record_type") == "fit_diagnostic"
+        and row.get("fit_type") == "revision10_final_selected_rank_post_refit"
+    )
     return {
         "task": task,
         "rows": rows,
@@ -151,6 +169,8 @@ def _outer_worker_with_metrics(task: Task) -> dict[str, Any]:
         "threadpool_info_after": after,
         "current_rss_bytes": current_rss,
         "peak_rss_bytes": peak_rss,
+        "pilot_seconds": pilot_seconds,
+        "final_fit_seconds": final_fit_seconds,
     }
 
 
@@ -210,17 +230,25 @@ def iter_outer_task_results(
     *,
     effective_n_jobs: int,
     collect_metrics: bool = False,
+    on_submit: Callable[[Task], None] | None = None,
 ) -> Iterator[tuple[Task, list[dict[str, Any]], dict[str, Any] | None]]:
     """Run independent outer tasks with bounded, spawn-safe process submission."""
 
     if effective_n_jobs < 1:
         raise ValueError("effective_n_jobs must be positive")
+    orchestration_started = time.perf_counter()
     native_threads = int(config["run"]["blas_threads"])
     if effective_n_jobs == 1:
         _initialize_outer_worker(config, calibrations, native_threads)
         for task in tasks:
+            if on_submit is not None:
+                on_submit(task)
             if collect_metrics:
                 result = _outer_worker_with_metrics(task)
+                result["coordinator_completed_seconds"] = (
+                    time.perf_counter() - orchestration_started
+                )
+                result["pending_count_after_completion"] = 0
                 yield task, result["rows"], result
             else:
                 yield task, _outer_worker(task), None
@@ -241,6 +269,8 @@ def iter_outer_task_results(
                 task = next(task_iterator)
             except StopIteration:
                 break
+            if on_submit is not None:
+                on_submit(task)
             pending[executor.submit(worker, task)] = task
         while pending:
             completed, _ = wait(pending, return_when=FIRST_COMPLETED)
@@ -248,6 +278,10 @@ def iter_outer_task_results(
                 task = pending.pop(future)
                 result = future.result()
                 if collect_metrics:
+                    result["coordinator_completed_seconds"] = (
+                        time.perf_counter() - orchestration_started
+                    )
+                    result["pending_count_after_completion"] = len(pending)
                     yield task, result["rows"], result
                 else:
                     yield task, result, None
@@ -255,6 +289,8 @@ def iter_outer_task_results(
                     next_task = next(task_iterator)
                 except StopIteration:
                     continue
+                if on_submit is not None:
+                    on_submit(next_task)
                 pending[executor.submit(worker, next_task)] = next_task
 
 
@@ -287,6 +323,69 @@ def _git_commit() -> str:
         ).strip()
     except (OSError, subprocess.SubprocessError):
         return "unknown"
+
+
+def _source_tree_hash() -> str:
+    repository = Path(__file__).resolve().parents[2]
+    digest = hashlib.sha256()
+    files = sorted((repository / "src" / "dynamic_panel_econ").glob("*.py"))
+    files.extend(sorted((repository / "scripts").glob("*.py")))
+    for path in files:
+        digest.update(path.relative_to(repository).as_posix().encode("utf-8"))
+        digest.update(path.read_bytes())
+    return digest.hexdigest()
+
+
+def _checkpoint_task_spec(task: Task, config: dict[str, Any]) -> dict[str, Any]:
+    dgp, n, t, replication, true_rank = _task_parts(task)
+    return semantic_task_specification(
+        dgp=dgp,
+        n=n,
+        t=t,
+        true_rank=true_rank,
+        replication=replication,
+        master_seed=int(config["run"]["master_seed"]),
+        selector_method=str(config["estimation"]["rank_selector_method"]),
+    )
+
+
+def _checkpoint_seed_metadata(task: Task, config: dict[str, Any]) -> dict[str, Any]:
+    dgp, n, t, replication, true_rank = _task_parts(task)
+    return {
+        "master_seed": int(config["run"]["master_seed"]),
+        "semantic_keys": [dgp, n, t, replication, list(true_rank)],
+        "derivations": {
+            "dgp": ["production", dgp, n, t, replication, list(true_rank), "dgp"],
+            "rank_starts": [dgp, n, t, replication, list(true_rank), "rank_starts"],
+            "fixed_rank_starts": [
+                dgp,
+                n,
+                t,
+                replication,
+                list(true_rank),
+                "fixed_rank_starts",
+            ],
+            "time_split": [dgp, n, t, replication, list(true_rank), "time_split"],
+            "unit_split": [dgp, n, t, replication, list(true_rank), "unit_split"],
+        },
+    }
+
+
+def _terminal_state(rows: list[dict[str, Any]]) -> str:
+    statuses = {
+        str(row.get("primary_status"))
+        for row in rows
+        if row.get("record_type") in {"replication", "failure"}
+        and row.get("primary_status") is not None
+    }
+    if statuses & {
+        "rank_selection_numerically_unresolved",
+        "selected_rank_post_refit_numerically_unresolved",
+    }:
+        return "unresolved"
+    if statuses and statuses <= {"success"}:
+        return "completed"
+    return "failed"
 
 
 def _params(config: dict[str, Any]) -> DGPParameters:
@@ -1011,6 +1110,16 @@ def _fit_diagnostic_record(
             fit.diagnostics.get("coefficient_envelope_history"),
             default=_json_default,
         ),
+        "solver_architecture": fit.diagnostics.get("solver_architecture"),
+        "objective_history": json.dumps(fit.objective_history, default=_json_default),
+        "stationarity_residual_history": json.dumps(
+            fit.diagnostics.get("stationarity_residual_history"), default=_json_default
+        ),
+        "condition_number_history": json.dumps(
+            fit.diagnostics.get("condition_number_history"), default=_json_default
+        ),
+        "objective_safeguard_count": fit.diagnostics.get("objective_safeguard_count"),
+        "gauss_newton_steps": fit.diagnostics.get("gauss_newton_steps"),
     }
 
 
@@ -1022,6 +1131,8 @@ def _selected_context_fit_type(fit_type: str, diagnostic_context: str) -> str:
         return "rank_cap_pilot"
     if diagnostic_context.startswith("post_refit"):
         return "candidate_post_refit"
+    if diagnostic_context.startswith("revision10_spectral_pilot"):
+        return "revision10_cap_plus_one_pilot"
     return fit_type
 
 
@@ -2404,8 +2515,6 @@ def run_monte_carlo(
                         inference_destination,
                         replication_destination,
                     )
-                    if all(path.exists() for path in destinations) and resume:
-                        continue
                     tasks: list[Task] = [
                         (int(dgp), int(n), int(t), replication, true_rank)
                         for replication in range(begin, end)
@@ -2420,36 +2529,143 @@ def run_monte_carlo(
                         }
                     )
 
+    task_specifications = [
+        _checkpoint_task_spec(task, resolved)
+        for plan in plans
+        for task in plan["tasks"]
+    ]
+    calibration_hash = sha256_value(
+        sorted(calibration_rows, key=lambda row: json.dumps(row, sort_keys=True, default=_json_default))
+    )
+    fingerprint = scientific_fingerprint(
+        code_commit=_git_commit(),
+        source_tree_hash=_source_tree_hash(),
+        config_hash=digest,
+        calibration_hash=calibration_hash,
+        selector_method=str(resolved["estimation"]["rank_selector_method"]),
+        master_seed=int(resolved["run"]["master_seed"]),
+        scientific_configuration={
+            "dgp": resolved["dgp"],
+            "estimation": resolved["estimation"],
+            "inference": resolved["inference"],
+            "rank_stress": resolved.get("rank_stress"),
+            "rank_mode": resolved["run"]["rank_mode"],
+            "dgps": resolved["run"]["dgps"],
+            "cells": resolved["run"]["cells"],
+            "replications": resolved["run"]["replications"],
+        },
+    )
+    checkpoint_store = TaskCheckpointStore(
+        root,
+        fingerprint,
+        task_specifications,
+        resume=resume,
+    )
+    task_ids = {
+        task: str(_checkpoint_task_spec(task, resolved)["semantic_task_id"])
+        for plan in plans
+        for task in plan["tasks"]
+    }
     runnable_tasks: list[Task] = []
     task_locations: dict[Task, tuple[int, int]] = {}
     for plan_index, plan in enumerate(plans):
         calibration_key = plan["calibration_key"]
-        if calibration_key not in calibration_payloads:
-            nested = [
-                _calibration_failure_task_rows(
+        for task_index, task in enumerate(plan["tasks"]):
+            task_id = task_ids[task]
+            saved = checkpoint_store.load_terminal(task_id)
+            if saved is not None:
+                plan["results"][task_index] = saved["rows"]
+                plan["remaining"] -= 1
+                continue
+            if calibration_key not in calibration_payloads:
+                rows = _calibration_failure_task_rows(
                     task, resolved, calibration_failures[calibration_key]
                 )
-                for task in plan["tasks"]
-            ]
-            _write_task_chunk(nested, plan["destinations"])
-            plan["remaining"] = 0
-            continue
-        for task_index, task in enumerate(plan["tasks"]):
+                checkpoint_store.mark_running(task_id, worker_hint="coordinator")
+                checkpoint_store.save_terminal(
+                    task_id,
+                    terminal_state="failed",
+                    seed_metadata=_checkpoint_seed_metadata(task, resolved),
+                    rows=rows,
+                    metrics={"worker_pid": os.getpid(), "worker_wall_seconds": 0.0},
+                )
+                plan["results"][task_index] = rows
+                plan["remaining"] -= 1
+                continue
             task_locations[task] = (plan_index, task_index)
             runnable_tasks.append(task)
-
-    for task, rows, _ in iter_outer_task_results(
-        runnable_tasks,
-        resolved,
-        calibration_payloads,
-        effective_n_jobs=min(effective_jobs, max(1, len(runnable_tasks))),
-    ):
-        plan_index, task_index = task_locations[task]
-        plan = plans[plan_index]
-        plan["results"][task_index] = rows
-        plan["remaining"] -= 1
         if plan["remaining"] == 0:
             _write_task_chunk(plan["results"], plan["destinations"])
+
+    performance_records: list[dict[str, Any]] = []
+    execution_started = time.perf_counter()
+
+    def mark_submitted(task: Task) -> None:
+        checkpoint_store.mark_running(task_ids[task], worker_hint="outer_pool")
+
+    try:
+        for task, rows, metrics in iter_outer_task_results(
+            runnable_tasks,
+            resolved,
+            calibration_payloads,
+            effective_n_jobs=min(effective_jobs, max(1, len(runnable_tasks))),
+            collect_metrics=True,
+            on_submit=mark_submitted,
+        ):
+            task_id = task_ids[task]
+            worker_metrics = {
+                key: value
+                for key, value in (metrics or {}).items()
+                if key not in {"rows", "task"}
+            }
+            checkpoint_metrics = checkpoint_store.save_terminal(
+                task_id,
+                terminal_state=_terminal_state(rows),
+                seed_metadata=_checkpoint_seed_metadata(task, resolved),
+                rows=rows,
+                metrics=worker_metrics,
+            )
+            performance_records.append(
+                {
+                    "semantic_task_id": task_id,
+                    **worker_metrics,
+                    **checkpoint_metrics,
+                }
+            )
+            plan_index, task_index = task_locations[task]
+            plan = plans[plan_index]
+            plan["results"][task_index] = rows
+            plan["remaining"] -= 1
+            if plan["remaining"] == 0:
+                _write_task_chunk(plan["results"], plan["destinations"])
+    except KeyboardInterrupt:
+        checkpoint_store.record_interruption("ctrl_c", "coordinator KeyboardInterrupt")
+        raise
+    except Exception as exc:
+        checkpoint_store.record_interruption(
+            "worker_or_parent_exception", f"{type(exc).__name__}: {exc}"
+        )
+        raise
+    execution_wall_seconds = time.perf_counter() - execution_started
+    completion_times = sorted(
+        float(record.get("coordinator_completed_seconds", 0.0) or 0.0)
+        for record in performance_records
+    )
+    worker_count_used = min(effective_jobs, max(1, len(runnable_tasks)))
+    idle_tail_seconds = (
+        completion_times[-1] - completion_times[max(0, len(completion_times) - worker_count_used)]
+        if completion_times
+        else 0.0
+    )
+    process_cpu_seconds = sum(
+        float(record.get("process_cpu_seconds", 0.0) or 0.0)
+        for record in performance_records
+    )
+    task_wall_seconds = sum(
+        float(record.get("worker_wall_seconds", 0.0) or 0.0)
+        for record in performance_records
+    )
+    logical_cpus = os.cpu_count() or 1
     manifest = {
         "config_hash": digest,
         "git_commit": _git_commit(),
@@ -2511,6 +2727,69 @@ def run_monte_carlo(
         ),
         "frozen_calibration_file": frozen_calibration_file,
         "frozen_calibration_hash": frozen_calibration_hash,
+        "scientific_fingerprint": fingerprint,
+        "task_checkpoint_states": checkpoint_store.states(),
+        "task_bundle_schema": "dynamic-panel-task-bundle-v1",
+        "performance_instrumentation": {
+            "execution_wall_seconds": execution_wall_seconds,
+            "worker_count": worker_count_used,
+            "completed_task_metric_count": len(performance_records),
+            "native_threads_per_worker": int(resolved["run"]["blas_threads"]),
+            "process_cpu_seconds": process_cpu_seconds,
+            "cpu_utilization_percent_of_logical_capacity": (
+                100.0 * process_cpu_seconds / (execution_wall_seconds * logical_cpus)
+                if execution_wall_seconds > 0.0
+                else 0.0
+            ),
+            "worker_utilization_percent": (
+                100.0 * task_wall_seconds / (execution_wall_seconds * worker_count_used)
+                if execution_wall_seconds > 0.0
+                else 0.0
+            ),
+            "peak_worker_rss_bytes": max(
+                (int(record.get("peak_rss_bytes", 0) or 0) for record in performance_records),
+                default=0,
+            ),
+            "process_spawn_setup_seconds": max(
+                0.0,
+                (
+                    min(completion_times)
+                    - min(
+                        (
+                            float(record.get("worker_wall_seconds", 0.0) or 0.0)
+                            for record in performance_records
+                        ),
+                        default=0.0,
+                    )
+                    if completion_times
+                    else 0.0
+                ),
+            ),
+            "pilot_seconds": sum(
+                float(record.get("pilot_seconds", 0.0) or 0.0)
+                for record in performance_records
+            ),
+            "final_fit_seconds": sum(
+                float(record.get("final_fit_seconds", 0.0) or 0.0)
+                for record in performance_records
+            ),
+            "serialization_seconds": sum(
+                float(record.get("serialization_seconds", 0.0) or 0.0)
+                for record in performance_records
+            ),
+            "output_write_seconds": sum(
+                float(record.get("write_seconds", 0.0) or 0.0)
+                for record in performance_records
+            ),
+            "idle_tail_seconds": idle_tail_seconds,
+            "maximum_pending_count": max(
+                (
+                    int(record.get("pending_count_after_completion", 0) or 0)
+                    for record in performance_records
+                ),
+                default=0,
+            ),
+        },
         "calibration_cells": [
             {
                 "calibration_cell": {
@@ -2538,6 +2817,10 @@ def run_monte_carlo(
     )
     (root / "manifest.json").write_text(
         json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
+    )
+    (root / "performance_task_metrics.json").write_text(
+        json.dumps(performance_records, indent=2, default=_json_default) + "\n",
+        encoding="utf-8",
     )
     _consolidate_chunks(root, "replications", "attempted_replications", REPLICATION_COLUMNS)
     _consolidate_chunks(root, "fit", "fit_diagnostics", FIT_DIAGNOSTIC_COLUMNS)

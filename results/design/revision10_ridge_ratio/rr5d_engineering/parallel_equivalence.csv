@@ -1,0 +1,16 @@
+requested_n_jobs,repetition,scientific_outputs_equal_to_serial
+1,1,True
+1,2,True
+1,3,True
+4,1,True
+4,2,True
+4,3,True
+8,1,True
+8,2,True
+8,3,True
+12,1,True
+12,2,True
+12,3,True
+14,1,True
+14,2,True
+14,3,True

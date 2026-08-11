@@ -178,7 +178,7 @@ def test_cap_plus_one_pilot_accepts_natural_lower_numerical_rank(monkeypatch) ->
         calls += 1
         return _fit(lower_rank, (3, 3, 3), 1.0 + calls * 1e-10)
 
-    monkeypatch.setattr(rank_module, "fit_fixed_rank", fake_fit)
+    monkeypatch.setattr(rank_module, "fit_cap_plus_one", fake_fit)
     pilot, diagnostics = fit_revision10_spectral_pilot(
         np.ones((4, 4)),
         design,
@@ -209,7 +209,7 @@ def test_unresolved_pilot_failure_fixtures(
     theta = _diagonal_theta((1.0,) * 4, (1.0,) * 4, (1.0,) * 4)
     monkeypatch.setattr(
         rank_module,
-        "fit_fixed_rank",
+        "fit_cap_plus_one",
         lambda *args, **kwargs: _fit(
             theta,
             (2, 2, 2),

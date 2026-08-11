@@ -1,0 +1,9 @@
+fixture,expected_product_rank,realized_product_rank,converged,objective,stationarity_or_kkt,max_coefficient,product_error,objective_monotone,status,legacy_objective,objective_difference,valid_start_count,best_two_objective_gap
+width4_rank0,0,0,True,0.0,0.0,0.0,0.0,True,not_needed_interior_fast_path,,,,
+width4_rank1,1,1,True,8.152902813536759e-33,1.3426831212863937e-17,0.9999999999999999,4.440892098500626e-16,True,not_needed_interior_fast_path,,,,
+width4_rank2,2,2,True,1.7129713274658393e-32,1.933154220568767e-17,0.7999999999999997,4.440892098500626e-16,True,not_needed_interior_fast_path,,,,
+badly_scaled_gauge,4,4,True,0.0,0.0,9.739312284370534,6.328271240363392e-15,True,product_preserved,,,,
+near_collinear,1,1,True,1.2012121724399868e-32,1.3408167743458435e-17,1.0000000000999998,8.881784197001252e-16,True,not_needed_interior_fast_path,,,,
+active_box,1,1,True,1.125000075000002,5.551115123125783e-17,0.4999999500000003,,True,success,,,,
+old_new_semantic_regression,1,1,True,1.28078353655802e-32,1.6783171074446282e-17,1.0,4.579669976578771e-16,True,same_coefficient_problem,8.480110286380048e-33,4.327725079200151e-33,,
+frozen_three_start_gate,2,"[3, 0, 2]",True,1.935619779419934e-32,2.247280015427055e-17,0.7999999999999998,,True,accepted,,,3.0,2.108351621307164e-33

@@ -1,0 +1,4 @@
+solver_path,constrained_solver_status,constrained_fallback_used,start_count,convergence_count,stationarity_pass_count,iteration_cap_count,boundary_active_count,median_iterations,median_runtime_seconds,p95_runtime_seconds,maximum_runtime_seconds,termination_message_detail_recorded
+constrained_box_KKT,constrained_optimality_failure,True,162,0,0,162,143,200.0,312.79789329999767,1244.4292668400021,1923.0765744000018,False
+constrained_box_KKT,success,True,39,39,39,8,37,162.0,462.51498889999493,1013.8623830199987,1222.6451629999938,False
+interior_tangent_gradient,not_needed_interior_fast_path,False,339,14,14,338,0,200.0,15.889018400004716,28.399225039998406,49.18100469998899,False

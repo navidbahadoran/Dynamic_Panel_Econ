@@ -1,0 +1,82 @@
+{
+  "phase": "FP-DGP1-N50",
+  "status": "complete",
+  "created_utc": "2026-08-12T00:55:22.8426736Z",
+  "repository": "D:/Programming/Dynamic_Panel_Econ",
+  "branch": "main",
+  "approved_commit": "2e66212f132ece3f96987f2f7c0398d81a9dc2f5",
+  "scientific_fingerprint_hash": "af6e784c2c8e8cbb0d38f7763ded5dc41fcebf9142020171c11534b6ada2749c",
+  "seed_freshness": {
+    "master_seed": 2026081103,
+    "working_tree_exact_search_matches": 0,
+    "git_history_exact_search_matches": 0,
+    "classification": "fresh_for_scientific_use"
+  },
+  "design": {
+    "dgp": 1,
+    "N": 50,
+    "T": 50,
+    "replication_indices": [
+      1,
+      1000
+    ],
+    "replications": 1000,
+    "rank_mode": "supplied_true_rank",
+    "supplied_rank": [
+      1,
+      1,
+      1
+    ],
+    "automatic_rank_selector_run": false,
+    "requested_n_jobs": 8,
+    "effective_n_jobs": 8,
+    "blas_openmp_threads_per_worker": 1,
+    "variance_type": "diagonal"
+  },
+  "commands": {
+    "launch": ".\\.venv\\Scripts\\python.exe scripts\\run_mc.py --config results\\production\\fixed_rank_revision10\\dgp1_n50_r1000\\config.toml --n-jobs 8",
+    "resume": ".\\.venv\\Scripts\\python.exe scripts\\run_mc.py --config results\\production\\fixed_rank_revision10\\dgp1_n50_r1000\\config.toml --n-jobs 8 --resume",
+    "dry_run": ".\\.venv\\Scripts\\python.exe scripts\\run_mc.py --config results\\production\\fixed_rank_revision10\\dgp1_n50_r1000\\config.toml --n-jobs 8 --dry-run"
+  },
+  "resumability": {
+    "engine": "RR5d atomic semantic-task bundles",
+    "raw_directory": "results/production/fixed_rank_revision10/dgp1_n50_r1000/raw",
+    "resume_same_run_only": true,
+    "preserve_terminal_failures": true
+  },
+  "pre_run_gate": {
+    "head_local_remote_equal": true,
+    "worktree_clean_before_output_setup": true,
+    "manuscript_hash_match": true,
+    "calibration_hash_match": true,
+    "pytest": "182 passed in 66.93s",
+    "ruff": "passed",
+    "git_diff_check": "passed",
+    "dry_run": "1000 outer tasks; no scientific output generated"
+  },
+  "execution_result": {
+    "engine_fingerprint_hash": "a570a03ad413263b80b526bcb3228801f23e544914d49260c7cdfd32a33280a9",
+    "resolved_config_hash": "e5824158072b2d7c",
+    "expected_tasks": 1000,
+    "completed": 889,
+    "terminal_failures": 111,
+    "running": 0,
+    "pending": 0,
+    "interruptions": 0,
+    "resume_events": 0,
+    "corrupt_bundles": 0,
+    "execution_wall_seconds": 1399.855869100007,
+    "process_exit_code": 0
+  },
+  "post_run_validation": {
+    "source_tree_hash_unchanged": true,
+    "manuscript_hash_unchanged": true,
+    "calibration_hash_unchanged": true,
+    "production_config_hash_unchanged": true,
+    "pytest": "182 passed in 43.20s",
+    "ruff": "passed",
+    "git_diff_check": "passed",
+    "tuning_occurred": false,
+    "automatic_rank_selection_ran": false
+  }
+}

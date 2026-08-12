@@ -1,0 +1,12 @@
+{
+  "elapsed_seconds": 1399.855869100007,
+  "expected_tasks": 1000,
+  "fingerprint_hash": "a570a03ad413263b80b526bcb3228801f23e544914d49260c7cdfd32a33280a9",
+  "states": {
+    "completed": 889,
+    "failed": 111
+  },
+  "status": "all_tasks_terminal",
+  "terminal_tasks": 1000,
+  "throughput_tasks_per_second": 0.7143592580305559
+}

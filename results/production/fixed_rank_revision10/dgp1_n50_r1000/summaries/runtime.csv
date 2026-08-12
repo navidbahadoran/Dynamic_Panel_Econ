@@ -1,0 +1,16 @@
+metric,value,unit
+total_wall_seconds,1399.855869100007,seconds
+median_replication_seconds,5.722463350000908,seconds
+p95_replication_seconds,35.01941552998759,seconds
+max_replication_seconds,188.65773489999992,seconds
+throughput,0.7143592580305559,tasks/second
+worker_utilization,99.19188798916942,percent
+cpu_utilization_logical_capacity,30.84430267293136,percent
+peak_worker_rss,135438336.0,bytes
+serialization,18.39356960011355,seconds
+output_write,5.6528458997636335,seconds
+idle_tail,13.660964900002,seconds
+maximum_pending_count,15.0,tasks
+split_fit_runtime_all_records,5487.8788311999815,seconds
+inference_runtime_all_records,309.3501561000885,seconds
+full_fixed_rank_fit_runtime,1891.8426964004175,seconds

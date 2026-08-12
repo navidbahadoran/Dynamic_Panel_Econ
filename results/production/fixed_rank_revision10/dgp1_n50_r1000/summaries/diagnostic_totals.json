@@ -1,0 +1,50 @@
+{
+  "attempt_status": {
+    "full_fit_failure": 111,
+    "success": 889
+  },
+  "boundary_active_attempts": 241,
+  "constrained_fallback_attempts": 243,
+  "fit_type_counts": {
+    "full_fixed_rank": 3300,
+    "time_split_0": 889,
+    "time_split_1": 889,
+    "unit_split_0": 889,
+    "unit_split_1": 889
+  },
+  "gram_eigenvalue_nonfinite": 0,
+  "inference_status": {
+    "boundary_interiority_failure": 2138,
+    "split_fit_failure": 5184,
+    "success": 8680
+  },
+  "raw_bundle_bytes": 163503073,
+  "raw_bundle_count": 1000,
+  "raw_index_sha256": "d5445b66c20c16cc323eea24b38def5c9883b0caf5d6ff853836b085ef71b0f1",
+  "riesz_converged": {
+    "True": 16002
+  },
+  "split_status_counts": {
+    "time_split_0_status": {
+      "failure": 32,
+      "nan": 8890,
+      "success": 7080
+    },
+    "time_split_1_status": {
+      "failure": 8,
+      "nan": 8890,
+      "success": 7104
+    },
+    "unit_split_0_status": {
+      "failure": 8,
+      "nan": 8890,
+      "success": 7104
+    },
+    "unit_split_1_status": {
+      "failure": 16,
+      "nan": 8890,
+      "success": 7096
+    }
+  },
+  "variance_nonfinite": 0
+}

@@ -1,0 +1,8 @@
+{
+  "corrupt_or_incomplete_bundles": 0,
+  "events": [],
+  "fingerprint_validation": "initial run; no mismatch",
+  "interruption_count": 0,
+  "resume_event_count": 0,
+  "tasks_skipped_on_resume": 0
+}

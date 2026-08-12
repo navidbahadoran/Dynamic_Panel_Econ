@@ -1,0 +1,2 @@
+phase,DGP,N,T,supplied_rank,R_attempted,full_fit_accepted,full_fit_failed,full_fit_boundary_or_downstream_boundary,constrained_fallback_used,targets,point_valid_target_records,inference_valid_target_records,extreme_inference_valid_records,wall_seconds,interruptions,resume_events
+FP-DGP1-N50,1,50,50,"[1,1,1]",1000,889,111,241,243,18,16002,8680,6,1399.855869100007,0,0

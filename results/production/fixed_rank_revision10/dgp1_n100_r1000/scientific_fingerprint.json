@@ -1,0 +1,33 @@
+{
+  "N": 100,
+  "T": 100,
+  "calibration_file_sha256": "51b4ea76fdd2295a2cfeb840ef7b2b3f468d32c45ad2c123523363d5b968f17e",
+  "code_commit": "5acf224947372b9afcf3a29105c75d9969623264",
+  "config_file_sha256": "569b70a3ce968bdd94dad3a3725234d2dae8f31eec68bd62655b060ec9ffaf11",
+  "dgp": 1,
+  "fingerprint_hash": "45d516c387e72e9d13d7b30e066bf5b2daf55e15ca71899ac327486a2b714865",
+  "manuscript_sha256": "d1c7224e0962df6a54fb92a550671f72b66258f30afd64d292f3bf60c7d87be9",
+  "master_seed": 2026081103,
+  "rank_mode": "supplied_true_rank",
+  "replication_start": 1,
+  "replications": 1000,
+  "resolved_config_hash": "32bb33c3cfe3047d",
+  "selector_method": "none_supplied_true_rank",
+  "source_tree_hash": "6026f1a48d92fa4de1dc9ee81f4e6146ce5995a0ab8e6d90b8774cb9c78db555",
+  "supplied_rank": [1, 1, 1],
+  "task_identity_audit": {
+    "n100_unique_semantic_task_ids": 1000,
+    "n100_unique_dgp_seed_states": 1000,
+    "semantic_task_id_overlap_with_n50": 0,
+    "dgp_seed_state_overlap_with_n50": 0
+  },
+  "targets": [
+    "A_entry", "B_entry", "A_fixed_time_mean", "B_fixed_time_mean",
+    "A_full_mean", "B_full_mean", "A_G1_fixed_time", "A_G2_fixed_time",
+    "A_G2_minus_G1_fixed_time", "A_G1_time_average", "A_G2_time_average",
+    "A_G2_minus_G1_time_average", "B_G1_fixed_time", "B_G2_fixed_time",
+    "B_G2_minus_G1_fixed_time", "B_G1_time_average", "B_G2_time_average",
+    "B_G2_minus_G1_time_average"
+  ],
+  "variance_type": "diagonal"
+}

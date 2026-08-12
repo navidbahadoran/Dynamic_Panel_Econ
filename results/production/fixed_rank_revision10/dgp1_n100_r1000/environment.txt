@@ -1,0 +1,10 @@
+python=3.13.3 (tags/v3.13.3:6280bb5, Apr  8 2025, 14:47:33) [MSC v.1943 64 bit (AMD64)]
+platform=Windows-11-10.0.26200-SP0
+machine=AMD64
+processor=Intel64 Family 6 Model 154 Stepping 3, GenuineIntel
+logical_cpus=20
+numpy=2.5.1
+pandas=3.0.5
+requested_n_jobs=8
+effective_n_jobs=8
+native_threads_per_worker=1
